@@ -1,0 +1,379 @@
+import { Tool } from '@modelcontextprotocol/sdk/types.js';
+
+export class ToolGenerator {
+  /**
+   * Generate all available tools for the MCP server
+   */
+  async generateTools(): Promise<Tool[]> {
+    const tools: Tool[] = [
+      {
+        name: 'get_providers',
+        description: 'List all API providers in the directory',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: 'get_provider_apis',
+        description: 'List all APIs for a specific provider',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            provider: {
+              type: 'string',
+              description: 'Provider name (e.g., "googleapis.com", "azure.com")',
+            },
+          },
+          required: ['provider'],
+        },
+      },
+      {
+        name: 'get_provider_services',
+        description: 'List all services for a specific provider',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            provider: {
+              type: 'string',
+              description: 'Provider name (e.g., "googleapis.com", "azure.com")',
+            },
+          },
+          required: ['provider'],
+        },
+      },
+      {
+        name: 'get_api',
+        description: 'Get detailed information about a specific API',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            provider: {
+              type: 'string',
+              description: 'Provider name (e.g., "googleapis.com", "azure.com")',
+            },
+            api: {
+              type: 'string',
+              description: 'API version (e.g., "v3", "2.0")',
+            },
+            service: {
+              type: 'string',
+              description: 'Service name (optional, required for some APIs)',
+            },
+          },
+          required: ['provider', 'api'],
+        },
+      },
+      {
+        name: 'list_all_apis',
+        description: 'List all APIs in the directory with metadata',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: 'get_metrics',
+        description: 'Get statistics and metrics about the API directory',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: 'search_apis',
+        description: 'Search for APIs by name, description, or keywords',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Search query string',
+            },
+            provider: {
+              type: 'string',
+              description: 'Optional provider filter',
+            },
+          },
+          required: ['query'],
+        },
+      },
+      {
+        name: 'get_popular_apis',
+        description: 'Get the most popular APIs based on various metrics',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Maximum number of APIs to return (default: 20)',
+              default: 20,
+            },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'get_recently_updated',
+        description: 'Get recently updated APIs',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Maximum number of APIs to return (default: 10)',
+              default: 10,
+            },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'get_provider_stats',
+        description: 'Get statistics for a specific provider',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            provider: {
+              type: 'string',
+              description: 'Provider name (e.g., "googleapis.com", "azure.com")',
+            },
+          },
+          required: ['provider'],
+        },
+      },
+      {
+        name: 'get_openapi_spec',
+        description: 'Get the OpenAPI specification for a specific API',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              description: 'URL to the OpenAPI specification (JSON or YAML)',
+            },
+          },
+          required: ['url'],
+        },
+      },
+      {
+        name: 'analyze_api_categories',
+        description: 'Analyze API distribution by categories',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            provider: {
+              type: 'string',
+              description: 'Optional provider filter',
+            },
+          },
+          required: [],
+        },
+      },
+    ];
+
+    return tools;
+  }
+
+  /**
+   * Generate tools from OpenAPI specification
+   */
+  async generateToolsFromSpec(spec: any): Promise<Tool[]> {
+    const tools: Tool[] = [];
+
+    if (!spec.paths) {
+      return tools;
+    }
+
+    // Convert OpenAPI operations to MCP tools
+    for (const [path, pathItem] of Object.entries(spec.paths)) {
+      if (typeof pathItem !== 'object' || pathItem === null) {
+        continue;
+      }
+
+      const operations = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace'];
+      
+      for (const method of operations) {
+        const operation = (pathItem as any)[method];
+        if (!operation) continue;
+
+        const toolName = operation.operationId || `${method}_${path.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const tool: Tool = {
+          name: toolName,
+          description: operation.summary || operation.description || `${method.toUpperCase()} ${path}`,
+          inputSchema: this.generateInputSchema(operation, path),
+        };
+
+        tools.push(tool);
+      }
+    }
+
+    return tools;
+  }
+
+  /**
+   * Generate input schema for a tool based on OpenAPI operation
+   */
+  private generateInputSchema(operation: any, path: string): any {
+    const properties: any = {};
+    const required: string[] = [];
+
+    // Extract path parameters
+    const pathParams = path.match(/\{([^}]+)\}/g);
+    if (pathParams) {
+      for (const param of pathParams) {
+        const paramName = param.slice(1, -1); // Remove { and }
+        properties[paramName] = {
+          type: 'string',
+          description: `Path parameter: ${paramName}`,
+        };
+        required.push(paramName);
+      }
+    }
+
+    // Extract parameters from operation
+    if (operation.parameters) {
+      for (const param of operation.parameters) {
+        if (param.in === 'path') {
+          properties[param.name] = {
+            type: param.schema?.type || 'string',
+            description: param.description || `Path parameter: ${param.name}`,
+          };
+          if (param.required) {
+            required.push(param.name);
+          }
+        } else if (param.in === 'query') {
+          properties[param.name] = {
+            type: param.schema?.type || 'string',
+            description: param.description || `Query parameter: ${param.name}`,
+          };
+          if (param.required) {
+            required.push(param.name);
+          }
+        }
+      }
+    }
+
+    // Extract request body schema
+    if (operation.requestBody) {
+      const content = operation.requestBody.content;
+      if (content) {
+        const jsonContent = content['application/json'];
+        if (jsonContent?.schema) {
+          properties.body = {
+            type: 'object',
+            description: 'Request body',
+            properties: jsonContent.schema.properties || {},
+          };
+          if (operation.requestBody.required) {
+            required.push('body');
+          }
+        }
+      }
+    }
+
+    return {
+      type: 'object',
+      properties,
+      required,
+    };
+  }
+
+  /**
+   * Generate additional utility tools
+   */
+  generateUtilityTools(): Tool[] {
+    return [
+      {
+        name: 'validate_openapi_spec',
+        description: 'Validate an OpenAPI specification',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            spec: {
+              type: 'object',
+              description: 'OpenAPI specification to validate',
+            },
+          },
+          required: ['spec'],
+        },
+      },
+      {
+        name: 'compare_api_versions',
+        description: 'Compare two versions of an API',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            provider: {
+              type: 'string',
+              description: 'Provider name',
+            },
+            api: {
+              type: 'string',
+              description: 'API identifier',
+            },
+            version1: {
+              type: 'string',
+              description: 'First version to compare',
+            },
+            version2: {
+              type: 'string',
+              description: 'Second version to compare',
+            },
+          },
+          required: ['provider', 'api', 'version1', 'version2'],
+        },
+      },
+      {
+        name: 'get_api_dependencies',
+        description: 'Analyze API dependencies and relationships',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            provider: {
+              type: 'string',
+              description: 'Provider name',
+            },
+            api: {
+              type: 'string',
+              description: 'API identifier',
+            },
+          },
+          required: ['provider', 'api'],
+        },
+      },
+      {
+        name: 'export_api_collection',
+        description: 'Export a collection of APIs in various formats',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            apis: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  provider: { type: 'string' },
+                  api: { type: 'string' },
+                  version: { type: 'string' },
+                },
+                required: ['provider', 'api', 'version'],
+              },
+              description: 'List of APIs to export',
+            },
+            format: {
+              type: 'string',
+              enum: ['json', 'yaml', 'postman', 'insomnia'],
+              description: 'Export format',
+              default: 'json',
+            },
+          },
+          required: ['apis'],
+        },
+      },
+    ];
+  }
+}
