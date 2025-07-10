@@ -3,7 +3,6 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/openapi-directory-mcp"><img src="https://img.shields.io/npm/v/openapi-directory-mcp.svg?style=flat-square&aaa=1" alt="NPM Version"></a>
   <a href="https://github.com/rawveg/openapi-directory-mcp/blob/main/LICENSE"><img src="https://img.shields.io/github/license/rawveg/openapi-directory-mcp.svg?style=flat-square&aaa=1" alt="License"></a>
-  <a href="https://github.com/rawveg/openapi-directory-mcp/actions"><img src="https://img.shields.io/github/actions/workflow/status/rawveg/openapi-directory-mcp/ci.yml?branch=main&style=flat-square&aaa=1" alt="Build Status"></a>
   <a href="https://github.com/rawveg/openapi-directory-mcp"><img src="https://img.shields.io/github/stars/rawveg/openapi-directory-mcp?style=flat-square&aaa=1" alt="GitHub Stars"></a>
   <a href="https://github.com/sponsors/rawveg"><img src="https://img.shields.io/badge/sponsor-%E2%9D%A4-lightgrey?style=flat-square&aaa=1" alt="Sponsor"></a>
 </p>
