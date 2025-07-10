@@ -11,7 +11,7 @@
 ---
 
 
-A Model Context Protocol (MCP) server that provides access to the APIs.guru directory - the world's largest repository of OpenAPI specifications with over 3,000 APIs from 600+ providers.
+A Model Context Protocol (MCP) server that provides access to the APIs.guru directory - the world's largest repository of OpenAPI specifications with over 3,000 API Specs from 600+ providers.
 
 ## Table of Contents
 
@@ -50,7 +50,7 @@ The source data is provided under the Creative Commons Zero v1.0 Universal Licen
 | Feature                       | Description                                                  |
 |-------------------------------|--------------------------------------------------------------|
 | **Zero Configuration**        | Works out of the box with sensible defaults                  |
-| **Comprehensive API Coverage**| Access to 3,000+ APIs from APIs.guru                         |
+| **Comprehensive API Coverage**| Access to 3,000+ API specs from APIs.guru                    |
 | **Context Optimized**         | Progressive discovery reduces context usage by ~95%          |
 | **Intelligent Caching**       | 24-hour TTL caching for optimal performance                  |
 | **Rich Tool Set**             | 17 specialized tools for API discovery and endpoint analysis |
