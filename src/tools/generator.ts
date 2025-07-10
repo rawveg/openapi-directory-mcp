@@ -85,7 +85,7 @@ export class ToolGenerator {
       },
       {
         name: 'search_apis',
-        description: 'Search for APIs by name, description, or keywords',
+        description: 'Search for APIs by name, description, or keywords with pagination support',
         inputSchema: {
           type: 'object',
           properties: {
@@ -96,6 +96,16 @@ export class ToolGenerator {
             provider: {
               type: 'string',
               description: 'Optional provider filter',
+            },
+            page: {
+              type: 'number',
+              description: 'Page number (default: 1)',
+              default: 1,
+            },
+            limit: {
+              type: 'number',
+              description: 'Number of results per page (default: 20, max: 50)',
+              default: 20,
             },
           },
           required: ['query'],
@@ -171,6 +181,114 @@ export class ToolGenerator {
             },
           },
           required: [],
+        },
+      },
+      {
+        name: 'get_api_summary',
+        description: 'Get basic information about a specific API without endpoint details',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            api_id: {
+              type: 'string',
+              description: 'API identifier (e.g., "googleapis.com:admin", "github.com")',
+            },
+          },
+          required: ['api_id'],
+        },
+      },
+      {
+        name: 'get_endpoints',
+        description: 'Get a paginated list of endpoints for a specific API with minimal information',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            api_id: {
+              type: 'string',
+              description: 'API identifier (e.g., "googleapis.com:admin", "github.com")',
+            },
+            page: {
+              type: 'number',
+              description: 'Page number (default: 1)',
+              default: 1,
+            },
+            limit: {
+              type: 'number',
+              description: 'Number of endpoints per page (default: 30, max: 100)',
+              default: 30,
+            },
+            tag: {
+              type: 'string',
+              description: 'Optional tag filter to show only endpoints with specific tag',
+            },
+          },
+          required: ['api_id'],
+        },
+      },
+      {
+        name: 'get_endpoint_details',
+        description: 'Get detailed information about a specific API endpoint',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            api_id: {
+              type: 'string',
+              description: 'API identifier (e.g., "googleapis.com:admin", "github.com")',
+            },
+            method: {
+              type: 'string',
+              description: 'HTTP method (GET, POST, PUT, PATCH, DELETE, etc.)',
+            },
+            path: {
+              type: 'string',
+              description: 'API endpoint path (e.g., "/users/{id}", "/posts")',
+            },
+          },
+          required: ['api_id', 'method', 'path'],
+        },
+      },
+      {
+        name: 'get_endpoint_schema',
+        description: 'Get request and response schemas for a specific API endpoint',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            api_id: {
+              type: 'string',
+              description: 'API identifier (e.g., "googleapis.com:admin", "github.com")',
+            },
+            method: {
+              type: 'string',
+              description: 'HTTP method (GET, POST, PUT, PATCH, DELETE, etc.)',
+            },
+            path: {
+              type: 'string',
+              description: 'API endpoint path (e.g., "/users/{id}", "/posts")',
+            },
+          },
+          required: ['api_id', 'method', 'path'],
+        },
+      },
+      {
+        name: 'get_endpoint_examples',
+        description: 'Get request and response examples for a specific API endpoint',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            api_id: {
+              type: 'string',
+              description: 'API identifier (e.g., "googleapis.com:admin", "github.com")',
+            },
+            method: {
+              type: 'string',
+              description: 'HTTP method (GET, POST, PUT, PATCH, DELETE, etc.)',
+            },
+            path: {
+              type: 'string',
+              description: 'API endpoint path (e.g., "/users/{id}", "/posts")',
+            },
+          },
+          required: ['api_id', 'method', 'path'],
         },
       },
     ];

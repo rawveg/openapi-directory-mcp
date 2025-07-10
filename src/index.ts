@@ -149,13 +149,23 @@ class OpenAPIDirectoryServer {
       mimeType: 'application/json',
     });
 
+    // Add API summary resource
     resources.push({
-      uri: 'openapi://list',
-      name: 'All APIs List',
-      description: 'Complete list of all APIs in the directory',
+      uri: 'openapi://apis/summary',
+      name: 'API Directory Summary',
+      description: 'Overview of the API directory including popular APIs and statistics',
       mimeType: 'application/json',
     });
 
+    // Add paginated API resources (pages 1-20)
+    for (let page = 1; page <= 20; page++) {
+      resources.push({
+        uri: `openapi://apis/page/${page}`,
+        name: `APIs Page ${page}`,
+        description: `Page ${page} of APIs in the directory (50 APIs per page)`,
+        mimeType: 'application/json',
+      });
+    }
 
     return resources;
   }
@@ -176,13 +186,26 @@ class OpenAPIDirectoryServer {
           return JSON.stringify(metrics, null, 2);
         }
           
-        case 'list': {
-          const apis = await this.apiClient.listAPIs();
-          return JSON.stringify(apis, null, 2);
+        case 'apis/summary': {
+          const summary = await this.apiClient.getAPISummary();
+          return JSON.stringify(summary, null, 2);
         }
           
-        default:
+        default: {
+          // Handle paginated API resources: apis/page/N
+          if (path.startsWith('apis/page/')) {
+            const pageMatch = path.match(/^apis\/page\/(\d+)$/);
+            if (pageMatch && pageMatch[1]) {
+              const page = parseInt(pageMatch[1], 10);
+              if (page >= 1 && page <= 20) {
+                const paginatedAPIs = await this.apiClient.getPaginatedAPIs(page, 50);
+                return JSON.stringify(paginatedAPIs, null, 2);
+              }
+            }
+          }
+          
           throw new McpError(ErrorCode.InvalidRequest, `Unknown resource: ${uri}`);
+        }
       }
     }
 
@@ -235,9 +258,11 @@ class OpenAPIDirectoryServer {
         const searchSchema = z.object({
           query: z.string(),
           provider: z.string().optional(),
+          page: z.number().optional().default(1),
+          limit: z.number().optional().default(20),
         });
         const searchArgs = searchSchema.parse(args);
-        return await this.apiClient.searchAPIs(searchArgs.query, searchArgs.provider);
+        return await this.apiClient.searchAPIs(searchArgs.query, searchArgs.provider, searchArgs.page, searchArgs.limit);
       }
         
       case 'get_popular_apis':
@@ -273,6 +298,72 @@ class OpenAPIDirectoryServer {
         });
         const categoriesArgs = categoriesSchema.parse(args);
         return await this.analyzeApiCategories(categoriesArgs.provider);
+      }
+        
+      case 'get_api_summary': {
+        const summarySchema = z.object({
+          api_id: z.string(),
+        });
+        const summaryArgs = summarySchema.parse(args);
+        return await this.apiClient.getAPISummaryById(summaryArgs.api_id);
+      }
+        
+      case 'get_endpoints': {
+        const endpointsSchema = z.object({
+          api_id: z.string(),
+          page: z.number().optional().default(1),
+          limit: z.number().optional().default(30),
+          tag: z.string().optional(),
+        });
+        const endpointsArgs = endpointsSchema.parse(args);
+        return await this.apiClient.getAPIEndpoints(
+          endpointsArgs.api_id, 
+          endpointsArgs.page, 
+          endpointsArgs.limit, 
+          endpointsArgs.tag
+        );
+      }
+        
+      case 'get_endpoint_details': {
+        const detailsSchema = z.object({
+          api_id: z.string(),
+          method: z.string(),
+          path: z.string(),
+        });
+        const detailsArgs = detailsSchema.parse(args);
+        return await this.apiClient.getEndpointDetails(
+          detailsArgs.api_id,
+          detailsArgs.method,
+          detailsArgs.path
+        );
+      }
+        
+      case 'get_endpoint_schema': {
+        const schemaSchema = z.object({
+          api_id: z.string(),
+          method: z.string(),
+          path: z.string(),
+        });
+        const schemaArgs = schemaSchema.parse(args);
+        return await this.apiClient.getEndpointSchema(
+          schemaArgs.api_id,
+          schemaArgs.method,
+          schemaArgs.path
+        );
+      }
+        
+      case 'get_endpoint_examples': {
+        const examplesSchema = z.object({
+          api_id: z.string(),
+          method: z.string(),
+          path: z.string(),
+        });
+        const examplesArgs = examplesSchema.parse(args);
+        return await this.apiClient.getEndpointExamples(
+          examplesArgs.api_id,
+          examplesArgs.method,
+          examplesArgs.path
+        );
       }
         
       default:

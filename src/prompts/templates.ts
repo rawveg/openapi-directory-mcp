@@ -35,17 +35,34 @@ export const API_DISCOVERY_PROMPT: PromptTemplate = {
 
 ${args.requirements ? `Requirements: ${args.requirements}` : ''}
 
-Please help me:
-1. Search the APIs.guru directory for relevant APIs
-2. Evaluate the top candidates based on:
-   - API quality and documentation
-   - Authentication requirements
-   - Rate limits and pricing
-   - Community adoption
-3. Provide specific API recommendations with reasons
-4. Include links to documentation and OpenAPI specs
+Please help me discover and evaluate APIs using this efficient workflow:
 
-Use the available tools to search and analyze APIs from the directory.`
+**Phase 1: Initial Discovery**
+1. Use 'search_apis' tool to find relevant APIs (this returns paginated minimal results)
+2. If needed, check additional pages using the pagination parameters
+3. Use 'openapi://apis/summary' resource for directory overview and popular APIs
+
+**Phase 2: Basic Evaluation** 
+4. Use 'get_api_summary' tool for promising APIs to get:
+   - Basic info, authentication type, documentation links
+   - Categories, provider details, version info
+   - This gives you essential details without overwhelming context
+
+**Phase 3: Detailed Analysis (only for top candidates)**
+5. Use 'get_endpoints' tool to see available endpoints (paginated)
+6. Use 'get_endpoint_details' for specific endpoints you're interested in
+7. Use 'get_endpoint_schema' or 'get_endpoint_examples' for implementation details
+
+**Evaluation Criteria:**
+- API quality and documentation availability
+- Authentication requirements and complexity  
+- Free tier availability and rate limits
+- Community adoption and maintenance status
+- Endpoint coverage for your use case
+
+**Important:** Use the progressive discovery approach - start broad with search/summary, then drill down only into the most promising APIs. This prevents context saturation and allows comparison of many more APIs.
+
+Begin with Phase 1 to discover relevant APIs efficiently.`
       }
     }
   ]
@@ -81,18 +98,40 @@ export const API_INTEGRATION_GUIDE: PromptTemplate = {
 ${args.programming_language ? `Programming language: ${args.programming_language}` : ''}
 ${args.use_case ? `Use case: ${args.use_case}` : ''}
 
-Please provide a complete integration guide:
-1. Find the API in the directory and get its OpenAPI specification
-2. Analyze the authentication requirements
-3. Identify the relevant endpoints for my use case
-4. Generate code examples for:
-   - Authentication setup
-   - Making API calls
-   - Handling responses and errors
-5. Provide best practices and common pitfalls
-6. Include rate limiting and error handling strategies
+Please create a comprehensive integration guide using this efficient approach:
 
-Use the available tools to fetch the API specification and analyze its capabilities.`
+**Step 1: API Discovery & Summary**
+1. Search for the API using 'search_apis' tool with the API name
+2. Get detailed summary using 'get_api_summary' tool to understand:
+   - Authentication requirements and setup
+   - Base URL and documentation links  
+   - Available versions and preferred version
+   - Categories and provider information
+
+**Step 2: Endpoint Exploration**
+3. Use 'get_endpoints' tool to see all available endpoints
+4. Filter endpoints by tag if relevant to the use case
+5. Identify the specific endpoints needed for the integration
+
+**Step 3: Implementation Details**
+6. For each needed endpoint, use 'get_endpoint_details' to understand:
+   - Required parameters and their types
+   - Response codes and error handling
+   - Authentication and security requirements
+7. Use 'get_endpoint_schema' to get request/response data structures
+8. Use 'get_endpoint_examples' to see sample requests and responses
+
+**Integration Guide Should Include:**
+- Authentication setup and configuration
+- Required headers and base URL setup
+- Code examples for each endpoint (in specified language)
+- Error handling and response processing
+- Rate limiting considerations
+- Best practices and common pitfalls
+
+**Important:** Use the progressive discovery tools to gather information efficiently without overwhelming the context. Start with summary, then explore endpoints, then dive into implementation details only for relevant endpoints.
+
+Begin by finding and summarizing the API details.`
       }
     }
   ]
