@@ -153,9 +153,7 @@ claude mcp add openapi-directory -- node /absolute/path/to/openapi-directory-mcp
 }
 ```
 
-### NPX Installation (After Publishing)
-
-**Note**: This package is not yet published to NPM. Once published, you can use:
+### NPX Installation
 
 ```bash
 npx -y openapi-directory-mcp
