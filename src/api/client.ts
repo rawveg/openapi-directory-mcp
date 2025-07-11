@@ -322,10 +322,18 @@ export class ApiClient {
         const scoreA = scoreMatch(idA, providerA, titleA);
         const scoreB = scoreMatch(idB, providerB, titleB);
         
-        // Sort by score (descending), then alphabetically by ID
+        // Sort by score (descending), then by version date (descending), then alphabetically by ID
         if (scoreA !== scoreB) {
           return scoreB - scoreA;
         }
+        
+        // For same relevance score, prioritize newer versions
+        const dateA = new Date(versionA?.updated || '1970-01-01').getTime();
+        const dateB = new Date(versionB?.updated || '1970-01-01').getTime();
+        if (dateA !== dateB) {
+          return dateB - dateA; // Newer dates first
+        }
+        
         return idA.localeCompare(idB);
       });
       
