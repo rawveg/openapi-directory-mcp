@@ -1,7 +1,7 @@
 {
   "name": "openapi-directory-mcp",
-  "version": "1.0.6",
-  "description": "Model Context Protocol server for accessing the APIs.guru directory of OpenAPI specifications",
+  "version": "1.1.0",
+  "description": "Model Context Protocol server for accessing enhanced dual-source OpenAPI directory (APIs.guru + additional APIs)",
   "type": "module",
   "main": "dist/index.js",
   "bin": {

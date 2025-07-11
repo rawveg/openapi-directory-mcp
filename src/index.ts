@@ -12,7 +12,7 @@ import {
   ErrorCode,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { ApiClient } from './api/client.js';
+import { DualSourceApiClient } from './api/dual-source-client.js';
 import { CacheManager } from './cache/manager.js';
 import { ToolGenerator } from './tools/generator.js';
 import { PromptHandler } from './prompts/handler.js';
@@ -21,16 +21,17 @@ import { z } from 'zod';
 // Configuration
 const config = {
   name: 'openapi-directory-mcp',
-  version: '1.0.0',
-  description: 'Browse and discover APIs from APIs.guru OpenAPI directory',
+  version: '1.1.0',
+  description: 'Browse and discover APIs from dual-source OpenAPI directory (APIs.guru + enhanced)',
   cacheEnabled: process.env.DISABLE_CACHE !== 'true',
   cacheTTL: parseInt(process.env.CACHE_TTL || '86400000'), // 24 hours in milliseconds
-  apiBaseUrl: process.env.API_BASE_URL || 'https://api.apis.guru/v2',
+  primaryApiBaseUrl: process.env.PRIMARY_API_BASE_URL || 'https://api.apis.guru/v2',
+  secondaryApiBaseUrl: process.env.SECONDARY_API_BASE_URL || 'https://api.openapidirectory.com',
 };
 
 class OpenAPIDirectoryServer {
   private server: Server;
-  private apiClient: ApiClient;
+  private apiClient: DualSourceApiClient;
   private cacheManager: CacheManager;
   private toolGenerator: ToolGenerator;
   private promptHandler: PromptHandler;
@@ -44,7 +45,7 @@ class OpenAPIDirectoryServer {
     );
 
     this.cacheManager = new CacheManager(config.cacheTTL);
-    this.apiClient = new ApiClient(config.apiBaseUrl, this.cacheManager);
+    this.apiClient = new DualSourceApiClient(config.primaryApiBaseUrl, config.secondaryApiBaseUrl, this.cacheManager);
     this.toolGenerator = new ToolGenerator();
     this.promptHandler = new PromptHandler();
 
@@ -410,7 +411,9 @@ class OpenAPIDirectoryServer {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     
-    console.error(`${config.name} v${config.version} - MCP server started`);
+    console.error(`${config.name} v${config.version} - Dual-source MCP server started`);
+    console.error(`Primary API: ${config.primaryApiBaseUrl}`);
+    console.error(`Secondary API: ${config.secondaryApiBaseUrl}`);
     console.error(`Cache: ${config.cacheEnabled ? 'enabled' : 'disabled'} (TTL: ${config.cacheTTL}ms)`);
   }
 }
