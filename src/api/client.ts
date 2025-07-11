@@ -280,18 +280,54 @@ export class ApiClient {
           continue;
         }
         
-        // Search in API ID, title, and description
+        // Search in API ID, title, description, and provider name
         const matches = 
           apiId.toLowerCase().includes(queryLower) ||
           Object.values(api.versions).some(version => 
             version.info.title?.toLowerCase().includes(queryLower) ||
-            version.info.description?.toLowerCase().includes(queryLower)
+            version.info.description?.toLowerCase().includes(queryLower) ||
+            version.info['x-providerName']?.toLowerCase().includes(queryLower)
           );
           
         if (matches) {
           matchingAPIs.push([apiId, api]);
         }
       }
+      
+      // Sort results by relevance
+      matchingAPIs.sort(([idA, apiA], [idB, apiB]) => {
+        const versionA = apiA.versions[apiA.preferred];
+        const versionB = apiB.versions[apiB.preferred];
+        const providerA = versionA?.info['x-providerName']?.toLowerCase() || '';
+        const providerB = versionB?.info['x-providerName']?.toLowerCase() || '';
+        const titleA = versionA?.info.title?.toLowerCase() || '';
+        const titleB = versionB?.info.title?.toLowerCase() || '';
+        
+        // Score each match based on where the query appears
+        const scoreMatch = (id: string, provider: string, title: string): number => {
+          // Exact provider match gets highest score
+          if (provider === queryLower) return 100;
+          // Provider contains query gets high score
+          if (provider.includes(queryLower)) return 80;
+          // ID starts with query gets good score
+          if (id.toLowerCase().startsWith(queryLower)) return 60;
+          // ID contains query gets moderate score
+          if (id.toLowerCase().includes(queryLower)) return 40;
+          // Title contains query gets lower score
+          if (title.includes(queryLower)) return 20;
+          // Description match gets lowest score
+          return 10;
+        };
+        
+        const scoreA = scoreMatch(idA, providerA, titleA);
+        const scoreB = scoreMatch(idB, providerB, titleB);
+        
+        // Sort by score (descending), then alphabetically by ID
+        if (scoreA !== scoreB) {
+          return scoreB - scoreA;
+        }
+        return idA.localeCompare(idB);
+      });
       
       // Calculate pagination
       const total_results = matchingAPIs.length;

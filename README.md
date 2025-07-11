@@ -51,6 +51,7 @@ The source data is provided under the Creative Commons Zero v1.0 Universal Licen
 | **Zero Configuration**        | Works out of the box with sensible defaults                  |
 | **Comprehensive API Coverage**| Access to 3,000+ API specs from APIs.guru                    |
 | **Context Optimized**         | Progressive discovery reduces context usage by ~95%          |
+| **Relevance-Based Search**    | Provider names appear first when searching (e.g., "github.com") |
 | **Intelligent Caching**       | 24-hour TTL caching for optimal performance                  |
 | **Rich Tool Set**             | 17 specialized tools for API discovery and endpoint analysis |
 | **Paginated Resources**       | Efficient data access with pagination support                |
@@ -228,7 +229,7 @@ claude mcp remove openapi-directory
 | `get_api`             | Get detailed API information                   |
 | `list_all_apis`       | ⚠️ **Use with caution** - Returns massive data |
 | `get_metrics`         | Directory statistics                           |
-| `search_apis`         | 🎯 **Paginated search** (20 results max per page) |
+| `search_apis`         | 🎯 **Paginated search with relevance ranking** (20 results/page) |
 
 ### Progressive Discovery Tools (Recommended)
 
@@ -308,12 +309,13 @@ export OPENAPI_DIRECTORY_CACHE_DIR=~/.cache/openapi-directory-mcp  # Cache direc
 ### 🎯 Progressive Discovery Workflow (Recommended)
 
 ```javascript
-// Phase 1: Initial Discovery (Context-efficient search)
+// Phase 1: Initial Discovery (Context-efficient search with relevance ranking)
 const searchResults = await search_apis({ 
   query: "payment", 
   page: 1, 
   limit: 20 
 });
+// Note: Searching for provider names like "github.com" now shows that provider's APIs first!
 
 // Phase 2: Basic Evaluation (Get summaries for promising APIs)
 const stripeInfo = await get_api_summary({ api_id: "stripe.com" });

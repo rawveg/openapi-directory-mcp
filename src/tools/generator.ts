@@ -85,7 +85,7 @@ export class ToolGenerator {
       },
       {
         name: 'search_apis',
-        description: 'Search for APIs by name, description, or keywords with pagination support',
+        description: 'Search for APIs by name, description, provider, or keywords with pagination support',
         inputSchema: {
           type: 'object',
           properties: {
