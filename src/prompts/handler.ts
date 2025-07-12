@@ -1,8 +1,5 @@
-import { 
-  Prompt, 
-  PromptMessage 
-} from '@modelcontextprotocol/sdk/types.js';
-import { getAllPrompts, PromptTemplate } from './templates.js';
+import { Prompt, PromptMessage } from "@modelcontextprotocol/sdk/types.js";
+import { getAllPrompts, PromptTemplate } from "./templates.js";
 
 export class PromptHandler {
   private prompts: Map<string, PromptTemplate> = new Map();
@@ -15,7 +12,7 @@ export class PromptHandler {
 
   private async initializePrompts(): Promise<void> {
     const allPrompts = await getAllPrompts();
-    allPrompts.forEach(prompt => {
+    allPrompts.forEach((prompt) => {
       this.prompts.set(prompt.name, prompt);
     });
     this.initialized = true;
@@ -32,11 +29,13 @@ export class PromptHandler {
    */
   async listPrompts(): Promise<{ prompts: Prompt[] }> {
     await this.ensureInitialized();
-    const prompts: Prompt[] = Array.from(this.prompts.values()).map(template => ({
-      name: template.name,
-      description: template.description,
-      arguments: template.arguments || []
-    }));
+    const prompts: Prompt[] = Array.from(this.prompts.values()).map(
+      (template) => ({
+        name: template.name,
+        description: template.description,
+        arguments: template.arguments || [],
+      }),
+    );
 
     return { prompts };
   }
@@ -44,9 +43,12 @@ export class PromptHandler {
   /**
    * Handle the prompts/get request
    */
-  async getPrompt(request: { name: string; arguments?: Record<string, unknown> }): Promise<{ 
-    description: string; 
-    messages: PromptMessage[] 
+  async getPrompt(request: {
+    name: string;
+    arguments?: Record<string, unknown>;
+  }): Promise<{
+    description: string;
+    messages: PromptMessage[];
   }> {
     await this.ensureInitialized();
     const template = this.prompts.get(request.name);
@@ -57,7 +59,10 @@ export class PromptHandler {
     // Validate required arguments
     if (template.arguments) {
       for (const arg of template.arguments) {
-        if (arg.required && (!request.arguments || !(arg.name in request.arguments))) {
+        if (
+          arg.required &&
+          (!request.arguments || !(arg.name in request.arguments))
+        ) {
           throw new Error(`Missing required argument: ${arg.name}`);
         }
       }
@@ -67,7 +72,7 @@ export class PromptHandler {
 
     return {
       description: template.description,
-      messages
+      messages,
     };
   }
 

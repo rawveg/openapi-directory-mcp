@@ -1,11 +1,17 @@
-import { jest, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
+import {
+  jest,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+} from "@jest/globals";
 
 // Global test setup
 beforeAll(() => {
   // Set test environment variables
-  process.env.NODE_ENV = 'test';
-  process.env.CACHE_ENABLED = 'true';
-  process.env.CACHE_TTL = '1000'; // 1 second for testing
+  process.env.NODE_ENV = "test";
+  process.env.CACHE_ENABLED = "true";
+  process.env.CACHE_TTL = "1000"; // 1 second for testing
 });
 
 afterAll(() => {

@@ -1,4 +1,4 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_discovery",
@@ -6,14 +6,16 @@ export const prompt: PromptTemplate = {
   arguments: [
     {
       name: "use_case",
-      description: "What you want to accomplish (e.g., 'send emails', 'process payments', 'analyze images')",
-      required: true
+      description:
+        "What you want to accomplish (e.g., 'send emails', 'process payments', 'analyze images')",
+      required: true,
     },
     {
       name: "requirements",
-      description: "Specific requirements or constraints (e.g., 'free tier available', 'good documentation', 'REST API')",
-      required: false
-    }
+      description:
+        "Specific requirements or constraints (e.g., 'free tier available', 'good documentation', 'REST API')",
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -22,7 +24,7 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `I need to find APIs for: ${args.use_case}
 
-${args.requirements ? `Requirements: ${args.requirements}` : ''}
+${args.requirements ? `Requirements: ${args.requirements}` : ""}
 
 Please help me discover and evaluate APIs using this efficient workflow:
 
@@ -51,10 +53,10 @@ Please help me discover and evaluate APIs using this efficient workflow:
 
 **Important:** Use the progressive discovery approach - start broad with search/summary, then drill down only into the most promising APIs. This prevents context saturation and allows comparison of many more APIs.
 
-Begin with Phase 1 to discover relevant APIs efficiently.`
-      }
-    }
-  ]
+Begin with Phase 1 to discover relevant APIs efficiently.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

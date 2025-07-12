@@ -41,25 +41,25 @@ export interface ApiGuruInfo {
     url?: string;
   };
   termsOfService?: string;
-  'x-apiClientRegistration'?: {
+  "x-apiClientRegistration"?: {
     url?: string;
   };
-  'x-logo'?: {
+  "x-logo"?: {
     url?: string;
   };
-  'x-origin'?: {
+  "x-origin"?: {
     format?: string;
     url?: string;
     version?: string;
   };
-  'x-preferred'?: boolean;
-  'x-providerName'?: string;
-  'x-serviceName'?: string;
-  'x-tags'?: string[];
-  'x-unofficialSpec'?: boolean;
-  'x-apisguru-categories'?: string[];
-  'x-apisguru-driver'?: string;
-  'x-apisguru-popularity'?: number;
+  "x-preferred"?: boolean;
+  "x-providerName"?: string;
+  "x-serviceName"?: string;
+  "x-tags"?: string[];
+  "x-unofficialSpec"?: boolean;
+  "x-apisguru-categories"?: string[];
+  "x-apisguru-driver"?: string;
+  "x-apisguru-popularity"?: number;
   [key: string]: any;
 }
 

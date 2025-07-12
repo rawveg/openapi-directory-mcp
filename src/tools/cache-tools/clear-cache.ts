@@ -1,10 +1,10 @@
-import { ToolDefinition, ToolContext } from '../types.js';
+import { ToolDefinition, ToolContext } from "../types.js";
 
 export const tool: ToolDefinition = {
-  name: 'clear_cache',
-  description: 'Clear all cache entries',
+  name: "clear_cache",
+  description: "Clear all cache entries",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {},
     required: [],
   },
@@ -15,7 +15,7 @@ export const tool: ToolDefinition = {
       message: `Cache cleared successfully. Removed ${keysBefore} entries.`,
       cleared: keysBefore,
     };
-  }
+  },
 };
 
 export default tool;

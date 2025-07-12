@@ -1,4 +1,4 @@
-import { PromptMessage } from '@modelcontextprotocol/sdk/types.js';
+import { PromptMessage } from "@modelcontextprotocol/sdk/types.js";
 
 export interface PromptTemplate {
   name: string;

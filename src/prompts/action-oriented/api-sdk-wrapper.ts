@@ -1,4 +1,4 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_sdk_wrapper",
@@ -7,18 +7,18 @@ export const prompt: PromptTemplate = {
     {
       name: "api_name",
       description: "Name of the API to wrap",
-      required: true
+      required: true,
     },
     {
       name: "included_operations",
       description: "Specific operations to include (comma-separated)",
-      required: false
+      required: false,
     },
     {
       name: "naming_convention",
       description: "SDK naming convention (camelCase, snake_case, etc.)",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -27,8 +27,8 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Create a simplified SDK wrapper for the ${args.api_name} API.
 
-${args.included_operations ? `Focus on operations: ${args.included_operations}` : 'Include all major operations'}
-${args.naming_convention ? `Naming convention: ${args.naming_convention}` : 'Use idiomatic naming for target language'}
+${args.included_operations ? `Focus on operations: ${args.included_operations}` : "Include all major operations"}
+${args.naming_convention ? `Naming convention: ${args.naming_convention}` : "Use idiomatic naming for target language"}
 
 Please create an opinionated, easy-to-use SDK:
 
@@ -74,7 +74,7 @@ SDK/
 
 **Example SDK Usage:**
 \`\`\`typescript
-const client = new ${String(args.api_name || 'Api').replace(/[^a-zA-Z0-9]/g, '')}SDK({
+const client = new ${String(args.api_name || "Api").replace(/[^a-zA-Z0-9]/g, "")}SDK({
   apiKey: 'your-key',
   debug: true
 });
@@ -94,10 +94,10 @@ const result = await client
 - Consistent naming across all methods
 - Built-in validation and sanitization
 
-Begin by analyzing the API to design an intuitive SDK interface.`
-      }
-    }
-  ]
+Begin by analyzing the API to design an intuitive SDK interface.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

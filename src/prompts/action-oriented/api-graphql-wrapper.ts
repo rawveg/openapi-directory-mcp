@@ -1,4 +1,4 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_graphql_wrapper",
@@ -7,18 +7,18 @@ export const prompt: PromptTemplate = {
     {
       name: "api_name",
       description: "Name of the REST API to wrap with GraphQL",
-      required: true
+      required: true,
     },
     {
       name: "schema_style",
       description: "GraphQL schema style (relay, simple, custom)",
-      required: false
+      required: false,
     },
     {
       name: "included_operations",
       description: "Specific operations to include (comma-separated)",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -27,8 +27,8 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Create a GraphQL wrapper for the ${args.api_name} REST API.
 
-${args.schema_style ? `Schema style: ${args.schema_style}` : 'Use simple, intuitive schema design'}
-${args.included_operations ? `Include operations: ${args.included_operations}` : 'Wrap all major operations'}
+${args.schema_style ? `Schema style: ${args.schema_style}` : "Use simple, intuitive schema design"}
+${args.included_operations ? `Include operations: ${args.included_operations}` : "Wrap all major operations"}
 
 Please create a comprehensive GraphQL API:
 
@@ -84,13 +84,17 @@ type Post {
 - Optimistic UI support
 
 **4. Advanced Features:**
-${args.schema_style === 'relay' ? `
+${
+  args.schema_style === "relay"
+    ? `
 **Relay Compliance:**
 - Global ID specification
 - Connection-based pagination
 - Node interface implementation
 - Mutation payload patterns
-` : ''}
+`
+    : ""
+}
 - DataLoader for N+1 problem prevention
 - Real-time subscriptions where applicable
 - GraphQL Federation support
@@ -121,10 +125,10 @@ graphql-wrapper/
 - Batch request optimization
 - Connection pooling
 
-Begin by analyzing the REST API structure to design an intuitive GraphQL schema.`
-      }
-    }
-  ]
+Begin by analyzing the REST API structure to design an intuitive GraphQL schema.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

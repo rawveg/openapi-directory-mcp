@@ -1,18 +1,18 @@
-import { z } from 'zod';
-import { ToolDefinition, ToolContext } from '../types.js';
+import { z } from "zod";
+import { ToolDefinition, ToolContext } from "../types.js";
 
 export const tool: ToolDefinition = {
-  name: 'get_openapi_spec',
-  description: 'Get the OpenAPI specification for a specific API',
+  name: "get_openapi_spec",
+  description: "Get the OpenAPI specification for a specific API",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       url: {
-        type: 'string',
-        description: 'URL to the OpenAPI specification (JSON or YAML)',
+        type: "string",
+        description: "URL to the OpenAPI specification (JSON or YAML)",
       },
     },
-    required: ['url'],
+    required: ["url"],
   },
   async execute(args: any, context: ToolContext): Promise<any> {
     const schema = z.object({
@@ -20,7 +20,7 @@ export const tool: ToolDefinition = {
     });
     const params = schema.parse(args);
     return await context.apiClient.getOpenAPISpec(params.url);
-  }
+  },
 };
 
 export default tool;

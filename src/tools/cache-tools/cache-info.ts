@@ -1,10 +1,10 @@
-import { ToolDefinition, ToolContext } from '../types.js';
+import { ToolDefinition, ToolContext } from "../types.js";
 
 export const tool: ToolDefinition = {
-  name: 'cache_info',
-  description: 'Get cache configuration and settings',
+  name: "cache_info",
+  description: "Get cache configuration and settings",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {},
     required: [],
   },
@@ -14,7 +14,7 @@ export const tool: ToolDefinition = {
       config: context.cacheManager.getConfig(),
       size: context.cacheManager.getSize(),
     };
-  }
+  },
 };
 
 export default tool;

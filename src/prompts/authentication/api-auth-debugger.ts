@@ -1,14 +1,15 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_auth_debugger",
-  description: "Generate debugging utilities for authentication troubleshooting",
+  description:
+    "Generate debugging utilities for authentication troubleshooting",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API to create auth debugging for",
-      required: true
-    }
+      required: true,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -144,10 +145,10 @@ auth-debug request --url="/api/protected" --auth-header="Bearer token"
 - Common pitfall identification
 - Best practice recommendations
 
-Begin by analyzing the API's authentication mechanisms to create targeted debugging tools.`
-      }
-    }
-  ]
+Begin by analyzing the API's authentication mechanisms to create targeted debugging tools.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

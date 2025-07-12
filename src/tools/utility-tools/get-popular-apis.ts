@@ -1,14 +1,14 @@
-import { ToolDefinition, ToolContext } from '../types.js';
+import { ToolDefinition, ToolContext } from "../types.js";
 
 export const tool: ToolDefinition = {
-  name: 'get_popular_apis',
-  description: 'Get the most popular APIs based on various metrics',
+  name: "get_popular_apis",
+  description: "Get the most popular APIs based on various metrics",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       limit: {
-        type: 'number',
-        description: 'Maximum number of APIs to return (default: 20)',
+        type: "number",
+        description: "Maximum number of APIs to return (default: 20)",
         default: 20,
       },
     },
@@ -16,7 +16,7 @@ export const tool: ToolDefinition = {
   },
   async execute(_args: any, context: ToolContext): Promise<any> {
     return await context.apiClient.getPopularAPIs();
-  }
+  },
 };
 
 export default tool;

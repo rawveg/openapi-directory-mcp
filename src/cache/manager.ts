@@ -1,13 +1,14 @@
-import NodeCache from 'node-cache';
-import { ICacheManager } from './types.js';
+import NodeCache from "node-cache";
+import { ICacheManager } from "./types.js";
 
 export class CacheManager implements ICacheManager {
   private cache: NodeCache;
   private enabled: boolean;
 
-  constructor(ttlMs: number = 86400000) { // 24 hours default
-    this.enabled = process.env.DISABLE_CACHE !== 'true';
-    
+  constructor(ttlMs: number = 86400000) {
+    // 24 hours default
+    this.enabled = process.env.DISABLE_CACHE !== "true";
+
     this.cache = new NodeCache({
       stdTTL: Math.floor(ttlMs / 1000), // NodeCache uses seconds
       checkperiod: Math.floor(ttlMs / 1000 / 10), // Check every 10% of TTL
@@ -17,11 +18,11 @@ export class CacheManager implements ICacheManager {
     });
 
     // Set up cache statistics logging
-    this.cache.on('expired', (key) => {
+    this.cache.on("expired", (key) => {
       console.error(`Cache expired: ${key}`);
     });
 
-    this.cache.on('set', (key) => {
+    this.cache.on("set", (key) => {
       console.error(`Cache set: ${key}`);
     });
   }
@@ -55,15 +56,17 @@ export class CacheManager implements ICacheManager {
     }
 
     try {
-      const success = ttlMs 
+      const success = ttlMs
         ? this.cache.set(key, value, Math.max(1, Math.floor(ttlMs / 1000)))
         : this.cache.set(key, value);
-      
+
       if (success) {
-        const ttlSeconds = ttlMs ? Math.max(1, Math.floor(ttlMs / 1000)) : 'default';
+        const ttlSeconds = ttlMs
+          ? Math.max(1, Math.floor(ttlMs / 1000))
+          : "default";
         console.error(`Cache set: ${key} (TTL: ${ttlSeconds}s)`);
       }
-      
+
       return success;
     } catch (error) {
       console.error(`Cache set error for key ${key}:`, error);
@@ -101,9 +104,9 @@ export class CacheManager implements ICacheManager {
 
     try {
       this.cache.flushAll();
-      console.error('Cache cleared');
+      console.error("Cache cleared");
     } catch (error) {
-      console.error('Cache clear error:', error);
+      console.error("Cache clear error:", error);
     }
   }
 
@@ -197,7 +200,7 @@ export class CacheManager implements ICacheManager {
     // NodeCache handles this automatically, but we can force it
     const keys = this.cache.keys();
     const now = Date.now();
-    
+
     for (const key of keys) {
       const ttl = this.cache.getTtl(key);
       if (ttl && ttl < now) {

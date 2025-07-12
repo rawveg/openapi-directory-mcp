@@ -26,7 +26,7 @@ export interface ICacheManager {
     ttlSeconds: number;
     maxKeys: number;
   };
-  
+
   // Optional methods for specific implementations
   getCacheDir?(): string;
   destroy?(): void;
