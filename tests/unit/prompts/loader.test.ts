@@ -58,7 +58,7 @@ describe('PromptLoader', () => {
       const originalImport = global.import;
       global.import = jest.fn().mockImplementation((modulePath: string) => {
         const fileName = path.basename(modulePath, '.js');
-        const promptKey = fileName.replace(/-/g, '-');
+        const promptKey = fileName.replace(/-/g, '_');
         
         if (mockPrompts[promptKey as keyof typeof mockPrompts]) {
           return Promise.resolve({
