@@ -35,8 +35,7 @@ describe('Plugin Discovery Integration', () => {
         actualToolFiles.push(...files.map(f => ({ file: f, category })));
       }
 
-      console.log(`Found ${actualToolFiles.length} tool files in filesystem`);
-      console.log(`Loaded ${discoveredTools.length} tools from loader`);
+      // Debug: Found tool files and loaded tools
 
       // Should discover most actual tools (allowing for some filtering)
       expect(discoveredTools.length).toBeGreaterThan(0);
@@ -114,8 +113,7 @@ describe('Plugin Discovery Integration', () => {
         }
       }
 
-      console.log(`Found ${actualPromptFiles.length} prompt files in filesystem`);
-      console.log(`Loaded ${discoveredPrompts.length} prompts from loader`);
+      // Debug: Found prompt files and loaded prompts
 
       expect(discoveredPrompts.length).toBeGreaterThan(0);
       expect(discoveredPrompts.length).toBeLessThanOrEqual(actualPromptFiles.length);
@@ -280,7 +278,7 @@ describe('Plugin Discovery Integration', () => {
           } catch (error) {
             // Some tools might require specific parameters
             // This is acceptable - we're testing that they can be called
-            console.log(`Tool ${tool.name} execution note:`, error instanceof Error ? error.message : error);
+            // Tool execution note: some tools might require specific parameters
           }
         }
       }

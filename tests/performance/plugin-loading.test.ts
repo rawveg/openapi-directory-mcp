@@ -67,7 +67,7 @@ describe('Plugin Loading Performance', () => {
       expect(metrics.duration).toBeLessThan(3000); // 3 seconds max
       expect(metrics.memoryDelta.heapUsed).toBeLessThan(50 * 1024 * 1024); // 50MB max
       
-      console.log(`Tool loading: ${metrics.duration.toFixed(2)}ms, ${result.length} tools`);
+      // Tool loading performance tracked
     });
 
     it('should demonstrate caching benefits', async () => {
@@ -85,7 +85,7 @@ describe('Plugin Loading Performance', () => {
       expect(cachedMetrics.duration).toBeLessThan(coldMetrics.duration * 0.1); // 90% faster
       expect(cachedMetrics.memoryDelta.heapUsed).toBeLessThan(1024 * 1024); // <1MB delta
       
-      console.log(`Cache improvement: ${((coldMetrics.duration - cachedMetrics.duration) / coldMetrics.duration * 100).toFixed(1)}%`);
+      // Cache improvement tracked
     });
 
     it('should load individual tools efficiently', async () => {
@@ -99,7 +99,7 @@ describe('Plugin Loading Performance', () => {
       expect(metrics.duration).toBeLessThan(10); // 10ms max for individual tool access
       expect(metrics.memoryDelta.heapUsed).toBeLessThan(100 * 1024); // <100KB
       
-      console.log(`Single tool access: ${metrics.duration.toFixed(2)}ms`);
+      // Single tool access performance tracked
     });
 
     it('should organize categories efficiently', async () => {
@@ -114,7 +114,7 @@ describe('Plugin Loading Performance', () => {
       expect(Array.isArray(result)).toBe(true);
       expect(metrics.duration).toBeLessThan(50); // 50ms max
       
-      console.log(`Category organization: ${metrics.duration.toFixed(2)}ms, ${result.length} categories`);
+      // Category organization performance tracked
     });
   });
 
@@ -132,7 +132,7 @@ describe('Plugin Loading Performance', () => {
       expect(metrics.duration).toBeLessThan(2000); // 2 seconds max
       expect(metrics.memoryDelta.heapUsed).toBeLessThan(20 * 1024 * 1024); // 20MB max
       
-      console.log(`Prompt loading: ${metrics.duration.toFixed(2)}ms, ${result.length} prompts`);
+      // Prompt loading performance tracked
     });
 
     it('should demonstrate prompt caching benefits', async () => {
@@ -148,7 +148,7 @@ describe('Plugin Loading Performance', () => {
 
       expect(cachedMetrics.duration).toBeLessThan(coldMetrics.duration * 0.1);
       
-      console.log(`Prompt cache improvement: ${((coldMetrics.duration - cachedMetrics.duration) / coldMetrics.duration * 100).toFixed(1)}%`);
+      // Prompt cache improvement tracked
     });
 
     it('should access individual prompts efficiently', async () => {
@@ -163,7 +163,7 @@ describe('Plugin Loading Performance', () => {
 
         expect(metrics.duration).toBeLessThan(10); // 10ms max
         
-        console.log(`Single prompt access: ${metrics.duration.toFixed(2)}ms`);
+        // Single prompt access performance tracked
       }
     });
   });
@@ -184,7 +184,7 @@ describe('Plugin Loading Performance', () => {
       // Concurrent loading should be more efficient than sequential
       expect(metrics.duration).toBeLessThan(4000); // 4 seconds max for both
       
-      console.log(`Concurrent loading: ${metrics.duration.toFixed(2)}ms`);
+      // Concurrent loading performance tracked
     });
 
     it('should handle multiple simultaneous requests', async () => {
@@ -212,7 +212,7 @@ describe('Plugin Loading Performance', () => {
 
       expect(metrics.duration).toBeLessThan(500); // 500ms max for 10 concurrent requests
       
-      console.log(`10 simultaneous requests: ${metrics.duration.toFixed(2)}ms`);
+      // Simultaneous requests performance tracked
     });
   });
 
@@ -249,8 +249,7 @@ describe('Plugin Loading Performance', () => {
       // Memory increase should be reasonable
       expect(memoryIncrease).toBeLessThan(100 * 1024 * 1024); // 100MB max
       
-      console.log(`Memory increase: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB`);
-      console.log(`Memory after GC: ${(memoryAfterGC / 1024 / 1024).toFixed(2)}MB`);
+      // Memory usage tracked
     });
   });
 
@@ -267,7 +266,7 @@ describe('Plugin Loading Performance', () => {
       });
       
       // Performance should be predictable
-      expect(metrics.duration).toBeLessThan(5000); // 5 seconds max
+      expect(fullLoad.duration).toBeLessThan(5000); // 5 seconds max
       
       const pluginCount = fullLoad.result[0].length + fullLoad.result[1].length;
       const timePerPlugin = fullLoad.duration / pluginCount;
@@ -280,7 +279,7 @@ describe('Plugin Loading Performance', () => {
         timestamp: new Date().toISOString()
       });
       
-      console.log(`${pluginCount} plugins loaded in ${fullLoad.duration.toFixed(2)}ms (${timePerPlugin.toFixed(2)}ms per plugin)`);
+      // Scalability metrics tracked
       
       // Should not exceed 50ms per plugin on average
       expect(timePerPlugin).toBeLessThan(50);

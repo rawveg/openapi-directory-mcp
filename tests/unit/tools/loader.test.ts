@@ -321,7 +321,7 @@ describe('ToolLoader', () => {
 
       mockFs.statSync.mockImplementation(() => ({
         isDirectory: () => true
-      }) as any;
+      }) as any);
 
       mockFs.existsSync.mockReturnValue(true);
 

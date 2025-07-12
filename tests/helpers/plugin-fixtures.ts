@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { PromptTemplate } from '../../src/prompts/types.js';
 import { ToolDefinition } from '../../src/tools/types.js';
 
@@ -5,7 +6,7 @@ import { ToolDefinition } from '../../src/tools/types.js';
  * Test fixtures for plugin architecture testing
  */
 
-export const createMockPrompt = (name: string, category = 'test'): PromptTemplate => ({
+export const createMockPrompt = (name: string, _category = 'test'): PromptTemplate => ({
   name,
   description: `Test prompt: ${name}`,
   arguments: [
@@ -39,7 +40,7 @@ export const createMockTool = (name: string, category = 'test'): ToolDefinition 
     },
     required: ['test_param']
   },
-  async execute(args, context) {
+  async execute(args, _context) {
     return {
       tool: name,
       category,

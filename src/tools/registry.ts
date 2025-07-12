@@ -8,7 +8,7 @@ export class ToolRegistry {
   register(category: string, tool: ToolDefinition): void {
     // Check for duplicate names
     if (this.toolsByName.has(tool.name)) {
-      console.warn(`Tool '${tool.name}' already registered, skipping duplicate`);
+      // Tool already registered, skipping duplicate
       return;
     }
 

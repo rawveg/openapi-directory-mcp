@@ -70,7 +70,7 @@ export class ToolLoader {
         tool = module.tool;
       } else {
         // Look for any named export that's a valid tool
-        for (const [_key, value] of Object.entries(module)) {
+        for (const value of Object.values(module)) {
           if (this.isValidTool(value)) {
             tool = value as ToolDefinition;
             break;
@@ -80,9 +80,9 @@ export class ToolLoader {
 
       if (tool) {
         this.registry.register(categoryName, tool);
-        console.log(`Loaded tool: ${tool.name} from ${relativePath}`);
+        // Tool loaded successfully
       } else {
-        console.warn(`No valid tool found in ${relativePath}`);
+        // No valid tool found - skip file
       }
     } catch (error) {
       console.error(`Error loading tool file ${relativePath}:`, error);

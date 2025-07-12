@@ -120,7 +120,7 @@ export class PromptLoader {
         prompt = module.prompt;
       } else {
         // Look for any named export that's a valid prompt
-        for (const [_key, value] of Object.entries(module)) {
+        for (const value of Object.values(module)) {
           if (this.isValidPrompt(value)) {
             prompt = value as PromptTemplate;
             break;
@@ -131,7 +131,7 @@ export class PromptLoader {
       if (prompt) {
         this.registry.register(categoryName, prompt);
       } else {
-        console.warn(`No valid prompt found in ${relativePath}`);
+        // No valid prompt found - skip file
       }
     } catch (error) {
       console.error(`Error loading prompt file ${relativePath}:`, error);
