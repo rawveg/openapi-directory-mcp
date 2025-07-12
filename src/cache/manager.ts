@@ -1,6 +1,7 @@
 import NodeCache from 'node-cache';
+import { ICacheManager } from './types.js';
 
-export class CacheManager {
+export class CacheManager implements ICacheManager {
   private cache: NodeCache;
   private enabled: boolean;
 

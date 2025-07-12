@@ -1,7 +1,7 @@
 import { ApiClient } from './client.js';
 import { SecondaryApiClient } from './secondary-client.js';
 import { MergeUtilities, MergedSearchResult } from '../utils/merge.js';
-import { CacheManager } from '../cache/manager.js';
+import { ICacheManager } from '../cache/types.js';
 import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from '../types/api.js';
 
 /**
@@ -11,12 +11,12 @@ import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from '../types/api.js';
 export class DualSourceApiClient {
   private primaryClient: ApiClient;
   private secondaryClient: SecondaryApiClient;
-  private cache: CacheManager;
+  private cache: ICacheManager;
 
   constructor(
     primaryBaseURL: string, 
     secondaryBaseURL: string, 
-    cacheManager: CacheManager
+    cacheManager: ICacheManager
   ) {
     this.primaryClient = new ApiClient(primaryBaseURL, cacheManager);
     this.secondaryClient = new SecondaryApiClient(secondaryBaseURL, cacheManager);

@@ -1,12 +1,12 @@
 import axios, { AxiosInstance } from 'axios';
-import { CacheManager } from '../cache/manager.js';
+import { ICacheManager } from '../cache/types.js';
 import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from '../types/api.js';
 
 export class ApiClient {
   private http: AxiosInstance;
-  private cache: CacheManager;
+  private cache: ICacheManager;
 
-  constructor(baseURL: string, cacheManager: CacheManager) {
+  constructor(baseURL: string, cacheManager: ICacheManager) {
     this.http = axios.create({
       baseURL,
       timeout: 30000,

@@ -13,7 +13,8 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { DualSourceApiClient } from './api/dual-source-client.js';
-import { CacheManager } from './cache/manager.js';
+import { PersistentCacheManager } from './cache/persistent-manager.js';
+import { ICacheManager } from './cache/types.js';
 import { ToolGenerator } from './tools/generator.js';
 import { PromptHandler } from './prompts/handler.js';
 import { z } from 'zod';
@@ -21,7 +22,7 @@ import { z } from 'zod';
 // Configuration
 const config = {
   name: 'openapi-directory-mcp',
-  version: '1.1.0',
+  version: '1.1.1',
   description: 'Browse and discover APIs from dual-source OpenAPI directory (APIs.guru + enhanced)',
   cacheEnabled: process.env.DISABLE_CACHE !== 'true',
   cacheTTL: parseInt(process.env.CACHE_TTL || '86400000'), // 24 hours in milliseconds
@@ -32,7 +33,7 @@ const config = {
 class OpenAPIDirectoryServer {
   private server: Server;
   private apiClient: DualSourceApiClient;
-  private cacheManager: CacheManager;
+  private cacheManager: ICacheManager;
   private toolGenerator: ToolGenerator;
   private promptHandler: PromptHandler;
 
@@ -44,7 +45,7 @@ class OpenAPIDirectoryServer {
       }
     );
 
-    this.cacheManager = new CacheManager(config.cacheTTL);
+    this.cacheManager = new PersistentCacheManager(config.cacheTTL);
     this.apiClient = new DualSourceApiClient(config.primaryApiBaseUrl, config.secondaryApiBaseUrl, this.cacheManager);
     this.toolGenerator = new ToolGenerator();
     this.promptHandler = new PromptHandler();
@@ -415,6 +416,23 @@ class OpenAPIDirectoryServer {
     console.error(`Primary API: ${config.primaryApiBaseUrl}`);
     console.error(`Secondary API: ${config.secondaryApiBaseUrl}`);
     console.error(`Cache: ${config.cacheEnabled ? 'enabled' : 'disabled'} (TTL: ${config.cacheTTL}ms)`);
+    if (config.cacheEnabled && this.cacheManager.isEnabled() && this.cacheManager.getCacheDir) {
+      console.error(`Cache directory: ${this.cacheManager.getCacheDir()}`);
+    }
+
+    // Set up graceful shutdown
+    const shutdown = () => {
+      console.error('Shutting down server...');
+      if (this.cacheManager && this.cacheManager.isEnabled() && this.cacheManager.destroy) {
+        this.cacheManager.destroy();
+        console.error('Cache saved and cleaned up');
+      }
+      process.exit(0);
+    };
+
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
+    process.on('beforeExit', shutdown);
   }
 }
 
