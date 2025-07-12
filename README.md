@@ -54,6 +54,7 @@ The source data is provided under the Creative Commons Zero v1.0 Universal Licen
 | **Smart Search Results**      | Relevance ranking + newest versions first + provider priority |
 | **Intelligent Caching**       | 24-hour TTL persistent caching with management tools         |
 | **Rich Tool Set**             | 22 specialized tools for API discovery and endpoint analysis |
+| **Slash Commands**            | All prompts auto-exposed as Claude Code slash commands       |
 | **Paginated Resources**       | Efficient data access with pagination support                |
 | **NPX Ready**                 | Install and run with a single command                        |
 | **Type Safe**                 | Built with TypeScript for reliability                        |
@@ -86,7 +87,7 @@ We've redesigned the discovery workflow into three efficient phases:
 - `get_endpoint_schema` and `get_endpoint_examples` for implementation
 
 ### Smart Prompts Guide You
-All 7 built-in prompts automatically use this progressive approach:
+All 22 built-in prompts automatically use this progressive approach:
 - `api_discovery` guides you through efficient API exploration
 - `api_integration_guide` uses progressive endpoint discovery
 - Each prompt prevents context saturation while maximizing useful information
@@ -192,6 +193,36 @@ claude mcp remove openapi-directory
 /mcp
 ```
 
+**🎯 Claude Code Slash Commands**: All 22 MCP prompts are automatically available as slash commands!
+
+**Core Discovery & Analysis:**
+- `/openapi-directory:api_discovery` - Discover APIs for specific use cases
+- `/openapi-directory:api_integration_guide` - Generate integration guides
+- `/openapi-directory:api_comparison` - Compare multiple APIs
+- `/openapi-directory:authentication_guide` - Understand API authentication
+- `/openapi-directory:code_generation` - Generate code examples
+- `/openapi-directory:api_documentation_analysis` - Analyze API capabilities
+- `/openapi-directory:troubleshooting_guide` - Debug integration issues
+
+**Action-Oriented Code Generation:**
+- `/openapi-directory:retrofit_api_client` - Retrofit existing codebase with typed API client
+- `/openapi-directory:api_type_generator` - Generate TypeScript/language types from specs
+- `/openapi-directory:api_test_suite` - Create comprehensive test suites
+- `/openapi-directory:api_error_handler` - Build robust error handling with retry logic
+- `/openapi-directory:api_migration_assistant` - Migrate between API versions/providers
+- `/openapi-directory:api_sdk_wrapper` - Generate custom SDK wrappers
+- `/openapi-directory:api_webhook_scaffold` - Scaffold webhook handlers
+- `/openapi-directory:api_rate_limiter` - Implement intelligent rate limiting
+- `/openapi-directory:api_graphql_wrapper` - Create GraphQL wrappers for REST APIs
+- `/openapi-directory:api_batch_processor` - Build batch processing systems
+
+**Authentication-Focused:**
+- `/openapi-directory:api_auth_implementation` - Complete auth implementation
+- `/openapi-directory:api_auth_flow_generator` - Generate OAuth2/OIDC flows
+- `/openapi-directory:api_auth_middleware` - Build auth middleware for frameworks
+- `/openapi-directory:api_auth_test_harness` - Create auth testing tools
+- `/openapi-directory:api_auth_debugger` - Debug authentication issues
+
 #### Cursor (NPX)
 ```json
 {
@@ -288,7 +319,11 @@ claude mcp remove openapi-directory
 
 ## 💡 Available Prompts (Context-Optimized)
 
-All prompts automatically use the progressive discovery workflow to prevent context saturation:
+All prompts automatically use the progressive discovery workflow to prevent context saturation.
+
+**🎯 Claude Code Users**: All prompts below are available as slash commands! Just type `/openapi-directory:` and you'll see all available commands with descriptions.
+
+### Core Discovery & Analysis Prompts
 
 | Prompt                       | Purpose                                      | Workflow                |
 |------------------------------|----------------------------------------------|-------------------------|
@@ -300,7 +335,35 @@ All prompts automatically use the progressive discovery workflow to prevent cont
 | `api_documentation_analysis` | Analyze API capabilities and limitations      | Progressive capability mapping |
 | `troubleshooting_guide`      | Debug API integration issues                  | Targeted problem analysis |
 
-**💡 Pro Tip**: Start with `api_discovery` prompt for any use case - it guides you through the most efficient exploration workflow.
+### Action-Oriented Code Generation Prompts
+
+| Prompt                       | Purpose                                      | Use Case                |
+|------------------------------|----------------------------------------------|-------------------------|
+| `retrofit_api_client`        | Retrofit existing codebase with typed API client | Modernize legacy integrations |
+| `api_type_generator`         | Generate TypeScript/language types from OpenAPI specs | Type safety & IDE support |
+| `api_test_suite`             | Create comprehensive test suites for API integrations | Quality assurance & CI/CD |
+| `api_error_handler`          | Build robust error handling with retry logic | Production reliability |
+| `api_migration_assistant`    | Migrate between different API versions/providers | API modernization |
+| `api_sdk_wrapper`            | Generate custom SDK wrappers around APIs | Developer experience |
+| `api_webhook_scaffold`       | Scaffold webhook handlers and verification | Event-driven architectures |
+| `api_rate_limiter`           | Implement intelligent rate limiting | API quota management |
+| `api_graphql_wrapper`        | Create GraphQL wrappers for REST APIs | Modern API interfaces |
+| `api_batch_processor`        | Build batch processing systems for API calls | High-volume operations |
+
+### Authentication-Focused Prompts
+
+| Prompt                       | Purpose                                      | Auth Types              |
+|------------------------------|----------------------------------------------|-------------------------|
+| `api_auth_implementation`    | Complete auth implementation for any API    | OAuth2, Bearer, API Key, Basic |
+| `api_auth_flow_generator`    | Generate OAuth2/OIDC authorization flows    | OAuth2, OIDC, PKCE     |
+| `api_auth_middleware`        | Build auth middleware for frameworks        | Express, FastAPI, Spring |
+| `api_auth_test_harness`      | Create auth testing and validation tools    | Unit & integration tests |
+| `api_auth_debugger`          | Debug authentication issues and flows       | Token inspection, flow tracing |
+
+**💡 Pro Tips**: 
+- Start with `api_discovery` for any use case - guides you through efficient exploration
+- Use `retrofit_api_client` to modernize existing codebases with proper API clients
+- Try `api_auth_implementation` for complete authentication solutions with any API
 
 ## Configuration
 
@@ -420,7 +483,7 @@ The server uses a modular, context-optimized architecture:
 - **Tool Generator**: Creates MCP tools with pagination and context limits
 - **Resource Handler**: Manages paginated resource streaming (20 pages of 50 APIs each)
 - **Progressive Discovery**: Smart workflow guides preventing context saturation
-- **Prompt System**: 7 context-aware prompts using efficient discovery patterns
+- **Prompt System**: 22 context-aware prompts using efficient discovery patterns
 - **Cache Management**: 5 tools for cache inspection and maintenance
 
 ---
@@ -473,22 +536,93 @@ npm run lint
 npm run lint:fix
 ```
 
-### Publishing to NPM
+### Automated Release Process
+
+This project uses an automated release workflow triggered by version tags:
+
+#### Creating a Release
+
+1. **Ensure main branch is ready**:
+   ```bash
+   # Make sure you're on main and up to date
+   git checkout main
+   git pull origin main
+   
+   # Ensure all tests pass
+   npm run validate
+   ```
+
+2. **Update version and create tag**:
+   ```bash
+   # Update version in package.json (choose one)
+   npm version patch  # 1.0.0 -> 1.0.1
+   npm version minor  # 1.0.0 -> 1.1.0  
+   npm version major  # 1.0.0 -> 2.0.0
+   
+   # Or for pre-releases
+   npm version prerelease --preid=beta  # 1.0.0 -> 1.0.1-beta.0
+   ```
+
+3. **Push tag to trigger release**:
+   ```bash
+   # Push the tag (this triggers the automated workflow)
+   git push origin --tags
+   
+   # Also push the commit
+   git push origin main
+   ```
+
+#### What Happens Automatically
+
+The GitHub Actions workflow will:
+
+1. **Pre-Release Validation**:
+   - ✅ Verify version matches tag
+   - ✅ Check for changelog entry (optional)
+   - ✅ Run full test suite (lint, typecheck, tests)
+   - ✅ Build project and validate package contents
+
+2. **NPM Publishing**:
+   - ✅ Build production version
+   - ✅ Configure NPM authentication
+   - ✅ Publish to NPM (stable or beta tag based on version)
+   - ✅ Verify publication and test installation
+
+3. **GitHub Release Creation**:
+   - ✅ Generate changelog from commits
+   - ✅ Create GitHub release with installation instructions
+   - ✅ Upload build artifacts
+   - ✅ Mark as pre-release if beta/alpha/rc version
+
+4. **Post-Release Verification**:
+   - ✅ Verify NPM package is accessible
+   - ✅ Verify GitHub release is created
+   - ✅ Update package badges
+
+#### Manual Publishing (Fallback)
 
 ```bash
-# Ensure you're logged in to NPM
+# Only use if automated process fails
 npm login
-
-# Build and test
 npm run build
 npm test
-
-# Publish (automatically runs prepublishOnly script)
 npm publish
-
-# Or publish with specific tag
-npm publish --tag beta
 ```
+
+#### Branch Protection
+
+The `main` branch is protected and requires:
+- ✅ Pull requests for all changes
+- ✅ All CI checks to pass
+- ✅ Up-to-date branches before merging
+- ✅ No direct pushes to main
+
+#### Release Requirements
+
+- All tests must pass
+- Version in package.json must match git tag
+- Optional but recommended: Update CHANGELOG.md
+- Required for NPM publishing: NPM_TOKEN secret configured
 
 ### Local Testing with MCP Clients
 
@@ -560,13 +694,207 @@ npm uninstall -g openapi-directory-mcp
 
 ---
 
+## 🔧 Plugin Architecture
+
+This MCP server features a **dual plugin architecture** that enables zero-touch extensibility for both prompts and tools. All components are automatically discovered and loaded at startup from organized category folders.
+
+### Architecture Overview
+
+#### Prompts Plugin System
+```
+src/prompts/
+├── core-discovery/         # API discovery and analysis prompts
+│   ├── api-discovery.ts
+│   ├── api-integration-guide.ts
+│   ├── api-comparison.ts
+│   ├── authentication-guide.ts
+│   ├── code-generation.ts
+│   ├── api-documentation-analysis.ts
+│   ├── troubleshooting-guide.ts
+│   └── api-performance-analyzer.ts
+├── action-oriented/        # Code generation and automation prompts
+│   ├── retrofit-api-client.ts
+│   ├── api-type-generator.ts
+│   ├── api-test-suite.ts
+│   ├── api-error-handler.ts
+│   ├── api-migration-assistant.ts
+│   ├── api-sdk-wrapper.ts
+│   ├── api-webhook-scaffold.ts
+│   ├── api-rate-limiter.ts
+│   ├── api-graphql-wrapper.ts
+│   └── api-batch-processor.ts
+├── authentication/         # Authentication-focused prompts
+│   ├── api-auth-implementation.ts
+│   ├── api-auth-flow-generator.ts
+│   ├── api-auth-middleware.ts
+│   ├── api-auth-test-harness.ts
+│   └── api-auth-debugger.ts
+├── loader.ts              # Auto-discovery system
+├── types.ts               # Prompt type definitions
+└── templates.ts           # Main prompt interface
+```
+
+#### Tools Plugin System
+```
+src/tools/
+├── api-discovery/          # Core API discovery tools
+│   ├── get-providers.ts
+│   ├── get-provider-services.ts
+│   ├── list-all-apis.ts
+│   └── get-metrics.ts
+├── api-details/            # Detailed API information tools
+│   ├── get-api.ts
+│   ├── get-api-summary.ts
+│   ├── get-openapi-spec.ts
+│   ├── get-provider-stats.ts
+│   └── search-apis.ts
+├── endpoint-tools/         # API endpoint analysis tools
+│   ├── get-endpoints.ts
+│   ├── get-endpoint-details.ts
+│   ├── get-endpoint-schema.ts
+│   └── get-endpoint-examples.ts
+├── cache-tools/           # Cache management tools
+│   ├── cache-stats.ts
+│   ├── cache-info.ts
+│   ├── list-cache-keys.ts
+│   ├── clear-cache.ts
+│   └── clear-cache-key.ts
+├── provider-tools/        # Provider-specific tools
+│   └── get-provider-apis.ts
+├── utility-tools/         # Analysis and utility tools
+│   ├── analyze-api-categories.ts
+│   ├── get-popular-apis.ts
+│   └── get-recently-updated.ts
+├── loader.ts             # Auto-discovery system
+├── registry.ts           # Tool organization
+├── handler.ts            # MCP integration
+└── types.ts              # Tool type definitions
+```
+
+### Adding New Prompts
+
+**Zero Development Overhead**: Simply create a new `.ts` file in the appropriate category folder:
+
+1. **Create the prompt file**:
+```typescript
+// src/prompts/core-discovery/my-new-prompt.ts
+import { PromptTemplate } from '../types.js';
+
+export const prompt: PromptTemplate = {
+  name: "my_new_prompt",
+  description: "Description of what this prompt does",
+  arguments: [
+    {
+      name: "api_name",
+      description: "Name of the API to work with",
+      required: true
+    }
+  ],
+  generateMessages: (args) => [
+    {
+      role: "user",
+      content: {
+        type: "text",
+        text: `Your prompt content here using ${args.api_name}`
+      }
+    }
+  ]
+};
+
+export default prompt;
+```
+
+2. **That's it!** The system will:
+   - ✅ Automatically discover your prompt at startup
+   - ✅ Make it available as `/openapi-directory:my_new_prompt`
+   - ✅ Include it in the appropriate category
+   - ✅ Validate the prompt structure
+   - ✅ Handle all MCP protocol interactions
+
+### Adding New Tools
+
+**Zero Development Overhead**: Simply create a new `.ts` file in the appropriate category folder:
+
+1. **Create the tool file**:
+```typescript
+// src/tools/api-discovery/my-new-tool.ts
+import { z } from 'zod';
+import { ToolDefinition, ToolContext } from '../types.js';
+
+export const tool: ToolDefinition = {
+  name: 'my_new_tool',
+  description: 'Description of what this tool does',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      api_name: {
+        type: 'string',
+        description: 'Name of the API to work with',
+      },
+    },
+    required: ['api_name'],
+  },
+  async execute(args: any, context: ToolContext): Promise<any> {
+    const schema = z.object({
+      api_name: z.string(),
+    });
+    const params = schema.parse(args);
+    
+    // Your tool logic here using:
+    // - context.apiClient for API operations
+    // - context.cacheManager for cache operations
+    
+    return { result: `Processed ${params.api_name}` };
+  }
+};
+
+export default tool;
+```
+
+2. **That's it!** The system will:
+   - ✅ Automatically discover your tool at startup
+   - ✅ Make it available through the MCP interface
+   - ✅ Include it in the appropriate category
+   - ✅ Validate the tool structure and parameters
+   - ✅ Handle all MCP protocol interactions
+
+### Adding New Categories
+
+Create new folders under `src/prompts/` or `src/tools/` and add files inside:
+
+```bash
+# For prompts
+mkdir src/prompts/my-category
+# Add .ts files with prompt exports
+
+# For tools  
+mkdir src/tools/my-category
+# Add .ts files with tool exports
+```
+
+The auto-loaders will discover and organize them automatically.
+
+### Plugin Architecture Benefits
+
+- **Single Responsibility**: Each component is ~15-70 lines
+- **Zero Touch Extension**: No code changes needed for new components
+- **Organized**: Clear folder-based categorization
+- **Maintainable**: Easy to find, edit, and test individual components
+- **Scalable**: Unlimited prompts/tools and categories supported
+- **Type Safe**: Full TypeScript validation and IntelliSense
+- **Consistent**: Same architecture pattern for both prompts and tools
+
+---
+
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests
+3. Make your changes (see Plugin Architecture above for adding prompts)
+4. Add tests if needed
 5. Submit a pull request
+
+**Plugin Contributions**: Thanks to our dual plugin architecture, adding new prompts and tools is incredibly easy! Just follow the patterns above and submit a PR.
 
 ---
 

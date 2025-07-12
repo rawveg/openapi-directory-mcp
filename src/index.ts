@@ -22,7 +22,7 @@ import { z } from 'zod';
 // Configuration
 const config = {
   name: 'openapi-directory-mcp',
-  version: '1.1.2',
+  version: '1.2.0',
   description: 'Browse and discover APIs from dual-source OpenAPI directory (APIs.guru + enhanced)',
   cacheEnabled: process.env.DISABLE_CACHE !== 'true',
   cacheTTL: parseInt(process.env.CACHE_TTL || '86400000'), // 24 hours in milliseconds
