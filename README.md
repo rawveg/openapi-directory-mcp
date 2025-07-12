@@ -52,8 +52,8 @@ The source data is provided under the Creative Commons Zero v1.0 Universal Licen
 | **Comprehensive API Coverage**| Access to 3,000+ API specs from APIs.guru                    |
 | **Context Optimized**         | Progressive discovery reduces context usage by ~95%          |
 | **Smart Search Results**      | Relevance ranking + newest versions first + provider priority |
-| **Intelligent Caching**       | 24-hour TTL caching for optimal performance                  |
-| **Rich Tool Set**             | 17 specialized tools for API discovery and endpoint analysis |
+| **Intelligent Caching**       | 24-hour TTL persistent caching with management tools         |
+| **Rich Tool Set**             | 22 specialized tools for API discovery and endpoint analysis |
 | **Paginated Resources**       | Efficient data access with pagination support                |
 | **NPX Ready**                 | Install and run with a single command                        |
 | **Type Safe**                 | Built with TypeScript for reliability                        |
@@ -251,6 +251,16 @@ claude mcp remove openapi-directory
 | `get_openapi_spec`  | Fetch OpenAPI specifications|
 | `analyze_api_categories`| Analyze API categories   |
 
+### Cache Management Tools
+
+| Tool                | Description                |
+|---------------------|----------------------------|
+| `cache_stats`       | Get cache statistics and usage info |
+| `list_cache_keys`   | List all cached keys with total count |
+| `clear_cache`       | Clear all cache entries    |
+| `clear_cache_key`   | Clear a specific cache key |
+| `cache_info`        | Get cache configuration and settings |
+
 ---
 
 ## 📦 Available Resources
@@ -297,9 +307,11 @@ All prompts automatically use the progressive discovery workflow to prevent cont
 The server works with zero configuration but supports customization via environment variables:
 
 ```bash
-export OPENAPI_DIRECTORY_CACHE_TTL=86400  # Cache TTL in seconds (default: 24 hours)
-export OPENAPI_DIRECTORY_BASE_URL=https://api.apis.guru/v2  # Base API URL
+export CACHE_TTL=86400000  # Cache TTL in milliseconds (default: 24 hours)
+export DISABLE_CACHE=false  # Disable caching (default: false)
 export OPENAPI_DIRECTORY_CACHE_DIR=~/.cache/openapi-directory-mcp  # Cache directory
+export PRIMARY_API_BASE_URL=https://api.apis.guru/v2  # Primary API URL
+export SECONDARY_API_BASE_URL=https://api.openapidirectory.com  # Secondary API URL
 ```
 
 ---
@@ -403,12 +415,13 @@ const popularApis = await get_popular_apis({ limit: 10 });
 
 The server uses a modular, context-optimized architecture:
 
-- **API Client**: Handles communication with APIs.guru with progressive data fetching
-- **Cache Manager**: Implements 24-hour TTL caching for performance
+- **Dual-Source API Client**: Handles communication with both APIs.guru and secondary API sources
+- **Persistent Cache Manager**: Implements 24-hour TTL filesystem caching with management tools
 - **Tool Generator**: Creates MCP tools with pagination and context limits
 - **Resource Handler**: Manages paginated resource streaming (20 pages of 50 APIs each)
 - **Progressive Discovery**: Smart workflow guides preventing context saturation
 - **Prompt System**: 7 context-aware prompts using efficient discovery patterns
+- **Cache Management**: 5 tools for cache inspection and maintenance
 
 ---
 

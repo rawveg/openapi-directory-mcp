@@ -22,7 +22,7 @@ import { z } from 'zod';
 // Configuration
 const config = {
   name: 'openapi-directory-mcp',
-  version: '1.1.1',
+  version: '1.1.2',
   description: 'Browse and discover APIs from dual-source OpenAPI directory (APIs.guru + enhanced)',
   cacheEnabled: process.env.DISABLE_CACHE !== 'true',
   cacheTTL: parseInt(process.env.CACHE_TTL || '86400000'), // 24 hours in milliseconds
@@ -366,6 +366,48 @@ class OpenAPIDirectoryServer {
           examplesArgs.method,
           examplesArgs.path
         );
+      }
+
+      case 'cache_stats': {
+        return this.cacheManager.getStats();
+      }
+
+      case 'list_cache_keys': {
+        return {
+          keys: this.cacheManager.keys(),
+          total: this.cacheManager.keys().length,
+        };
+      }
+
+      case 'clear_cache': {
+        const keysBefore = this.cacheManager.keys().length;
+        this.cacheManager.clear();
+        return {
+          message: `Cache cleared successfully. Removed ${keysBefore} entries.`,
+          cleared: keysBefore,
+        };
+      }
+
+      case 'clear_cache_key': {
+        const keySchema = z.object({
+          key: z.string(),
+        });
+        const keyArgs = keySchema.parse(args);
+        const deleted = this.cacheManager.delete(keyArgs.key);
+        return {
+          message: deleted > 0 
+            ? `Cache key '${keyArgs.key}' cleared successfully.`
+            : `Cache key '${keyArgs.key}' not found.`,
+          deleted: deleted,
+        };
+      }
+
+      case 'cache_info': {
+        return {
+          enabled: this.cacheManager.isEnabled(),
+          config: this.cacheManager.getConfig(),
+          size: this.cacheManager.getSize(),
+        };
       }
         
       default:

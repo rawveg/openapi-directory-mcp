@@ -492,6 +492,56 @@ export class ToolGenerator {
           required: ['apis'],
         },
       },
+      {
+        name: 'cache_stats',
+        description: 'Get cache statistics and information',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: 'list_cache_keys',
+        description: 'List all cache keys',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: 'clear_cache',
+        description: 'Clear all cache entries',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: 'clear_cache_key',
+        description: 'Clear a specific cache key',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            key: {
+              type: 'string',
+              description: 'The cache key to clear',
+            },
+          },
+          required: ['key'],
+        },
+      },
+      {
+        name: 'cache_info',
+        description: 'Get cache configuration and settings',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
     ];
   }
 }
