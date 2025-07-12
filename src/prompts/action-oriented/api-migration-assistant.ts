@@ -1,24 +1,26 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_migration_assistant",
   description: "Help migrate from one API version/provider to another",
+  template: "Migrate from {{from_api}} to {{to_api}} API",
+  category: "action-oriented",
   arguments: [
     {
       name: "from_api",
       description: "Current API name/version to migrate from",
-      required: true
+      required: true,
     },
     {
       name: "to_api",
       description: "Target API name/version to migrate to",
-      required: true
+      required: true,
     },
     {
       name: "mapping_strategy",
       description: "Migration strategy (direct, adapter, gradual)",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -27,7 +29,7 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Help me migrate from ${args.from_api} to ${args.to_api}.
 
-${args.mapping_strategy ? `Migration strategy: ${args.mapping_strategy}` : 'Use adapter pattern'}
+${args.mapping_strategy ? `Migration strategy: ${args.mapping_strategy}` : "Use adapter pattern"}
 
 Please create a comprehensive migration plan:
 
@@ -60,27 +62,39 @@ Please create a comprehensive migration plan:
 - **Rollout Plan**: Phased migration strategy
 
 **Migration Patterns:**
-${args.mapping_strategy === 'adapter' || !args.mapping_strategy ? `
+${
+  args.mapping_strategy === "adapter" || !args.mapping_strategy
+    ? `
 **Adapter Pattern:**
 - Create unified interface wrapping both APIs
 - Route calls to appropriate API version
 - Handle data format differences transparently
 - Enable gradual migration endpoint by endpoint
-` : ''}
-${args.mapping_strategy === 'direct' ? `
+`
+    : ""
+}
+${
+  args.mapping_strategy === "direct"
+    ? `
 **Direct Migration:**
 - Replace all calls immediately
 - Update data structures in one go
 - Requires comprehensive testing
 - Faster but higher risk approach
-` : ''}
-${args.mapping_strategy === 'gradual' ? `
+`
+    : ""
+}
+${
+  args.mapping_strategy === "gradual"
+    ? `
 **Gradual Migration:**
 - Migrate endpoints one by one
 - Run both APIs in parallel
 - Use feature flags for switching
 - Monitor and compare results
-` : ''}
+`
+    : ""
+}
 
 **Risk Mitigation:**
 - Identify high-risk changes
@@ -89,10 +103,10 @@ ${args.mapping_strategy === 'gradual' ? `
 - Design quick rollback mechanisms
 - Document all breaking changes
 
-Begin by analyzing both APIs to understand the migration scope.`
-      }
-    }
-  ]
+Begin by analyzing both APIs to understand the migration scope.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

@@ -1,24 +1,27 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_auth_middleware",
   description: "Generate framework-specific authentication middleware",
+  template:
+    "Generate {{framework}} authentication middleware for {{api_name}} API",
+  category: "authentication",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API to create middleware for",
-      required: true
+      required: true,
     },
     {
       name: "framework",
       description: "Target framework (express, fastapi, gin, django, etc.)",
-      required: true
+      required: true,
     },
     {
       name: "auth_strategy",
       description: "Authentication strategy (jwt, bearer, apikey, oauth2)",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -27,7 +30,7 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Generate ${args.framework} authentication middleware for the ${args.api_name} API.
 
-${args.auth_strategy ? `Authentication strategy: ${args.auth_strategy}` : 'Auto-detect from API specification'}
+${args.auth_strategy ? `Authentication strategy: ${args.auth_strategy}` : "Auto-detect from API specification"}
 
 Please create comprehensive middleware:
 
@@ -52,7 +55,9 @@ Please create comprehensive middleware:
 
 **${args.framework} Middleware Features:**
 
-${args.framework === 'express' ? `
+${
+  args.framework === "express"
+    ? `
 **Express.js Middleware:**
 \`\`\`typescript
 import { Request, Response, NextFunction } from 'express';
@@ -81,9 +86,13 @@ export const authenticateAPI = async (
   }
 };
 \`\`\`
-` : ''}
+`
+    : ""
+}
 
-${args.framework === 'fastapi' ? `
+${
+  args.framework === "fastapi"
+    ? `
 **FastAPI Dependencies:**
 \`\`\`python
 from fastapi import Depends, HTTPException, status
@@ -105,9 +114,13 @@ async def authenticate_api(
             headers={"WWW-Authenticate": "Bearer"}
         )
 \`\`\`
-` : ''}
+`
+    : ""
+}
 
-${args.framework === 'gin' ? `
+${
+  args.framework === "gin"
+    ? `
 **Gin Middleware:**
 \`\`\`go
 func AuthenticateAPI() gin.HandlerFunc {
@@ -135,7 +148,9 @@ func AuthenticateAPI() gin.HandlerFunc {
     }
 }
 \`\`\`
-` : ''}
+`
+    : ""
+}
 
 **Authentication Features:**
 - Token extraction from headers/cookies/query
@@ -170,10 +185,10 @@ middleware/
 └── utils/          # Helper functions
 \`\`\`
 
-Begin by analyzing the API's authentication requirements for ${args.framework} integration.`
-      }
-    }
-  ]
+Begin by analyzing the API's authentication requirements for ${args.framework} integration.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

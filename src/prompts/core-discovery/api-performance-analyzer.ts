@@ -1,19 +1,23 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_performance_analyzer",
-  description: "Analyze API performance characteristics and optimization opportunities",
+  description:
+    "Analyze API performance characteristics and optimization opportunities",
+  template: "Analyze {{api_name}} API performance focusing on {{focus_area}}",
+  category: "core-discovery",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API to analyze performance for",
-      required: true
+      required: true,
     },
     {
       name: "focus_area",
-      description: "Specific performance area to focus on (latency, throughput, caching, etc.)",
-      required: false
-    }
+      description:
+        "Specific performance area to focus on (latency, throughput, caching, etc.)",
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -22,7 +26,7 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Analyze performance characteristics of the ${args.api_name} API.
 
-${args.focus_area ? `Focus area: ${args.focus_area}` : 'Analyze all performance aspects'}
+${args.focus_area ? `Focus area: ${args.focus_area}` : "Analyze all performance aspects"}
 
 Please provide comprehensive performance analysis:
 
@@ -59,10 +63,10 @@ Please provide comprehensive performance analysis:
 - Smart retry and circuit breaker patterns
 - Monitoring and alerting setup
 
-Begin by analyzing the API's documented performance characteristics and constraints.`
-      }
-    }
-  ]
+Begin by analyzing the API's documented performance characteristics and constraints.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

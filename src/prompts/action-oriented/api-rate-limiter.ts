@@ -1,24 +1,26 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_rate_limiter",
   description: "Implement rate limiting and quota management for APIs",
+  template: "Implement {{storage_backend}} rate limiting for {{api_name}} API",
+  category: "action-oriented",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API to create rate limiting for",
-      required: true
+      required: true,
     },
     {
       name: "storage_backend",
       description: "Storage backend (redis, memory, database)",
-      required: false
+      required: false,
     },
     {
       name: "rate_limits",
       description: "Custom rate limits (e.g., '100/minute,1000/hour')",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -27,8 +29,8 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Implement rate limiting and quota management for the ${args.api_name} API.
 
-${args.storage_backend ? `Storage backend: ${args.storage_backend}` : 'Use Redis for distributed rate limiting'}
-${args.rate_limits ? `Custom rate limits: ${args.rate_limits}` : 'Extract limits from API documentation'}
+${args.storage_backend ? `Storage backend: ${args.storage_backend}` : "Use Redis for distributed rate limiting"}
+${args.rate_limits ? `Custom rate limits: ${args.rate_limits}` : "Extract limits from API documentation"}
 
 Please create comprehensive rate limiting:
 
@@ -69,27 +71,39 @@ Rate Limit Examples:
 \`\`\`
 
 **3. Storage Backends:**
-${args.storage_backend === 'redis' || !args.storage_backend ? `
+${
+  args.storage_backend === "redis" || !args.storage_backend
+    ? `
 **Redis Backend:**
 - Distributed rate limiting
 - Atomic operations with Lua scripts
 - Persistence and replication
 - High performance at scale
-` : ''}
-${args.storage_backend === 'memory' ? `
+`
+    : ""
+}
+${
+  args.storage_backend === "memory"
+    ? `
 **Memory Backend:**
 - Fast, in-process limiting
 - No external dependencies
 - Limited to single instance
 - Good for development/testing
-` : ''}
-${args.storage_backend === 'database' ? `
+`
+    : ""
+}
+${
+  args.storage_backend === "database"
+    ? `
 **Database Backend:**
 - Persistent storage
 - Complex quota queries
 - Audit trail capability
 - Slower but more features
-` : ''}
+`
+    : ""
+}
 
 **4. Advanced Features:**
 - Per-user/per-IP/per-API-key limits
@@ -115,10 +129,10 @@ rate-limiter/
 - Microservice rate limiting
 - Client-side rate limiting
 
-Begin by analyzing the API's documented rate limits and quota policies.`
-      }
-    }
-  ]
+Begin by analyzing the API's documented rate limits and quota policies.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

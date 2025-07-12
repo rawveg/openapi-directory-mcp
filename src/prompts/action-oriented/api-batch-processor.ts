@@ -1,29 +1,32 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_batch_processor",
   description: "Generate batch processing code for bulk API operations",
+  template:
+    "Generate batch processing code for the {{api_name}} API with batch size {{batch_size}}, concurrency {{concurrency}}, and error strategy {{error_strategy}}",
+  category: "action-oriented",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API to create batch processing for",
-      required: true
+      required: true,
     },
     {
       name: "batch_size",
       description: "Number of items per batch (default: auto-detect)",
-      required: false
+      required: false,
     },
     {
       name: "concurrency",
       description: "Number of concurrent batches (default: 5)",
-      required: false
+      required: false,
     },
     {
       name: "error_strategy",
       description: "Error handling strategy (continue, stop, retry)",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -32,9 +35,9 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Generate batch processing code for the ${args.api_name} API.
 
-${args.batch_size ? `Batch size: ${args.batch_size}` : 'Auto-detect optimal batch size'}
-${args.concurrency ? `Concurrency: ${args.concurrency}` : 'Use 5 concurrent batches'}
-${args.error_strategy ? `Error strategy: ${args.error_strategy}` : 'Continue processing on errors'}
+${args.batch_size ? `Batch size: ${args.batch_size}` : "Auto-detect optimal batch size"}
+${args.concurrency ? `Concurrency: ${args.concurrency}` : "Use 5 concurrent batches"}
+${args.error_strategy ? `Error strategy: ${args.error_strategy}` : "Continue processing on errors"}
 
 Please create comprehensive batch processing:
 
@@ -66,33 +69,45 @@ Please create comprehensive batch processing:
 - Adaptive batch sizing based on performance
 
 **2. Concurrency Management:**
-${args.concurrency ? `- ${args.concurrency} concurrent batch workers` : '- 5 concurrent batch workers by default'}
+${args.concurrency ? `- ${args.concurrency} concurrent batch workers` : "- 5 concurrent batch workers by default"}
 - Rate limit aware scheduling
 - Backpressure handling
 - Resource usage monitoring
 
 **3. Error Handling Strategies:**
-${args.error_strategy === 'continue' || !args.error_strategy ? `
+${
+  args.error_strategy === "continue" || !args.error_strategy
+    ? `
 **Continue Strategy:**
 - Log errors but continue processing
 - Collect failed items for later retry
 - Maintain overall progress
 - Generate detailed error reports
-` : ''}
-${args.error_strategy === 'stop' ? `
+`
+    : ""
+}
+${
+  args.error_strategy === "stop"
+    ? `
 **Stop Strategy:**
 - Halt processing on first error
 - Preserve processing state
 - Allow manual intervention
 - Resume from failure point
-` : ''}
-${args.error_strategy === 'retry' ? `
+`
+    : ""
+}
+${
+  args.error_strategy === "retry"
+    ? `
 **Retry Strategy:**
 - Automatic retry with exponential backoff
 - Maximum retry attempts per item
 - Dead letter queue for permanent failures
 - Smart retry scheduling
-` : ''}
+`
+    : ""
+}
 
 **4. Progress Tracking:**
 - Real-time progress updates
@@ -115,7 +130,7 @@ batch-processor/
 \`\`\`typescript
 const processor = new BatchProcessor({
   api: '${args.api_name}',
-  batchSize: ${args.batch_size || 'auto'},
+  batchSize: ${args.batch_size || "auto"},
   concurrency: ${args.concurrency || 5},
   onProgress: (stats) => console.log(stats),
   onError: (error, item) => handleError(error, item)
@@ -131,10 +146,10 @@ await processor.process(largeDataSet);
 - Result streaming
 - Checkpoint/resume capability
 
-Begin by analyzing the API's batch capabilities and rate limiting constraints.`
-      }
-    }
-  ]
+Begin by analyzing the API's batch capabilities and rate limiting constraints.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

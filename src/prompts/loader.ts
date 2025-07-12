@@ -1,7 +1,7 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { PromptTemplate } from './types.js';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { PromptTemplate } from "./types.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -71,29 +71,30 @@ export class PromptLoader {
 
   private async scanAndLoadCategories(): Promise<void> {
     const promptsDir = __dirname;
-    
+
     try {
       const entries = fs.readdirSync(promptsDir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         if (entry.isDirectory() && this.isValidCategoryName(entry.name)) {
           await this.loadCategory(entry.name);
         }
       }
     } catch (error) {
-      console.error('Error scanning prompts directory:', error);
+      console.error("Error scanning prompts directory:", error);
       throw new Error(`Failed to scan prompts directory: ${error}`);
     }
   }
 
   private async loadCategory(categoryName: string): Promise<void> {
     const categoryPath = path.join(__dirname, categoryName);
-    
+
     try {
-      const files = fs.readdirSync(categoryPath)
-        .filter(file => file.endsWith('.js') && !file.endsWith('.d.ts'))
-        .filter(file => file !== 'index.js'); // Skip index files
-      
+      const files = fs
+        .readdirSync(categoryPath)
+        .filter((file) => file.endsWith(".js") && !file.endsWith(".d.ts"))
+        .filter((file) => file !== "index.js"); // Skip index files
+
       for (const file of files) {
         await this.loadPromptFile(categoryName, categoryPath, file);
       }
@@ -103,14 +104,18 @@ export class PromptLoader {
     }
   }
 
-  private async loadPromptFile(categoryName: string, categoryPath: string, filename: string): Promise<void> {
+  private async loadPromptFile(
+    categoryName: string,
+    categoryPath: string,
+    filename: string,
+  ): Promise<void> {
     const filePath = path.join(categoryPath, filename);
     const relativePath = path.relative(__dirname, filePath);
-    
+
     try {
       // Use dynamic import to load the module
-      const module = await import(`./${relativePath.replace(/\\/g, '/')}`);
-      
+      const module = await import(`./${relativePath.replace(/\\/g, "/")}`);
+
       let prompt: PromptTemplate | undefined;
 
       // Try different export patterns
@@ -140,23 +145,27 @@ export class PromptLoader {
   }
 
   private isValidPrompt(obj: any): obj is PromptTemplate {
-    return obj && 
-           typeof obj === 'object' &&
-           typeof obj.name === 'string' &&
-           obj.name.length > 0 &&
-           typeof obj.description === 'string' &&
-           obj.description.length > 0 &&
-           typeof obj.generateMessages === 'function' &&
-           (obj.arguments === undefined || Array.isArray(obj.arguments));
+    return (
+      obj &&
+      typeof obj === "object" &&
+      typeof obj.name === "string" &&
+      obj.name.length > 0 &&
+      typeof obj.description === "string" &&
+      obj.description.length > 0 &&
+      typeof obj.generateMessages === "function" &&
+      (obj.arguments === undefined || Array.isArray(obj.arguments))
+    );
   }
 
   private isValidCategoryName(name: string): boolean {
     // Skip hidden directories, node_modules, etc.
-    return !name.startsWith('.') && 
-           !name.startsWith('_') &&
-           name !== 'node_modules' &&
-           name !== 'dist' &&
-           name !== 'build';
+    return (
+      !name.startsWith(".") &&
+      !name.startsWith("_") &&
+      name !== "node_modules" &&
+      name !== "dist" &&
+      name !== "build"
+    );
   }
 
   getRegistry(): PromptRegistry {
@@ -168,10 +177,10 @@ export class PromptLoader {
       await this.scanAndLoadCategories();
       this.loaded = true;
     }
-    
-    return this.registry.getCategories().map(categoryName => ({
+
+    return this.registry.getCategories().map((categoryName) => ({
       name: categoryName,
-      prompts: this.registry.getCategory(categoryName)
+      prompts: this.registry.getCategory(categoryName),
     }));
   }
 
@@ -181,6 +190,14 @@ export class PromptLoader {
       this.loaded = true;
     }
     return this.registry.getCategory(categoryName);
+  }
+
+  async getPrompt(name: string): Promise<PromptTemplate | undefined> {
+    if (!this.loaded) {
+      await this.scanAndLoadCategories();
+      this.loaded = true;
+    }
+    return this.registry.getPrompt(name);
   }
 }
 

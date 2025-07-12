@@ -1,6 +1,6 @@
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
-import { toolLoader, ToolLoader } from './loader.js';
-import { ToolDefinition, ToolContext, toMcpTool } from './types.js';
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { toolLoader, ToolLoader } from "./loader.js";
+import { ToolDefinition, ToolContext, toMcpTool } from "./types.js";
 
 export class ToolHandler {
   private loader: ToolLoader;
@@ -29,7 +29,7 @@ export class ToolHandler {
   async listTools(): Promise<{ tools: Tool[] }> {
     await this.ensureInitialized();
     const toolDefinitions = await this.loader.loadAllTools();
-    
+
     const tools: Tool[] = toolDefinitions.map(toMcpTool);
     return { tools };
   }
@@ -39,7 +39,7 @@ export class ToolHandler {
    */
   async callTool(name: string, args: any, context: ToolContext): Promise<any> {
     await this.ensureInitialized();
-    
+
     const tool = await this.loader.getTool(name);
     if (!tool) {
       throw new Error(`Tool not found: ${name}`);
@@ -50,7 +50,9 @@ export class ToolHandler {
       return result;
     } catch (error) {
       console.error(`Error executing tool ${name}:`, error);
-      throw new Error(`Tool execution failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -60,7 +62,7 @@ export class ToolHandler {
   async getToolNames(): Promise<string[]> {
     await this.ensureInitialized();
     const tools = await this.loader.loadAllTools();
-    return tools.map(tool => tool.name);
+    return tools.map((tool) => tool.name);
   }
 
   /**
@@ -94,19 +96,23 @@ export class ToolHandler {
   async getCategories(): Promise<string[]> {
     await this.ensureInitialized();
     const categories = await this.loader.getCategories();
-    return categories.map(cat => cat.name);
+    return categories.map((cat) => cat.name);
   }
 
   /**
    * Get tool statistics
    */
-  async getStats(): Promise<{ totalTools: number; totalCategories: number; categorizedTools: { [category: string]: number } }> {
+  async getStats(): Promise<{
+    totalTools: number;
+    totalCategories: number;
+    categorizedTools: { [category: string]: number };
+  }> {
     await this.ensureInitialized();
     const categories = await this.loader.getCategories();
-    
+
     const categorizedTools: { [category: string]: number } = {};
     let totalTools = 0;
-    
+
     for (const category of categories) {
       categorizedTools[category.name] = category.tools.length;
       totalTools += category.tools.length;
@@ -115,7 +121,7 @@ export class ToolHandler {
     return {
       totalTools,
       totalCategories: categories.length,
-      categorizedTools
+      categorizedTools,
     };
   }
 }

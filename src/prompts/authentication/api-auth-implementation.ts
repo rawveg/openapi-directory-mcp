@@ -1,24 +1,27 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_auth_implementation",
-  description: "Generate complete authentication implementation from OpenAPI security schemes",
+  description:
+    "Generate complete authentication implementation from OpenAPI security schemes",
+  template: "Implement {{framework}} authentication for {{api_name}} API",
+  category: "authentication",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API to implement authentication for",
-      required: true
+      required: true,
     },
     {
       name: "framework",
       description: "Target framework (express, fastapi, gin, etc.)",
-      required: false
+      required: false,
     },
     {
       name: "credential_storage",
       description: "Credential storage method (env, config, keychain, vault)",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -27,8 +30,8 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Generate complete authentication implementation for the ${args.api_name} API.
 
-${args.framework ? `Target framework: ${args.framework}` : 'Generate framework-agnostic code'}
-${args.credential_storage ? `Credential storage: ${args.credential_storage}` : 'Use environment variables'}
+${args.framework ? `Target framework: ${args.framework}` : "Generate framework-agnostic code"}
+${args.credential_storage ? `Credential storage: ${args.credential_storage}` : "Use environment variables"}
 
 Please create comprehensive authentication code:
 
@@ -113,18 +116,22 @@ auth/
 - Rate limit aware authentication
 
 **Framework Integration:**
-${args.framework ? `
+${
+  args.framework
+    ? `
 Generate ${args.framework}-specific:
 - Middleware/dependencies
 - Route protection
 - Error handlers
 - Configuration setup
-` : ''}
+`
+    : ""
+}
 
-Begin by extracting and analyzing the API's security schemes from the OpenAPI specification.`
-      }
-    }
-  ]
+Begin by extracting and analyzing the API's security schemes from the OpenAPI specification.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

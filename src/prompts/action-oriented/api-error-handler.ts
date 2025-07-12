@@ -1,24 +1,27 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_error_handler",
   description: "Generate robust error handling and retry logic for APIs",
+  template:
+    "Generate error handling and {{retry_strategy}} retry logic for {{api_name}} API",
+  category: "action-oriented",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API to create error handling for",
-      required: true
+      required: true,
     },
     {
       name: "retry_strategy",
       description: "Retry strategy (exponential, linear, fixed)",
-      required: false
+      required: false,
     },
     {
       name: "error_mapping",
       description: "Custom error code mapping (optional)",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -27,8 +30,8 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Generate robust error handling and retry logic for the ${args.api_name} API.
 
-${args.retry_strategy ? `Retry strategy: ${args.retry_strategy}` : 'Use exponential backoff'}
-${args.error_mapping ? `Error mapping: ${args.error_mapping}` : ''}
+${args.retry_strategy ? `Retry strategy: ${args.retry_strategy}` : "Use exponential backoff"}
+${args.error_mapping ? `Error mapping: ${args.error_mapping}` : ""}
 
 Please create comprehensive error handling:
 
@@ -61,22 +64,34 @@ Please create comprehensive error handling:
 - **Dead Letter Queue**: Handle permanently failed requests
 
 **Retry Strategy Implementation:**
-${args.retry_strategy === 'exponential' || !args.retry_strategy ? `
+${
+  args.retry_strategy === "exponential" || !args.retry_strategy
+    ? `
 - Exponential backoff: 1s, 2s, 4s, 8s, 16s
 - Jitter to prevent thundering herd
 - Maximum retry attempts: 5
 - Total timeout: 60 seconds
-` : ''}
-${args.retry_strategy === 'linear' ? `
+`
+    : ""
+}
+${
+  args.retry_strategy === "linear"
+    ? `
 - Linear backoff: 2s, 4s, 6s, 8s, 10s
 - No jitter, predictable timing
 - Maximum retry attempts: 5
-` : ''}
-${args.retry_strategy === 'fixed' ? `
+`
+    : ""
+}
+${
+  args.retry_strategy === "fixed"
+    ? `
 - Fixed interval: 3 seconds between retries
 - Maximum retry attempts: 3
 - Quick failure detection
-` : ''}
+`
+    : ""
+}
 
 **Code Generation Requirements:**
 - Thread-safe error handling
@@ -85,10 +100,10 @@ ${args.retry_strategy === 'fixed' ? `
 - Configuration options
 - Documentation with examples
 
-Begin by analyzing the API's error response patterns.`
-      }
-    }
-  ]
+Begin by analyzing the API's error response patterns.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

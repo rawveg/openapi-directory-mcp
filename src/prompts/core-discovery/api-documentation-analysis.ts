@@ -1,19 +1,22 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_documentation_analysis",
   description: "Analyze API capabilities, limitations, and best practices",
+  template: "Analyze {{api_name}} API focusing on {{focus_area}}",
+  category: "core-discovery",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API to analyze",
-      required: true
+      required: true,
     },
     {
       name: "focus_area",
-      description: "Specific area to focus on (e.g., 'rate limits', 'data models', 'error handling')",
-      required: false
-    }
+      description:
+        "Specific area to focus on (e.g., 'rate limits', 'data models', 'error handling')",
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -22,7 +25,7 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Analyze the ${args.api_name} API in detail.
 
-${args.focus_area ? `Focus area: ${args.focus_area}` : ''}
+${args.focus_area ? `Focus area: ${args.focus_area}` : ""}
 
 Please provide a comprehensive analysis:
 1. Find the API in the directory and get its specification
@@ -38,10 +41,10 @@ Please provide a comprehensive analysis:
 6. Highlight any potential issues or gotchas
 7. Compare with similar APIs in the directory
 
-Use the available tools to fetch the API specification and compare with related APIs.`
-      }
-    }
-  ]
+Use the available tools to fetch the API specification and compare with related APIs.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

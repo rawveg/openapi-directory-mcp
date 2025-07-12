@@ -1,10 +1,10 @@
-import { ToolDefinition, ToolContext } from '../types.js';
+import { ToolDefinition, ToolContext } from "../types.js";
 
 export const tool: ToolDefinition = {
-  name: 'list_cache_keys',
-  description: 'List all cache keys',
+  name: "list_cache_keys",
+  description: "List all cache keys",
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {},
     required: [],
   },
@@ -13,7 +13,7 @@ export const tool: ToolDefinition = {
       keys: context.cacheManager.keys(),
       total: context.cacheManager.keys().length,
     };
-  }
+  },
 };
 
 export default tool;

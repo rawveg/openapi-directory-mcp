@@ -1,6 +1,6 @@
-import axios, { AxiosInstance } from 'axios';
-import { ICacheManager } from '../cache/types.js';
-import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from '../types/api.js';
+import axios, { AxiosInstance } from "axios";
+import { ICacheManager } from "../cache/types.js";
+import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from "../types/api.js";
 
 /**
  * Secondary API client for the enhanced OpenAPI directory
@@ -15,8 +15,8 @@ export class SecondaryApiClient {
       baseURL,
       timeout: 30000,
       headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'openapi-directory-mcp/1.0.6-dual-source',
+        Accept: "application/json",
+        "User-Agent": "openapi-directory-mcp/1.0.6-dual-source",
       },
     });
 
@@ -26,7 +26,7 @@ export class SecondaryApiClient {
   private async fetchWithCache<T>(
     key: string,
     fetchFn: () => Promise<T>,
-    ttl?: number
+    ttl?: number,
   ): Promise<T> {
     const cached = this.cache.get<T>(`secondary:${key}`);
     if (cached) {
@@ -42,8 +42,10 @@ export class SecondaryApiClient {
    * List all providers in the secondary directory
    */
   async getProviders(): Promise<{ data: string[] }> {
-    return this.fetchWithCache('providers', async () => {
-      const response = await this.http.get<{ data: string[] }>('/providers.json');
+    return this.fetchWithCache("providers", async () => {
+      const response = await this.http.get<{ data: string[] }>(
+        "/providers.json",
+      );
       return response.data;
     });
   }
@@ -53,7 +55,9 @@ export class SecondaryApiClient {
    */
   async getProvider(provider: string): Promise<Record<string, ApiGuruAPI>> {
     return this.fetchWithCache(`provider:${provider}`, async () => {
-      const response = await this.http.get<Record<string, ApiGuruAPI>>(`/${provider}.json`);
+      const response = await this.http.get<Record<string, ApiGuruAPI>>(
+        `/${provider}.json`,
+      );
       return response.data;
     });
   }
@@ -63,7 +67,9 @@ export class SecondaryApiClient {
    */
   async getServices(provider: string): Promise<ApiGuruServices> {
     return this.fetchWithCache(`services:${provider}`, async () => {
-      const response = await this.http.get<ApiGuruServices>(`/${provider}/services.json`);
+      const response = await this.http.get<ApiGuruServices>(
+        `/${provider}/services.json`,
+      );
       return response.data;
     });
   }
@@ -73,7 +79,9 @@ export class SecondaryApiClient {
    */
   async getAPI(provider: string, api: string): Promise<ApiGuruAPI> {
     return this.fetchWithCache(`api:${provider}:${api}`, async () => {
-      const response = await this.http.get<ApiGuruAPI>(`/specs/${provider}/${api}.json`);
+      const response = await this.http.get<ApiGuruAPI>(
+        `/specs/${provider}/${api}.json`,
+      );
       return response.data;
     });
   }
@@ -81,19 +89,29 @@ export class SecondaryApiClient {
   /**
    * Retrieve one version of a particular API with a serviceName
    */
-  async getServiceAPI(provider: string, service: string, api: string): Promise<ApiGuruAPI> {
-    return this.fetchWithCache(`api:${provider}:${service}:${api}`, async () => {
-      const response = await this.http.get<ApiGuruAPI>(`/specs/${provider}/${service}/${api}.json`);
-      return response.data;
-    });
+  async getServiceAPI(
+    provider: string,
+    service: string,
+    api: string,
+  ): Promise<ApiGuruAPI> {
+    return this.fetchWithCache(
+      `api:${provider}:${service}:${api}`,
+      async () => {
+        const response = await this.http.get<ApiGuruAPI>(
+          `/specs/${provider}/${service}/${api}.json`,
+        );
+        return response.data;
+      },
+    );
   }
 
   /**
    * List all APIs in the secondary directory
    */
   async listAPIs(): Promise<Record<string, ApiGuruAPI>> {
-    return this.fetchWithCache('all_apis', async () => {
-      const response = await this.http.get<Record<string, ApiGuruAPI>>('/list.json');
+    return this.fetchWithCache("all_apis", async () => {
+      const response =
+        await this.http.get<Record<string, ApiGuruAPI>>("/list.json");
       return response.data;
     });
   }
@@ -102,8 +120,8 @@ export class SecondaryApiClient {
    * Get basic metrics for the secondary directory
    */
   async getMetrics(): Promise<ApiGuruMetrics> {
-    return this.fetchWithCache('metrics', async () => {
-      const response = await this.http.get<ApiGuruMetrics>('/metrics.json');
+    return this.fetchWithCache("metrics", async () => {
+      const response = await this.http.get<ApiGuruMetrics>("/metrics.json");
       return response.data;
     });
   }

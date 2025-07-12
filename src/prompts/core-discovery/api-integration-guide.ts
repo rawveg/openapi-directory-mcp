@@ -1,24 +1,28 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_integration_guide",
   description: "Generate step-by-step integration guide for a specific API",
+  template:
+    "Generate {{programming_language}} integration guide for {{api_name}} API with {{use_case}} use case",
+  category: "core-discovery",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API to integrate with",
-      required: true
+      required: true,
     },
     {
       name: "programming_language",
-      description: "Programming language for code examples (e.g., 'JavaScript', 'Python', 'cURL')",
-      required: false
+      description:
+        "Programming language for code examples (e.g., 'JavaScript', 'Python', 'cURL')",
+      required: false,
     },
     {
       name: "use_case",
       description: "Specific functionality you want to implement",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -27,8 +31,8 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `I want to integrate with the ${args.api_name} API.
 
-${args.programming_language ? `Programming language: ${args.programming_language}` : ''}
-${args.use_case ? `Use case: ${args.use_case}` : ''}
+${args.programming_language ? `Programming language: ${args.programming_language}` : ""}
+${args.use_case ? `Use case: ${args.use_case}` : ""}
 
 Please create a comprehensive integration guide using this efficient approach:
 
@@ -63,10 +67,10 @@ Please create a comprehensive integration guide using this efficient approach:
 
 **Important:** Use the progressive discovery tools to gather information efficiently without overwhelming the context. Start with summary, then explore endpoints, then dive into implementation details only for relevant endpoints.
 
-Begin by finding and summarizing the API details.`
-      }
-    }
-  ]
+Begin by finding and summarizing the API details.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

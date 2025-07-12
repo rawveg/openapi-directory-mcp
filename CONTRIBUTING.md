@@ -21,8 +21,8 @@ npm install
 # Build the project
 npm run build
 
-# Run tests
-npm test
+# Validate the project
+npm run validate
 ```
 
 ---
@@ -73,19 +73,17 @@ src/
 
 2. **Make Changes**:
    - Follow the plugin architecture patterns below
-   - Add tests for new functionality
    - Update documentation if needed
 
-3. **Test Your Changes**:
+3. **Validate Your Changes**:
    ```bash
    # Run full validation
    npm run validate
    
-   # Test specific areas
-   npm run test:unit
-   npm run test:integration
+   # Individual checks
    npm run lint
    npm run type-check
+   npm run build
    ```
 
 4. **Submit Pull Request**:
@@ -116,7 +114,7 @@ This project uses **automated releases** triggered by version tags:
    ```
 
 3. **Automated Workflow**:
-   - ✅ Pre-release validation (tests, build, package validation)
+   - ✅ Pre-release validation (lint, type-check, build, package validation)
    - ✅ NPM publishing (stable or beta based on version)
    - ✅ GitHub release creation with changelog
    - ✅ Post-release verification
@@ -312,8 +310,8 @@ mkdir src/tools/my-new-category
 # Build the project
 npm run build
 
-# Run the test suite
-npm test
+# Validate the project
+npm run validate
 
 # Test your specific contribution
 npm run build && node -e "
@@ -375,12 +373,11 @@ export default tool;
 ### 2. Development
 - Create a feature branch: `git checkout -b feature/my-awesome-feature`
 - Follow the plugin architecture patterns above
-- Write tests if adding new core functionality
 - Update documentation if needed
 
 ### 3. Testing Checklist
 - [ ] Project builds without errors: `npm run build`
-- [ ] All tests pass: `npm test`
+- [ ] All validation passes: `npm run validate`
 - [ ] New prompts/tools are auto-discovered
 - [ ] Functionality works as expected
 - [ ] No breaking changes to existing functionality

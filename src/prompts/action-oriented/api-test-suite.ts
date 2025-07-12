@@ -1,24 +1,26 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_test_suite",
   description: "Generate comprehensive test suites for API integrations",
+  template: "Generate {{test_framework}} test suite for {{api_name}} API",
+  category: "action-oriented",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API to test",
-      required: true
+      required: true,
     },
     {
       name: "test_framework",
       description: "Test framework (jest, pytest, go-test, etc.)",
-      required: true
+      required: true,
     },
     {
       name: "coverage_type",
       description: "Test coverage type (unit, integration, e2e)",
-      required: true
-    }
+      required: true,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -72,10 +74,10 @@ Please create thorough test coverage:
 - Include various response scenarios
 - Add network simulation (delays, failures)
 
-Begin by analyzing the API structure to plan comprehensive test coverage.`
-      }
-    }
-  ]
+Begin by analyzing the API structure to plan comprehensive test coverage.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

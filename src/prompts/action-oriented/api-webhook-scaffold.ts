@@ -1,24 +1,27 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_webhook_scaffold",
   description: "Generate webhook handling infrastructure for APIs",
+  template:
+    "Generate webhook handlers for {{api_name}} API with {{webhook_types}} types",
+  category: "action-oriented",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API that sends webhooks",
-      required: true
+      required: true,
     },
     {
       name: "webhook_types",
       description: "Specific webhook types to handle (comma-separated)",
-      required: false
+      required: false,
     },
     {
       name: "verification_method",
       description: "Webhook verification method (hmac, jwt, basic)",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -27,8 +30,8 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Generate webhook handling infrastructure for ${args.api_name} webhooks.
 
-${args.webhook_types ? `Webhook types: ${args.webhook_types}` : 'Handle all webhook types'}
-${args.verification_method ? `Verification method: ${args.verification_method}` : 'Auto-detect from API spec'}
+${args.webhook_types ? `Webhook types: ${args.webhook_types}` : "Handle all webhook types"}
+${args.verification_method ? `Verification method: ${args.verification_method}` : "Auto-detect from API spec"}
 
 Please create complete webhook infrastructure:
 
@@ -60,21 +63,33 @@ Please create complete webhook infrastructure:
 - Event type detection
 
 **2. Verification System:**
-${args.verification_method === 'hmac' || !args.verification_method ? `
+${
+  args.verification_method === "hmac" || !args.verification_method
+    ? `
 - HMAC signature validation
 - Timestamp verification to prevent replay attacks
 - Secret key management
-` : ''}
-${args.verification_method === 'jwt' ? `
+`
+    : ""
+}
+${
+  args.verification_method === "jwt"
+    ? `
 - JWT token validation
 - Public key verification
 - Claims validation
-` : ''}
-${args.verification_method === 'basic' ? `
+`
+    : ""
+}
+${
+  args.verification_method === "basic"
+    ? `
 - Basic authentication
 - API key validation
 - IP whitelist checking
-` : ''}
+`
+    : ""
+}
 
 **3. Event Processing:**
 - Type-safe event handlers
@@ -106,10 +121,10 @@ webhooks/
 - Request logging
 - Health check endpoints
 
-Begin by analyzing the API's webhook documentation and requirements.`
-      }
-    }
-  ]
+Begin by analyzing the API's webhook documentation and requirements.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

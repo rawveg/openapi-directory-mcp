@@ -1,24 +1,26 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "troubleshooting_guide",
   description: "Help debug API integration issues",
+  template: "Troubleshoot {{api_name}} API issue: {{error_description}}",
+  category: "core-discovery",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API having issues with",
-      required: true
+      required: true,
     },
     {
       name: "error_description",
       description: "Description of the error or issue",
-      required: true
+      required: true,
     },
     {
       name: "code_snippet",
       description: "Code snippet causing the issue (optional)",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -28,7 +30,7 @@ export const prompt: PromptTemplate = {
         text: `I'm having issues with the ${args.api_name} API.
 
 Error: ${args.error_description}
-${args.code_snippet ? `Code snippet: ${args.code_snippet}` : ''}
+${args.code_snippet ? `Code snippet: ${args.code_snippet}` : ""}
 
 Please help me troubleshoot this issue:
 1. Find the API in the directory and get its specification
@@ -44,10 +46,10 @@ Please help me troubleshoot this issue:
 6. Include corrected code examples
 7. Recommend preventive measures and best practices
 
-Use the available tools to fetch the API specification and analyze the endpoints involved.`
-      }
-    }
-  ]
+Use the available tools to fetch the API specification and analyze the endpoints involved.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

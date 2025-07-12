@@ -1,24 +1,28 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
-  name: "api_auth_flow_generator", 
-  description: "Create interactive OAuth2 authentication flows with callback handlers",
+  name: "api_auth_flow_generator",
+  description:
+    "Create interactive OAuth2 authentication flows with callback handlers",
+  template:
+    "Generate OAuth2 flow for {{api_name}} API with redirect to {{redirect_uri}}",
+  category: "authentication",
   arguments: [
     {
       name: "api_name",
       description: "Name of the API requiring OAuth2 authentication",
-      required: true
+      required: true,
     },
     {
       name: "redirect_uri",
       description: "OAuth2 redirect URI for callbacks",
-      required: true
+      required: true,
     },
     {
       name: "scope_requirements",
       description: "Required OAuth2 scopes (comma-separated)",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -28,7 +32,7 @@ export const prompt: PromptTemplate = {
         text: `Generate OAuth2 authentication flow for the ${args.api_name} API.
 
 Redirect URI: ${args.redirect_uri}
-${args.scope_requirements ? `Required scopes: ${args.scope_requirements}` : 'Use all available scopes'}
+${args.scope_requirements ? `Required scopes: ${args.scope_requirements}` : "Use all available scopes"}
 
 Please create complete OAuth2 flow implementation:
 
@@ -59,7 +63,7 @@ Please create complete OAuth2 flow implementation:
 \`\`\`typescript
 // Generate authorization URL with PKCE
 const authUrl = oauth.getAuthorizationUrl({
-  scope: '${args.scope_requirements || 'read write'}',
+  scope: '${args.scope_requirements || "read write"}',
   redirectUri: '${args.redirect_uri}',
   state: secureRandomString(),
   codeChallenge: pkceChallenge,
@@ -126,10 +130,10 @@ oauth2/
 - Mobile app integration patterns
 - Browser security considerations
 
-Begin by analyzing the API's OAuth2 configuration and available flows.`
-      }
-    }
-  ]
+Begin by analyzing the API's OAuth2 configuration and available flows.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

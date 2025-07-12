@@ -1,19 +1,22 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_auth_test_harness",
   description: "Generate comprehensive authentication testing setup",
+  template:
+    "Generate authentication test harness for {{api_name}} API with {{test_credentials_location}} credentials",
+  category: "authentication",
   arguments: [
     {
-      name: "api_name", 
+      name: "api_name",
       description: "Name of the API to test authentication for",
-      required: true
+      required: true,
     },
     {
       name: "test_credentials_location",
       description: "Location of test credentials (env, config, mock)",
-      required: false
-    }
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -22,7 +25,7 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `Generate comprehensive authentication testing setup for the ${args.api_name} API.
 
-${args.test_credentials_location ? `Test credentials: ${args.test_credentials_location}` : 'Use mock credentials and servers'}
+${args.test_credentials_location ? `Test credentials: ${args.test_credentials_location}` : "Use mock credentials and servers"}
 
 Please create thorough authentication testing:
 
@@ -106,18 +109,26 @@ test-harness/
 - Error condition simulation
 
 **Test Credential Management:**
-${args.test_credentials_location === 'env' ? `
+${
+  args.test_credentials_location === "env"
+    ? `
 - Environment variable based credentials
 - Separate test environment configuration
 - Credential rotation testing
 - Secret management integration
-` : ''}
-${args.test_credentials_location === 'mock' || !args.test_credentials_location ? `
+`
+    : ""
+}
+${
+  args.test_credentials_location === "mock" || !args.test_credentials_location
+    ? `
 - Mock credential generation
 - Deterministic test tokens
 - Configurable expiration times
 - Invalid credential scenarios
-` : ''}
+`
+    : ""
+}
 
 **Performance Testing:**
 - Authentication latency measurement
@@ -131,10 +142,10 @@ ${args.test_credentials_location === 'mock' || !args.test_credentials_location ?
 - Injection attack protection
 - Cross-site request forgery tests
 
-Begin by analyzing the API's authentication methods to design comprehensive test coverage.`
-      }
-    }
-  ]
+Begin by analyzing the API's authentication methods to design comprehensive test coverage.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

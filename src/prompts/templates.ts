@@ -1,8 +1,8 @@
-import { PromptTemplate } from './types.js';
-import { PromptLoader } from './loader.js';
+import { PromptTemplate } from "./types.js";
+import { PromptLoader } from "./loader.js";
 
 // Re-export the PromptTemplate type for backward compatibility
-export { PromptTemplate } from './types.js';
+export { PromptTemplate } from "./types.js";
 
 // Create a global loader instance
 const loader = new PromptLoader();
@@ -26,21 +26,23 @@ export async function getAllPrompts(): Promise<PromptTemplate[]> {
 
 // Export prompts by category
 export async function getCoreDiscoveryPrompts(): Promise<PromptTemplate[]> {
-  return loader.getPromptsByCategory('core-discovery');
+  return loader.getPromptsByCategory("core-discovery");
 }
 
 export async function getActionOrientedPrompts(): Promise<PromptTemplate[]> {
-  return loader.getPromptsByCategory('action-oriented');
+  return loader.getPromptsByCategory("action-oriented");
 }
 
 export async function getAuthenticationPrompts(): Promise<PromptTemplate[]> {
-  return loader.getPromptsByCategory('authentication');
+  return loader.getPromptsByCategory("authentication");
 }
 
 // Get individual prompts by name
-export async function getPromptByName(name: string): Promise<PromptTemplate | undefined> {
+export async function getPromptByName(
+  name: string,
+): Promise<PromptTemplate | undefined> {
   await ensurePromptsLoaded();
-  return allPrompts.find(prompt => prompt.name === name);
+  return allPrompts.find((prompt) => prompt.name === name);
 }
 
 // Backward compatibility: synchronous export (will be empty until loaded)

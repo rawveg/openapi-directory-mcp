@@ -1,19 +1,22 @@
-import { PromptTemplate } from '../types.js';
+import { PromptTemplate } from "../types.js";
 
 export const prompt: PromptTemplate = {
   name: "api_comparison",
   description: "Compare multiple APIs for the same functionality",
+  template: "Compare {{apis}} APIs based on {{criteria}} criteria",
+  category: "core-discovery",
   arguments: [
     {
       name: "apis",
       description: "Comma-separated list of APIs to compare",
-      required: true
+      required: true,
     },
     {
       name: "criteria",
-      description: "Specific criteria to compare (e.g., 'pricing', 'features', 'documentation quality')",
-      required: false
-    }
+      description:
+        "Specific criteria to compare (e.g., 'pricing', 'features', 'documentation quality')",
+      required: false,
+    },
   ],
   generateMessages: (args) => [
     {
@@ -22,7 +25,7 @@ export const prompt: PromptTemplate = {
         type: "text",
         text: `I need to compare these APIs: ${args.apis}
 
-${args.criteria ? `Comparison criteria: ${args.criteria}` : ''}
+${args.criteria ? `Comparison criteria: ${args.criteria}` : ""}
 
 Please provide a detailed comparison:
 1. Find each API in the directory
@@ -38,10 +41,10 @@ Please provide a detailed comparison:
 4. Provide a recommendation matrix
 5. Suggest the best choice for different use cases
 
-Use the available tools to fetch and analyze each API's specification.`
-      }
-    }
-  ]
+Use the available tools to fetch and analyze each API's specification.`,
+      },
+    },
+  ],
 };
 
 export default prompt;

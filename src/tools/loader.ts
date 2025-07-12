@@ -1,8 +1,8 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { ToolDefinition, ToolCategory } from './types.js';
-import { ToolRegistry } from './registry.js';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { ToolDefinition, ToolCategory } from "./types.js";
+import { ToolRegistry } from "./registry.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,29 +21,30 @@ export class ToolLoader {
 
   private async scanAndLoadCategories(): Promise<void> {
     const toolsDir = __dirname;
-    
+
     try {
       const entries = fs.readdirSync(toolsDir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         if (entry.isDirectory() && this.isValidCategoryName(entry.name)) {
           await this.loadCategory(entry.name);
         }
       }
     } catch (error) {
-      console.error('Error scanning tools directory:', error);
+      console.error("Error scanning tools directory:", error);
       throw new Error(`Failed to scan tools directory: ${error}`);
     }
   }
 
   private async loadCategory(categoryName: string): Promise<void> {
     const categoryPath = path.join(__dirname, categoryName);
-    
+
     try {
-      const files = fs.readdirSync(categoryPath)
-        .filter(file => file.endsWith('.js') && !file.endsWith('.d.ts'))
-        .filter(file => file !== 'index.js'); // Skip index files
-      
+      const files = fs
+        .readdirSync(categoryPath)
+        .filter((file) => file.endsWith(".js") && !file.endsWith(".d.ts"))
+        .filter((file) => file !== "index.js"); // Skip index files
+
       for (const file of files) {
         await this.loadToolFile(categoryName, categoryPath, file);
       }
@@ -53,14 +54,18 @@ export class ToolLoader {
     }
   }
 
-  private async loadToolFile(categoryName: string, categoryPath: string, filename: string): Promise<void> {
+  private async loadToolFile(
+    categoryName: string,
+    categoryPath: string,
+    filename: string,
+  ): Promise<void> {
     const filePath = path.join(categoryPath, filename);
     const relativePath = path.relative(__dirname, filePath);
-    
+
     try {
       // Use dynamic import to load the module
-      const module = await import(`./${relativePath.replace(/\\/g, '/')}`);
-      
+      const module = await import(`./${relativePath.replace(/\\/g, "/")}`);
+
       let tool: ToolDefinition | undefined;
 
       // Try different export patterns
@@ -91,23 +96,27 @@ export class ToolLoader {
   }
 
   private isValidTool(obj: any): obj is ToolDefinition {
-    return obj && 
-           typeof obj === 'object' &&
-           typeof obj.name === 'string' &&
-           obj.name.length > 0 &&
-           typeof obj.description === 'string' &&
-           obj.description.length > 0 &&
-           typeof obj.execute === 'function' &&
-           obj.inputSchema !== undefined;
+    return (
+      obj &&
+      typeof obj === "object" &&
+      typeof obj.name === "string" &&
+      obj.name.length > 0 &&
+      typeof obj.description === "string" &&
+      obj.description.length > 0 &&
+      typeof obj.execute === "function" &&
+      obj.inputSchema !== undefined
+    );
   }
 
   private isValidCategoryName(name: string): boolean {
     // Skip hidden directories, node_modules, etc.
-    return !name.startsWith('.') && 
-           !name.startsWith('_') &&
-           name !== 'node_modules' &&
-           name !== 'dist' &&
-           name !== 'build';
+    return (
+      !name.startsWith(".") &&
+      !name.startsWith("_") &&
+      name !== "node_modules" &&
+      name !== "dist" &&
+      name !== "build"
+    );
   }
 
   getRegistry(): ToolRegistry {
@@ -119,10 +128,10 @@ export class ToolLoader {
       await this.scanAndLoadCategories();
       this.loaded = true;
     }
-    
-    return this.registry.getCategories().map(categoryName => ({
+
+    return this.registry.getCategories().map((categoryName) => ({
       name: categoryName,
-      tools: this.registry.getCategory(categoryName)
+      tools: this.registry.getCategory(categoryName),
     }));
   }
 
