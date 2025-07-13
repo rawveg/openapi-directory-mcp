@@ -176,22 +176,7 @@ jobs:
           npm whoami
           echo "✅ NPM authentication verified"
           
-      - name: Check if version already published
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          echo "🔍 Checking if version ${{ needs.pre-release-validation.outputs.version }} is already published..."
-          
-          if npm view openapi-directory-mcp@${{ needs.pre-release-validation.outputs.version }} version 2>/dev/null; then
-            echo "✅ Version ${{ needs.pre-release-validation.outputs.version }} already exists on NPM"
-            echo "ALREADY_PUBLISHED=true" >> $GITHUB_ENV
-          else
-            echo "📦 Version ${{ needs.pre-release-validation.outputs.version }} not found on NPM, proceeding with publish"
-            echo "ALREADY_PUBLISHED=false" >> $GITHUB_ENV
-          fi
-          
       - name: Publish to NPM
-        if: env.ALREADY_PUBLISHED == 'false'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
@@ -209,12 +194,6 @@ jobs:
           fi
           
           echo "✅ Successfully published to NPM"
-          
-      - name: Skip NPM publish
-        if: env.ALREADY_PUBLISHED == 'true'
-        run: |
-          echo "⏭️  Skipping NPM publish - version ${{ needs.pre-release-validation.outputs.version }} already exists"
-          echo "✅ NPM publish step completed (already published)"
           
       - name: Verify publication
         run: |

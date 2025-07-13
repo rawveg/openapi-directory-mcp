@@ -19,9 +19,6 @@ build/
 # IDE files
 .vscode/
 .idea/
-.claude/
-claude-flow
-CLAUDE.md
 *.swp
 *.swo
 *~

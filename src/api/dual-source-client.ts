@@ -4,6 +4,12 @@ import { CustomSpecClient } from "../custom-specs/custom-spec-client.js";
 import { MergeUtilities, MergedSearchResult } from "../utils/merge.js";
 import { ICacheManager } from "../cache/types.js";
 import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from "../types/api.js";
+import {
+  ProviderStats,
+  calculateProviderStats,
+  CACHE_KEYS,
+  CACHE_TTL,
+} from "../utils/version-data.js";
 
 /**
  * Triple-source API client that combines data from primary (APIs.guru), secondary, and custom sources
@@ -48,7 +54,7 @@ export class DualSourceApiClient {
    * List all providers from all three sources
    */
   async getProviders(): Promise<{ data: string[] }> {
-    return this.fetchWithCache("providers", async () => {
+    return this.fetchWithCache(CACHE_KEYS.PROVIDERS, async () => {
       const [primaryProviders, secondaryProviders, customProviders] =
         await Promise.allSettled([
           this.primaryClient.getProviders(),
@@ -80,25 +86,28 @@ export class DualSourceApiClient {
    * Custom specs take precedence over secondary and primary
    */
   async getProvider(provider: string): Promise<Record<string, ApiGuruAPI>> {
-    return this.fetchWithCache(`provider:${provider}`, async () => {
-      const [primaryAPIs, secondaryAPIs, customAPIs] = await Promise.allSettled(
-        [
-          this.primaryClient.getProvider(provider),
-          this.secondaryClient.getProvider(provider),
-          this.customClient.getProvider(provider),
-        ],
-      );
+    return this.fetchWithCache(
+      `${CACHE_KEYS.PROVIDER_PREFIX}${provider}`,
+      async () => {
+        const [primaryAPIs, secondaryAPIs, customAPIs] =
+          await Promise.allSettled([
+            this.primaryClient.getProvider(provider),
+            this.secondaryClient.getProvider(provider),
+            this.customClient.getProvider(provider),
+          ]);
 
-      const primary =
-        primaryAPIs.status === "fulfilled" ? primaryAPIs.value : {};
-      const secondary =
-        secondaryAPIs.status === "fulfilled" ? secondaryAPIs.value : {};
-      const custom = customAPIs.status === "fulfilled" ? customAPIs.value : {};
+        const primary =
+          primaryAPIs.status === "fulfilled" ? primaryAPIs.value : {};
+        const secondary =
+          secondaryAPIs.status === "fulfilled" ? secondaryAPIs.value : {};
+        const custom =
+          customAPIs.status === "fulfilled" ? customAPIs.value : {};
 
-      // Merge with custom taking highest precedence
-      const merged = MergeUtilities.mergeAPILists(primary, secondary);
-      return MergeUtilities.mergeAPILists(merged, custom);
-    });
+        // Merge with custom taking highest precedence
+        const merged = MergeUtilities.mergeAPILists(primary, secondary);
+        return MergeUtilities.mergeAPILists(merged, custom);
+      },
+    );
   }
 
   /**
@@ -1191,9 +1200,16 @@ export class DualSourceApiClient {
     return recent;
   }
 
-  async getProviderStats(provider: string): Promise<any> {
-    // Use primary client implementation for provider stats
-    return this.primaryClient.getProviderStats(provider);
+  async getProviderStats(provider: string): Promise<ProviderStats> {
+    return this.fetchWithCache(
+      `${CACHE_KEYS.STATS_PREFIX}${provider}`,
+      async () => {
+        // Get provider APIs from the appropriate source
+        const providerAPIs = await this.getProvider(provider);
+        return calculateProviderStats(providerAPIs);
+      },
+      CACHE_TTL.PROVIDER_STATS,
+    );
   }
 
   /**
