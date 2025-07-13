@@ -1092,6 +1092,43 @@ export class DualSourceApiClient {
   }
 
   async getOpenAPISpec(url: string): Promise<any> {
+    // Check if this is a custom API ID (format: custom:name:version)
+    if (url.startsWith("custom:")) {
+      const hasCustom = await this.customClient.hasAPI(url);
+
+      if (hasCustom) {
+        try {
+          // Extract name and version from the API ID
+          const [, name, version] = url.split(":");
+          if (!name || !version) {
+            throw new Error(
+              `Invalid custom API ID format: ${url}. Expected format: custom:name:version`,
+            );
+          }
+
+          // Get the OpenAPI spec from the custom client
+          const manifestManager = this.customClient.getManifestManager();
+          const specContent = manifestManager.readSpecFile(name, version);
+          const apiData = JSON.parse(specContent);
+
+          // Navigate to the actual OpenAPI spec (handle ApiGuruAPI format)
+          const preferredVersion = apiData.versions[apiData.preferred];
+          if (!preferredVersion || !preferredVersion.spec) {
+            throw new Error(`OpenAPI spec not available for: ${url}`);
+          }
+
+          return preferredVersion.spec;
+        } catch (error) {
+          throw new Error(
+            `Failed to load custom API spec: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      } else {
+        throw new Error(`Custom API not found: ${url}`);
+      }
+    }
+
+    // For regular URLs, use the primary client
     return await this.primaryClient.getOpenAPISpec(url);
   }
 
