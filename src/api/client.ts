@@ -2,6 +2,21 @@ import axios, { AxiosInstance } from "axios";
 import { ICacheManager } from "../cache/types.js";
 import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from "../types/api.js";
 
+/**
+ * Interface for version data in provider statistics
+ */
+interface VersionData {
+  updated: string;
+  added: string;
+  [key: string]: any; // Allow additional properties for flexibility
+}
+
+/**
+ * Constants for default date values
+ */
+const EPOCH_DATE = new Date(0);
+const DEFAULT_DATE = EPOCH_DATE;
+
 export class ApiClient {
   private http: AxiosInstance;
   private cache: ICacheManager;
@@ -51,10 +66,10 @@ export class ApiClient {
    */
   async getProvider(provider: string): Promise<Record<string, ApiGuruAPI>> {
     return this.fetchWithCache(`provider:${provider}`, async () => {
-      const response = await this.http.get<Record<string, ApiGuruAPI>>(
-        `/${provider}.json`,
-      );
-      return response.data;
+      const response = await this.http.get<{
+        apis: Record<string, ApiGuruAPI>;
+      }>(`/${provider}.json`);
+      return response.data.apis || {};
     });
   }
 
@@ -1274,15 +1289,38 @@ export class ApiClient {
       async () => {
         const providerAPIs = await this.getProvider(provider);
 
+        // Handle case where provider doesn't exist or returns empty result
+        if (!providerAPIs || Object.keys(providerAPIs).length === 0) {
+          return {
+            totalAPIs: 0,
+            totalVersions: 0,
+            latestUpdate: DEFAULT_DATE.toISOString(),
+            oldestAPI: "",
+            newestAPI: "",
+          };
+        }
+
         let totalVersions = 0;
-        let latestUpdate = new Date(0);
+        let latestUpdate = DEFAULT_DATE;
         let oldestAPI = "";
         let newestAPI = "";
         let oldestDate = new Date();
-        let newestDate = new Date(0);
+        let newestDate = DEFAULT_DATE;
 
         for (const [apiId, api] of Object.entries(providerAPIs)) {
-          const versions = Object.values(api.versions);
+          // Handle different API formats:
+          // - Secondary/Custom format: has 'versions' property with multiple versions
+          // - Primary format: API object is the version data directly
+          let versions: VersionData[];
+
+          if (api.versions && typeof api.versions === "object") {
+            // Secondary/Custom format
+            versions = Object.values(api.versions) as VersionData[];
+          } else {
+            // Primary format - treat the API object as a single version
+            versions = [api as unknown as VersionData];
+          }
+
           totalVersions += versions.length;
 
           for (const version of versions) {

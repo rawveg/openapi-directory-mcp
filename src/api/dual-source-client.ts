@@ -6,6 +6,21 @@ import { ICacheManager } from "../cache/types.js";
 import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from "../types/api.js";
 
 /**
+ * Interface for version data in provider statistics
+ */
+interface VersionData {
+  updated: string;
+  added: string;
+  [key: string]: any; // Allow additional properties for flexibility
+}
+
+/**
+ * Constants for default date values
+ */
+const EPOCH_DATE = new Date(0);
+const DEFAULT_DATE = EPOCH_DATE;
+
+/**
  * Triple-source API client that combines data from primary (APIs.guru), secondary, and custom sources
  * Precedence: Custom > Secondary > Primary (Custom always wins)
  */
@@ -1191,9 +1206,79 @@ export class DualSourceApiClient {
     return recent;
   }
 
-  async getProviderStats(provider: string): Promise<any> {
-    // Use primary client implementation for provider stats
-    return this.primaryClient.getProviderStats(provider);
+  async getProviderStats(provider: string): Promise<{
+    totalAPIs: number;
+    totalVersions: number;
+    latestUpdate: string;
+    oldestAPI: string;
+    newestAPI: string;
+  }> {
+    return this.fetchWithCache(`stats:${provider}`, async () => {
+      // Get provider APIs from the appropriate source
+      const providerAPIs = await this.getProvider(provider);
+
+      // Handle case where provider doesn't exist or returns empty result
+      if (!providerAPIs || Object.keys(providerAPIs).length === 0) {
+        return {
+          totalAPIs: 0,
+          totalVersions: 0,
+          latestUpdate: DEFAULT_DATE.toISOString(),
+          oldestAPI: "",
+          newestAPI: "",
+        };
+      }
+
+      let totalVersions = 0;
+      let latestUpdate = DEFAULT_DATE;
+      let oldestAPI = "";
+      let newestAPI = "";
+      let oldestDate = new Date();
+      let newestDate = DEFAULT_DATE;
+
+      for (const [apiId, api] of Object.entries(providerAPIs)) {
+        // Handle different API formats:
+        // - Secondary/Custom format: has 'versions' property with multiple versions
+        // - Primary format: API object is the version data directly
+        let versions: VersionData[];
+
+        if (api.versions && typeof api.versions === "object") {
+          // Secondary/Custom format
+          versions = Object.values(api.versions) as VersionData[];
+        } else {
+          // Primary format - treat the API object as a single version
+          versions = [api as unknown as VersionData];
+        }
+
+        totalVersions += versions.length;
+
+        for (const version of versions) {
+          const updated = new Date(version.updated);
+          const added = new Date(version.added);
+
+          if (updated > latestUpdate) {
+            latestUpdate = updated;
+          }
+
+          if (added < oldestDate) {
+            oldestDate = added;
+            oldestAPI = apiId;
+          }
+
+          if (added > newestDate) {
+            newestDate = added;
+            newestAPI = apiId;
+          }
+        }
+      }
+
+      return {
+        totalAPIs: Object.keys(providerAPIs).length,
+        totalVersions,
+        latestUpdate: latestUpdate.toISOString(),
+        oldestAPI,
+        newestAPI,
+      };
+    });
   }
 
   /**
