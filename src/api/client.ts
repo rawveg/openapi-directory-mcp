@@ -1,6 +1,12 @@
 import axios, { AxiosInstance } from "axios";
 import { ICacheManager } from "../cache/types.js";
 import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from "../types/api.js";
+import {
+  ProviderStats,
+  calculateProviderStats,
+  CACHE_KEYS,
+  CACHE_TTL,
+} from "../utils/version-data.js";
 
 export class ApiClient {
   private http: AxiosInstance;
@@ -38,7 +44,7 @@ export class ApiClient {
    * List all providers in the directory
    */
   async getProviders(): Promise<{ data: string[] }> {
-    return this.fetchWithCache("providers", async () => {
+    return this.fetchWithCache(CACHE_KEYS.PROVIDERS, async () => {
       const response = await this.http.get<{ data: string[] }>(
         "/providers.json",
       );
@@ -50,12 +56,15 @@ export class ApiClient {
    * List all APIs for a particular provider
    */
   async getProvider(provider: string): Promise<Record<string, ApiGuruAPI>> {
-    return this.fetchWithCache(`provider:${provider}`, async () => {
-      const response = await this.http.get<Record<string, ApiGuruAPI>>(
-        `/${provider}.json`,
-      );
-      return response.data;
-    });
+    return this.fetchWithCache(
+      `${CACHE_KEYS.PROVIDER_PREFIX}${provider}`,
+      async () => {
+        const response = await this.http.get<{
+          apis: Record<string, ApiGuruAPI>;
+        }>(`/${provider}.json`);
+        return response.data.apis || {};
+      },
+    );
   }
 
   /**
@@ -1262,58 +1271,14 @@ export class ApiClient {
   /**
    * Get API statistics for a provider
    */
-  async getProviderStats(provider: string): Promise<{
-    totalAPIs: number;
-    totalVersions: number;
-    latestUpdate: string;
-    oldestAPI: string;
-    newestAPI: string;
-  }> {
+  async getProviderStats(provider: string): Promise<ProviderStats> {
     return this.fetchWithCache(
-      `stats:${provider}`,
+      `${CACHE_KEYS.STATS_PREFIX}${provider}`,
       async () => {
         const providerAPIs = await this.getProvider(provider);
-
-        let totalVersions = 0;
-        let latestUpdate = new Date(0);
-        let oldestAPI = "";
-        let newestAPI = "";
-        let oldestDate = new Date();
-        let newestDate = new Date(0);
-
-        for (const [apiId, api] of Object.entries(providerAPIs)) {
-          const versions = Object.values(api.versions);
-          totalVersions += versions.length;
-
-          for (const version of versions) {
-            const updated = new Date(version.updated);
-            const added = new Date(version.added);
-
-            if (updated > latestUpdate) {
-              latestUpdate = updated;
-            }
-
-            if (added < oldestDate) {
-              oldestDate = added;
-              oldestAPI = apiId;
-            }
-
-            if (added > newestDate) {
-              newestDate = added;
-              newestAPI = apiId;
-            }
-          }
-        }
-
-        return {
-          totalAPIs: Object.keys(providerAPIs).length,
-          totalVersions,
-          latestUpdate: latestUpdate.toISOString(),
-          oldestAPI,
-          newestAPI,
-        };
+        return calculateProviderStats(providerAPIs);
       },
-      1800000,
-    ); // Cache for 30 minutes
+      CACHE_TTL.PROVIDER_STATS,
+    );
   }
 }
