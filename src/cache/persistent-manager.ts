@@ -1,7 +1,7 @@
-import { join } from 'path';
-import { homedir } from 'os';
-import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs';
-import { ICacheManager } from './types.js';
+import { join } from "path";
+import { homedir } from "os";
+import { mkdirSync, existsSync, readFileSync, writeFileSync } from "fs";
+import { ICacheManager } from "./types.js";
 
 interface CacheEntry {
   value: any;
@@ -18,16 +18,18 @@ export class PersistentCacheManager implements ICacheManager {
   private persistInterval: number = 5 * 60 * 1000; // 5 minutes
   private persistTimer?: ReturnType<typeof setInterval>;
 
-  constructor(ttlMs: number = 86400000) { // 24 hours default
-    this.enabled = process.env.DISABLE_CACHE !== 'true';
+  constructor(ttlMs: number = 86400000) {
+    // 24 hours default
+    this.enabled = process.env.DISABLE_CACHE !== "true";
     this.ttlMs = ttlMs;
     this.cacheData = new Map<string, CacheEntry>();
-    
+
     // Set up cache directory and file
-    this.cacheDir = process.env.OPENAPI_DIRECTORY_CACHE_DIR || 
-                    join(homedir(), '.cache', 'openapi-directory-mcp');
-    this.cacheFile = join(this.cacheDir, 'cache.json');
-    
+    this.cacheDir =
+      process.env.OPENAPI_DIRECTORY_CACHE_DIR ||
+      join(homedir(), ".cache", "openapi-directory-mcp");
+    this.cacheFile = join(this.cacheDir, "cache.json");
+
     if (this.enabled) {
       this.initializeCache();
     }
@@ -43,19 +45,18 @@ export class PersistentCacheManager implements ICacheManager {
 
       // Load existing cache data if it exists
       this.loadFromDisk();
-      
+
       console.error(`Persistent cache initialized: ${this.cacheFile}`);
-      
+
       // Set up automatic persistence interval
       this.persistTimer = setInterval(() => {
         this.persistToDisk();
       }, this.persistInterval);
-      
+
       // Clean expired entries on startup
       this.cleanExpired();
-      
     } catch (error) {
-      console.error('Failed to initialize persistent cache:', error);
+      console.error("Failed to initialize persistent cache:", error);
       this.enabled = false;
     }
   }
@@ -99,18 +100,19 @@ export class PersistentCacheManager implements ICacheManager {
     try {
       const effectiveTtl = ttlMs || this.ttlMs;
       const expires = effectiveTtl > 0 ? Date.now() + effectiveTtl : 0;
-      
+
       const entry: CacheEntry = {
         value,
         expires,
-        created: Date.now()
+        created: Date.now(),
       };
 
       this.cacheData.set(key, entry);
-      
-      const ttlSeconds = effectiveTtl > 0 ? Math.floor(effectiveTtl / 1000) : 'never';
+
+      const ttlSeconds =
+        effectiveTtl > 0 ? Math.floor(effectiveTtl / 1000) : "never";
       console.error(`Cache set: ${key} (TTL: ${ttlSeconds}s)`);
-      
+
       return true;
     } catch (error) {
       console.error(`Cache set error for key ${key}:`, error);
@@ -150,9 +152,9 @@ export class PersistentCacheManager implements ICacheManager {
 
     try {
       this.cacheData.clear();
-      console.error('Cache cleared');
+      console.error("Cache cleared");
     } catch (error) {
-      console.error('Cache clear error:', error);
+      console.error("Cache clear error:", error);
     }
   }
 
@@ -180,11 +182,11 @@ export class PersistentCacheManager implements ICacheManager {
     let ksize = 0;
     let vsize = 0;
 
-    keys.forEach(key => {
+    keys.forEach((key) => {
       const entry = this.cacheData.get(key);
       if (entry && entry.value !== undefined) {
-        ksize += Buffer.byteLength(key, 'utf8');
-        vsize += Buffer.byteLength(JSON.stringify(entry.value), 'utf8');
+        ksize += Buffer.byteLength(key, "utf8");
+        vsize += Buffer.byteLength(JSON.stringify(entry.value), "utf8");
       }
     });
 
@@ -208,7 +210,7 @@ export class PersistentCacheManager implements ICacheManager {
     try {
       return Array.from(this.cacheData.keys());
     } catch (error) {
-      console.error('Cache keys error:', error);
+      console.error("Cache keys error:", error);
       return [];
     }
   }
@@ -357,7 +359,7 @@ export class PersistentCacheManager implements ICacheManager {
         console.error(`Cleaned ${cleanedCount} expired cache entries`);
       }
     } catch (error) {
-      console.error('Cache cleanup error:', error);
+      console.error("Cache cleanup error:", error);
     }
   }
 
@@ -370,15 +372,15 @@ export class PersistentCacheManager implements ICacheManager {
     }
 
     try {
-      const data = readFileSync(this.cacheFile, 'utf8');
+      const data = readFileSync(this.cacheFile, "utf8");
       const cacheObject = JSON.parse(data);
-      
+
       // Convert the object back to a Map
       this.cacheData = new Map(Object.entries(cacheObject));
-      
+
       console.error(`Loaded ${this.cacheData.size} cache entries from disk`);
     } catch (error) {
-      console.error('Cache load error:', error);
+      console.error("Cache load error:", error);
       this.cacheData = new Map(); // Start with empty cache on error
     }
   }
@@ -390,9 +392,13 @@ export class PersistentCacheManager implements ICacheManager {
 
     try {
       const cacheObject = Object.fromEntries(this.cacheData.entries());
-      writeFileSync(this.cacheFile, JSON.stringify(cacheObject, null, 2), 'utf8');
+      writeFileSync(
+        this.cacheFile,
+        JSON.stringify(cacheObject, null, 2),
+        "utf8",
+      );
     } catch (error) {
-      console.error('Cache persistence error:', error);
+      console.error("Cache persistence error:", error);
     }
   }
 
