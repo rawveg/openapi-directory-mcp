@@ -574,4 +574,175 @@ export class CustomSpecClient {
       },
     };
   }
+
+  /**
+   * Get detailed information about a specific endpoint
+   */
+  async getEndpointDetails(
+    apiId: string,
+    method: string,
+    path: string,
+  ): Promise<{
+    method: string;
+    path: string;
+    summary?: string;
+    description?: string;
+    operationId?: string;
+    tags: string[];
+    deprecated?: boolean;
+    parameters: Array<{
+      name: string;
+      in: string;
+      required: boolean;
+      type: string;
+      description?: string;
+    }>;
+    responses: Array<{
+      code: string;
+      description: string;
+      content_types: string[];
+    }>;
+    consumes: string[];
+    produces: string[];
+    security?: Array<{
+      type: string;
+      scopes?: string[];
+    }>;
+  }> {
+    const cacheKey = `endpoint_details:${apiId}:${method.toLowerCase()}:${path}`;
+
+    return this.fetchWithCache(
+      cacheKey,
+      async () => {
+        // Get the custom spec - extract name and version from apiId
+        const [, name, version] = apiId.split(":");
+        if (!name || !version) {
+          throw new Error(
+            `Invalid custom API ID format: ${apiId}. Expected format: custom:name:version`,
+          );
+        }
+
+        const specEntry = this.manifestManager.getSpec(apiId);
+        if (!specEntry) {
+          throw new Error(`API not found: ${apiId}`);
+        }
+
+        // Load the OpenAPI spec - custom specs are stored in ApiGuruAPI format
+        const specContent = this.manifestManager.readSpecFile(name, version);
+        const apiData = JSON.parse(specContent);
+
+        // Navigate to the actual OpenAPI spec
+        const preferredVersion = apiData.versions[apiData.preferred];
+        if (!preferredVersion || !preferredVersion.spec) {
+          throw new Error(`OpenAPI spec not available for: ${apiId}`);
+        }
+
+        const spec = preferredVersion.spec;
+
+        if (!spec.paths || !spec.paths[path]) {
+          throw new Error(`Path not found: ${path} in API: ${apiId}`);
+        }
+
+        const pathItem = spec.paths[path];
+        const operation = pathItem[method.toLowerCase()];
+
+        if (!operation) {
+          throw new Error(
+            `Method ${method.toUpperCase()} not found for path: ${path} in API: ${apiId}`,
+          );
+        }
+
+        // Extract parameters
+        const parameters: Array<{
+          name: string;
+          in: string;
+          required: boolean;
+          type: string;
+          description?: string;
+        }> = [];
+
+        // Add path-level parameters
+        if (pathItem.parameters) {
+          for (const param of pathItem.parameters) {
+            parameters.push({
+              name: param.name,
+              in: param.in,
+              required: param.required || false,
+              type: param.schema?.type || param.type || "string",
+              description: param.description,
+            });
+          }
+        }
+
+        // Add operation-level parameters
+        if (operation.parameters) {
+          for (const param of operation.parameters) {
+            parameters.push({
+              name: param.name,
+              in: param.in,
+              required: param.required || false,
+              type: param.schema?.type || param.type || "string",
+              description: param.description,
+            });
+          }
+        }
+
+        // Extract responses
+        const responses: Array<{
+          code: string;
+          description: string;
+          content_types: string[];
+        }> = [];
+
+        if (operation.responses) {
+          for (const [code, response] of Object.entries(operation.responses)) {
+            const responseObj = response as any;
+            responses.push({
+              code,
+              description: responseObj.description || "",
+              content_types: responseObj.content
+                ? Object.keys(responseObj.content)
+                : [],
+            });
+          }
+        }
+
+        // Extract security requirements
+        const security: Array<{
+          type: string;
+          scopes?: string[];
+        }> = [];
+
+        const securityRequirements = operation.security || spec.security || [];
+        for (const securityReq of securityRequirements) {
+          for (const [securityName, scopes] of Object.entries(securityReq)) {
+            const securityScheme =
+              spec.components?.securitySchemes?.[securityName];
+            if (securityScheme) {
+              security.push({
+                type: securityScheme.type,
+                scopes: Array.isArray(scopes) ? scopes : [],
+              });
+            }
+          }
+        }
+
+        return {
+          method: method.toUpperCase(),
+          path,
+          summary: operation.summary,
+          description: operation.description,
+          operationId: operation.operationId,
+          tags: operation.tags || [],
+          deprecated: operation.deprecated || false,
+          parameters,
+          responses,
+          consumes: operation.consumes || spec.consumes || [],
+          produces: operation.produces || spec.produces || [],
+          ...(security.length > 0 && { security }),
+        };
+      },
+      600000,
+    ); // Cache for 10 minutes
+  }
 }

@@ -1003,9 +1003,9 @@ export class DualSourceApiClient {
 
     if (hasCustom) {
       try {
-        return await this.primaryClient.getEndpointDetails(apiId, method, path); // Use primary implementation
+        return await this.customClient.getEndpointDetails(apiId, method, path);
       } catch (error) {
-        // Fallback to secondary/primary
+        // Fallback to secondary/primary if custom implementation fails
       }
     }
 
@@ -1014,7 +1014,7 @@ export class DualSourceApiClient {
 
     if (hasSecondary) {
       try {
-        return await this.primaryClient.getEndpointDetails(apiId, method, path); // Use primary implementation
+        return await this.primaryClient.getEndpointDetails(apiId, method, path);
       } catch (error) {
         // Fallback to primary
       }
