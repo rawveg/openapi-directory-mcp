@@ -223,12 +223,15 @@ jobs:
           # Wait a moment for NPM to update
           sleep 10
           
-          # Check that the version is available
-          NPM_VERSION=$(npm view openapi-directory-mcp version)
-          if [ "$NPM_VERSION" = "${{ needs.pre-release-validation.outputs.version }}" ]; then
+          # Check that the specific version is available
+          if npm view openapi-directory-mcp@${{ needs.pre-release-validation.outputs.version }} version 2>/dev/null; then
+            NPM_VERSION=$(npm view openapi-directory-mcp@${{ needs.pre-release-validation.outputs.version }} version)
             echo "✅ Version ${{ needs.pre-release-validation.outputs.version }} successfully published"
+            echo "📦 Confirmed NPM version: $NPM_VERSION"
           else
-            echo "❌ Published version ($NPM_VERSION) doesn't match expected (${{ needs.pre-release-validation.outputs.version }})"
+            echo "❌ Version ${{ needs.pre-release-validation.outputs.version }} not found on NPM"
+            echo "🔍 Available versions:"
+            npm view openapi-directory-mcp versions --json | jq -r '.[-5:][]' 2>/dev/null || echo "Could not fetch version list"
             exit 1
           fi
           
