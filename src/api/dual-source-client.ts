@@ -4,21 +4,7 @@ import { CustomSpecClient } from "../custom-specs/custom-spec-client.js";
 import { MergeUtilities, MergedSearchResult } from "../utils/merge.js";
 import { ICacheManager } from "../cache/types.js";
 import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from "../types/api.js";
-
-/**
- * Interface for version data in provider statistics
- */
-interface VersionData {
-  updated: string;
-  added: string;
-  [key: string]: any; // Allow additional properties for flexibility
-}
-
-/**
- * Constants for default date values
- */
-const EPOCH_DATE = new Date(0);
-const DEFAULT_DATE = EPOCH_DATE;
+import { VersionData, DEFAULT_DATE } from "../utils/version-data.js";
 
 /**
  * Triple-source API client that combines data from primary (APIs.guru), secondary, and custom sources
