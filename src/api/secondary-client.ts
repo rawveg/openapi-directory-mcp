@@ -98,7 +98,7 @@ export class SecondaryApiClient {
       `api:${provider}:${service}:${api}`,
       async () => {
         const response = await this.http.get<ApiGuruAPI>(
-          `/specs/${provider}/${service}/${api}.json`,
+          `/specs/${provider}:${service}/${api}.json`,
         );
         return response.data;
       },
