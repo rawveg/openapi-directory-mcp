@@ -87,15 +87,26 @@ export class CustomSpecClient {
   }
 
   /**
-   * List all services for custom provider (not applicable - returns empty)
+   * List all services for custom provider (returns names of imported APIs)
    */
   async getServices(provider: string): Promise<ApiGuruServices> {
     if (provider !== "custom") {
       throw new Error(`Provider ${provider} not found in custom specs`);
     }
 
-    // Custom specs don't use services structure
-    return { data: [] };
+    return this.fetchWithCache(`services:${provider}`, async () => {
+      const specs = this.manifestManager.listSpecs();
+      const services = new Set<string>();
+
+      for (const specEntry of specs) {
+        const parsed = this.manifestManager.parseSpecId(specEntry.id);
+        if (parsed) {
+          services.add(parsed.name);
+        }
+      }
+
+      return { data: Array.from(services).sort() };
+    });
   }
 
   /**
