@@ -49,6 +49,15 @@ export const CACHE_KEYS = {
 } as const;
 
 /**
+ * Cache TTL constants for consistency across clients
+ */
+export const CACHE_TTL = {
+  PROVIDER_STATS: 1800000, // 30 minutes
+  PROVIDER_DATA: 3600000, // 1 hour
+  API_DATA: 600000, // 10 minutes
+} as const;
+
+/**
  * Safely parse a date string with validation
  */
 function safeParseDate(dateString: string): Date {
@@ -95,7 +104,7 @@ export function calculateProviderStats(
   let latestUpdate = DEFAULT_DATE;
   let oldestAPI = "";
   let newestAPI = "";
-  let oldestDate = new Date();
+  let oldestDate = new Date(8640000000000000); // Max safe date (far future)
   let newestDate = DEFAULT_DATE;
 
   for (const [apiId, api] of Object.entries(providerAPIs)) {

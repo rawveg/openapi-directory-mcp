@@ -5,6 +5,7 @@ import {
   ProviderStats,
   calculateProviderStats,
   CACHE_KEYS,
+  CACHE_TTL,
 } from "../utils/version-data.js";
 
 export class ApiClient {
@@ -1277,7 +1278,7 @@ export class ApiClient {
         const providerAPIs = await this.getProvider(provider);
         return calculateProviderStats(providerAPIs);
       },
-      1800000,
-    ); // Cache for 30 minutes
+      CACHE_TTL.PROVIDER_STATS,
+    );
   }
 }
