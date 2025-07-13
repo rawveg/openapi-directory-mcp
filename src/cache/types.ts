@@ -27,6 +27,15 @@ export interface ICacheManager {
     maxKeys: number;
   };
 
+  // Pattern-based invalidation and cache warming
+  invalidatePattern(pattern: string): number;
+  invalidateKeys(keys: string[]): number;
+  warmCache<T>(
+    key: string,
+    fetchFn: () => Promise<T>,
+    ttlMs?: number,
+  ): Promise<T>;
+
   // Optional methods for specific implementations
   getCacheDir?(): string;
   destroy?(): void;

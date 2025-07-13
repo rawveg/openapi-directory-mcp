@@ -14,6 +14,7 @@ export class PersistentCacheManager implements ICacheManager {
   private enabled: boolean;
   private cacheDir: string;
   private cacheFile: string;
+  private invalidateFlag: string;
   private ttlMs: number;
   private persistInterval: number = 5 * 60 * 1000; // 5 minutes
   private persistTimer?: ReturnType<typeof setInterval>;
@@ -29,6 +30,7 @@ export class PersistentCacheManager implements ICacheManager {
       process.env.OPENAPI_DIRECTORY_CACHE_DIR ||
       join(homedir(), ".cache", "openapi-directory-mcp");
     this.cacheFile = join(this.cacheDir, "cache.json");
+    this.invalidateFlag = join(this.cacheDir, ".invalidate");
 
     if (this.enabled) {
       this.initializeCache();
@@ -62,12 +64,31 @@ export class PersistentCacheManager implements ICacheManager {
   }
 
   /**
+   * Check for invalidation flag and clear cache if present
+   */
+  private checkInvalidationFlag(): void {
+    if (existsSync(this.invalidateFlag)) {
+      console.error("Cache invalidation flag detected, clearing cache...");
+      this.cacheData.clear();
+      try {
+        require("fs").unlinkSync(this.invalidateFlag);
+        console.error("Cache invalidation flag removed");
+      } catch (error) {
+        console.error("Failed to remove invalidation flag:", error);
+      }
+    }
+  }
+
+  /**
    * Get value from cache
    */
   get<T>(key: string): T | undefined {
     if (!this.enabled) {
       return undefined;
     }
+
+    // Check for invalidation flag before any cache operation
+    this.checkInvalidationFlag();
 
     try {
       const entry = this.cacheData.get(key);
@@ -328,6 +349,22 @@ export class PersistentCacheManager implements ICacheManager {
   }
 
   /**
+   * Create invalidation flag file to signal cache refresh needed
+   */
+  createInvalidationFlag(): void {
+    if (!this.enabled) {
+      return;
+    }
+
+    try {
+      writeFileSync(this.invalidateFlag, "", "utf-8");
+      console.error("Cache invalidation flag created");
+    } catch (error) {
+      console.error("Failed to create invalidation flag:", error);
+    }
+  }
+
+  /**
    * Get cache directory path
    */
   getCacheDir(): string {
@@ -399,6 +436,106 @@ export class PersistentCacheManager implements ICacheManager {
       );
     } catch (error) {
       console.error("Cache persistence error:", error);
+    }
+  }
+
+  /**
+   * Invalidate cache keys matching a pattern (supports * wildcard)
+   */
+  invalidatePattern(pattern: string): number {
+    if (!this.enabled) {
+      return 0;
+    }
+
+    try {
+      const keys = this.keys();
+      const regex = new RegExp("^" + pattern.replace(/\*/g, ".*") + "$");
+      let deletedCount = 0;
+
+      for (const key of keys) {
+        if (regex.test(key)) {
+          if (this.cacheData.delete(key)) {
+            deletedCount++;
+          }
+        }
+      }
+
+      if (deletedCount > 0) {
+        console.error(
+          `Cache invalidated ${deletedCount} keys matching pattern: ${pattern}`,
+        );
+      }
+
+      return deletedCount;
+    } catch (error) {
+      console.error(
+        `Cache invalidatePattern error for pattern ${pattern}:`,
+        error,
+      );
+      return 0;
+    }
+  }
+
+  /**
+   * Invalidate multiple specific cache keys
+   */
+  invalidateKeys(keys: string[]): number {
+    if (!this.enabled) {
+      return 0;
+    }
+
+    try {
+      let deletedCount = 0;
+
+      for (const key of keys) {
+        if (this.cacheData.delete(key)) {
+          deletedCount++;
+        }
+      }
+
+      if (deletedCount > 0) {
+        console.error(`Cache invalidated ${deletedCount} specific keys`);
+      }
+
+      return deletedCount;
+    } catch (error) {
+      console.error(`Cache invalidateKeys error:`, error);
+      return 0;
+    }
+  }
+
+  /**
+   * Cache warming - fetch data and store it in cache
+   */
+  async warmCache<T>(
+    key: string,
+    fetchFn: () => Promise<T>,
+    ttlMs?: number,
+  ): Promise<T> {
+    if (!this.enabled) {
+      // If cache is disabled, just fetch and return the data
+      return await fetchFn();
+    }
+
+    try {
+      // Check if we already have fresh data
+      const cached = this.get<T>(key);
+      if (cached !== undefined) {
+        return cached;
+      }
+
+      // Fetch fresh data
+      console.error(`Cache warming: ${key}`);
+      const data = await fetchFn();
+
+      // Store in cache
+      this.set(key, data, ttlMs);
+
+      return data;
+    } catch (error) {
+      console.error(`Cache warmCache error for key ${key}:`, error);
+      // On error, try to fetch without caching
+      return await fetchFn();
     }
   }
 

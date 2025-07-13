@@ -10,7 +10,7 @@
 ---
 
 
-A Model Context Protocol (MCP) server that provides access to the APIs.guru directory - the world's largest repository of OpenAPI specifications with over 3,000 API Specs from 600+ providers.
+A Model Context Protocol (MCP) server that provides access to the APIs.guru directory - the world's largest repository of OpenAPI specifications with over 3,000 API Specs from 600+ providers. **Now with custom OpenAPI spec import** - seamlessly integrate your own APIs alongside the public directory.
 
 ## Table of Contents
 
@@ -18,6 +18,7 @@ A Model Context Protocol (MCP) server that provides access to the APIs.guru dire
 - [Features](#features)
 - [Context Optimization & Progressive Discovery](#-context-optimization--progressive-discovery)
 - [Quick Start](#-quick-start)
+- [Custom OpenAPI Specifications](#-custom-openapi-specifications)
 - [Available Tools](#%EF%B8%8F-available-tools)
 - [Available Resources](#-available-resources)
 - [Available Prompts](#-available-prompts-context-optimized)
@@ -50,6 +51,8 @@ The source data is provided under the Creative Commons Zero v1.0 Universal Licen
 |-------------------------------|--------------------------------------------------------------|
 | **Zero Configuration**        | Works out of the box with sensible defaults                  |
 | **Comprehensive API Coverage**| Access to 3,000+ API specs from APIs.guru                    |
+| **Custom OpenAPI Import**     | Import and manage your own APIs with zero-touch integration  |
+| **Context-Aware Security**    | Smart security scanning with legitimate pattern recognition  |
 | **Context Optimized**         | Progressive discovery reduces context usage by ~95%          |
 | **Smart Search Results**      | Relevance ranking + newest versions first + provider priority |
 | **Intelligent Caching**       | 24-hour TTL persistent caching with management tools         |
@@ -248,7 +251,418 @@ claude mcp remove openapi-directory
 
 ---
 
+## 📁 Custom OpenAPI Specifications
+
+Import and manage your own OpenAPI specifications alongside the public API directory. Custom specs are treated as **first-class citizens** with complete integration across all tools and prompts.
+
+### ✨ Key Features
+
+- **🎯 Frictionless Import**: Single command import from files or URLs
+- **🔒 Context-Aware Security Scanning**: Intelligent detection of security issues with legitimate pattern recognition
+- **⚡ Zero-Touch Integration**: Works seamlessly with all 22 existing tools and prompts  
+- **🏆 Custom Always Wins**: Custom specs take precedence over any conflicts
+- **📊 Interactive Management**: Full CLI for listing, removing, and maintaining specs
+- **🔄 YAML/JSON Support**: Automatic conversion and validation
+- **📂 Hierarchical Storage**: Organized in `custom/name/version` structure
+
+### 🚀 Quick Start
+
+#### Import a Custom Spec
+
+```bash
+# Interactive guided import (recommended for first time)
+openapi-directory-mcp --import
+
+# Direct import from local file
+openapi-directory-mcp --import ./my-api.yaml --name my-api --version v1
+
+# Import from URL with strict security scanning
+openapi-directory-mcp --import https://api.example.com/openapi.json --name example-api --version v2 --strict-security
+
+# Import with custom security options
+openapi-directory-mcp --import ./internal-api.yaml --name internal-api --version v1 --skip-security
+```
+
+#### Manage Custom Specs
+
+```bash
+# List all imported custom specs
+openapi-directory-mcp --list-custom
+
+# Remove a custom spec
+openapi-directory-mcp --remove-custom my-api:v1
+
+# Re-run security scan on existing spec
+openapi-directory-mcp --rescan-security my-api:v1
+
+# Validate integrity of all custom specs
+openapi-directory-mcp --validate-integrity
+
+# Repair any integrity issues
+openapi-directory-mcp --repair-integrity
+```
+
+### 🛡️ Security Scanning
+
+Built-in context-aware security scanner that understands the difference between legitimate code patterns and actual security risks:
+
+#### Security Rules
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| **Code Injection** | Critical | Detects `eval()`, `exec()`, script injection patterns |
+| **Path Traversal** | High | Identifies `../`, directory traversal attempts |
+| **SQL Injection** | High | Finds SQL injection patterns and keywords |
+| **XSS Patterns** | High | Detects cross-site scripting vulnerabilities |
+| **Hardcoded Secrets** | Medium | Identifies API keys, tokens, passwords |
+| **Unsafe URLs** | Medium | Flags suspicious domains and protocols |
+| **Command Execution** | Critical | Detects system command execution patterns |
+
+#### Context-Aware Intelligence
+
+The scanner understands **legitimate patterns in examples**:
+
+```yaml
+# ✅ This is SAFE - Scanner recognizes it's in an example
+paths:
+  /logs/analyze:
+    post:
+      examples:
+        datadog_query:
+          value: 
+            query: "eval(sum:system.cpu.usage{*})"  # Datadog query syntax
+```
+
+#### Security Modes
+
+- **Normal** (default): Scans and reports issues, allows import
+- **Strict**: Blocks import if any high/critical issues found
+- **Skip**: Bypasses security scanning entirely
+
+### 📂 Storage Architecture
+
+Custom specs are stored in a hierarchical structure matching the API directory format:
+
+```
+~/.cache/openapi-directory-mcp/custom-specs/
+├── manifest.json                    # Master index of all custom specs
+└── custom/                          # All custom specs use "custom" provider
+    ├── my-api/
+    │   ├── v1.json                  # Normalized OpenAPI spec
+    │   └── v2.json
+    ├── internal-api/
+    │   └── v1.json
+    └── third-party-api/
+        └── v1.json
+```
+
+### 🔄 Triple-Source Architecture
+
+The MCP server now operates as a **triple-source system**:
+
+```mermaid
+graph TD
+    A[MCP Client Request] --> B[Triple-Source API Client]
+    B --> C[Custom Specs - Highest Priority]
+    B --> D[Secondary APIs - Medium Priority]  
+    B --> E[APIs.guru - Base Priority]
+    
+    C --> F{Found in Custom?}
+    F -->|Yes| G[Return Custom Result]
+    F -->|No| H{Found in Secondary?}
+    H -->|Yes| I[Return Secondary Result]
+    H -->|No| J[Return Primary Result]
+```
+
+**Precedence Rules**: Custom > Secondary > Primary (**Custom Always Wins**)
+
+### 🔧 CLI Reference
+
+#### Import Commands
+
+```bash
+--import [PATH/URL]     # Import spec (interactive if no path provided)
+--name NAME             # Specify name for the imported spec  
+--version VERSION       # Specify version for the imported spec
+--skip-security         # Skip security scanning during import
+--strict-security       # Block import on any medium+ security issues
+```
+
+#### Management Commands
+
+```bash
+--list-custom           # List all imported custom specs with details
+--remove-custom ID      # Remove a custom spec (format: name:version)
+--rescan-security ID    # Re-run security scan on existing spec
+--validate-integrity    # Check integrity of custom spec storage
+--repair-integrity      # Repair integrity issues automatically
+```
+
+#### General Commands
+
+```bash
+--help, -h              # Show help message with all commands
+```
+
+### 💡 Usage Examples
+
+#### Interactive Import Workflow
+
+```bash
+$ openapi-directory-mcp --import
+
+📋 Custom OpenAPI Spec Import Wizard
+==================================================
+
+📂 Enter the path or URL to your OpenAPI spec: ./company-api.yaml
+🔍 Validating specification...
+✅ Valid OpenAPI specification detected
+📝 Enter a name for this API: company-api
+🏷️  Enter a version identifier: v1.2.0
+🔒 Security scanning? (strict/normal/skip) [normal]: normal
+
+📦 Ready to import:
+   Source: ./company-api.yaml
+   Name: company-api
+   Version: v1.2.0
+   Security: normal
+
+Proceed with import? (Y/n): y
+
+📥 Importing OpenAPI spec from: ./company-api.yaml
+📝 Name: company-api, Version: v1.2.0
+🔍 Processing and validating specification...
+🔒 Security scan completed:
+✅ No security issues found
+💾 Storing specification...
+✅ Successfully imported custom spec: custom:company-api:v1.2.0
+```
+
+#### Direct Import Examples
+
+```bash
+# Import internal API with security scanning disabled
+openapi-directory-mcp --import ./internal-api.yaml --name internal --version v1 --skip-security
+
+# Import public API with strict security requirements
+openapi-directory-mcp --import https://api.github.com/openapi.json --name github --version v3 --strict-security
+
+# Import development API with normal security scanning
+openapi-directory-mcp --import ./dev-api.json --name dev-api --version latest
+```
+
+#### Management Examples
+
+```bash
+# List all custom specifications
+$ openapi-directory-mcp --list-custom
+
+📚 Custom OpenAPI Specifications (3)
+============================================================
+
+1. company-api:v1.2.0
+   📋 Company Internal API
+   📄 Internal API for company services and data access
+   📅 Imported: 12/15/2024 | 📊 156KB YAML
+   🔒 Security: ✅ 0 issues | 📦 Source: file
+
+2. github:v3
+   📋 GitHub REST API
+   📄 GitHub's REST API for repository and user management
+   📅 Imported: 12/14/2024 | 📊 2.1MB JSON
+   🔒 Security: ⚠️ 2 issues | 📦 Source: url
+
+3. dev-api:latest
+   📋 Development API
+   📄 Development environment API for testing
+   📅 Imported: 12/13/2024 | 📊 45KB JSON
+   🔒 Security: ✅ 0 issues | 📦 Source: file
+
+💾 Total: 3 specs, 2.3MB
+```
+
+### 🔌 Seamless Integration
+
+Once imported, custom specs work automatically with **all existing functionality** through intelligent API routing and parameter recognition:
+
+#### Tools Integration
+
+```javascript
+// All 22 tools work with custom specs automatically with intelligent routing
+
+// Search automatically prioritizes custom specs
+const results = await search_apis({ query: "company" });
+// Returns: custom:company-api:v1.2.0 first (if matches), then public APIs
+
+// Get details works with automatic parameter recognition
+const details = await get_api_summary({ api_id: "custom:company-api:v1.2.0" });
+
+// Endpoint analysis works identically with smart routing
+const endpoints = await get_endpoints({ api_id: "custom:company-api:v1.2.0" });
+```
+
+#### Prompts Integration
+
+```bash
+# All 22 prompts work with custom specs automatically
+
+# API discovery finds custom specs first
+/openapi-directory:api_discovery
+# Arguments: { use_case: "internal data access" }
+# Result: Discovers and recommends custom:company-api:v1.2.0
+
+# Integration guides work seamlessly
+/openapi-directory:api_integration_guide  
+# Arguments: { api_name: "custom:company-api:v1.2.0", language: "Python" }
+# Result: Complete integration guide using your custom spec
+
+# Code generation uses custom specs
+/openapi-directory:code_generation
+# Arguments: { api_id: "custom:company-api:v1.2.0", endpoint: "/users" }
+# Result: Generated code for your custom API endpoints
+```
+
+#### Resources Integration
+
+```javascript
+// Resources automatically include custom specs with priority handling
+
+// Providers list dynamically includes "custom" when specs exist
+const providers = await readResource("openapi://providers");
+// Returns: [..., "custom"] (only when custom specs are imported)
+
+// Paginated APIs automatically prioritize custom specs
+const apis = await readResource("openapi://apis/page/1");
+// Custom specs appear first, then public APIs
+
+// Summary automatically aggregates custom specs in metrics
+const summary = await readResource("openapi://apis/summary");
+// Directory counts and popular lists seamlessly include custom specs
+```
+
+### 🎯 Best Practices
+
+#### Naming Conventions
+
+```bash
+# Use semantic versioning
+--name my-api --version v1.0.0
+--name my-api --version v1.1.0-beta
+
+# Use descriptive names
+--name user-management-api --version v2
+--name payment-gateway-api --version production
+--name analytics-api --version latest
+```
+
+#### Security Recommendations
+
+```bash
+# For production APIs, use strict scanning
+--strict-security
+
+# For internal/development APIs, use normal scanning
+# (default behavior)
+
+# Only skip security for trusted, internal-only APIs
+--skip-security
+```
+
+#### Version Management
+
+```bash
+# Import new versions as separate entries
+openapi-directory-mcp --import ./api-v1.yaml --name my-api --version v1
+openapi-directory-mcp --import ./api-v2.yaml --name my-api --version v2
+
+# Remove old versions when no longer needed
+openapi-directory-mcp --remove-custom my-api:v1
+```
+
+#### Storage Maintenance
+
+```bash
+# Regular integrity checks
+openapi-directory-mcp --validate-integrity
+
+# Automatic repairs when needed
+openapi-directory-mcp --repair-integrity
+
+# Clean up unused specs
+openapi-directory-mcp --list-custom  # Review list
+openapi-directory-mcp --remove-custom old-api:v1
+```
+
+### 🚨 Error Handling
+
+#### Common Import Issues
+
+| Error | Cause | Solution |
+|-------|--------|----------|
+| **Invalid OpenAPI spec** | Malformed YAML/JSON | Validate spec with OpenAPI tools |
+| **Name already exists** | Duplicate name:version | Use different version or remove existing |
+| **Security issues found** | Potential security risks | Review issues, use `--skip-security` if safe |
+| **File not found** | Invalid path | Check file path and permissions |
+| **Network error** | URL unreachable | Verify URL and network connectivity |
+
+#### Integrity Issues
+
+```bash
+# Check for issues
+$ openapi-directory-mcp --validate-integrity
+❌ Found 2 integrity issues:
+   • Missing spec file: custom:old-api:v1
+   • Orphaned file: custom/unknown-api/v1.json
+
+# Repair automatically
+$ openapi-directory-mcp --repair-integrity
+✅ Repaired 2 issues:
+   • Removed orphaned manifest entry: custom:old-api:v1
+   • Cleaned up orphaned file: custom/unknown-api/v1.json
+```
+
+### 🔧 Environment Configuration
+
+Custom specs respect the same environment variables:
+
+```bash
+# Change cache directory for custom specs
+export OPENAPI_DIRECTORY_CACHE_DIR=/custom/cache/path
+
+# Custom specs will be stored at:
+# /custom/cache/path/custom-specs/
+```
+
+### ⚡ Automatic Cache Invalidation
+
+The system uses a **flag file approach** for seamless cache synchronization between CLI operations and the running MCP server:
+
+#### How It Works
+1. **Import/Remove Operations**: When you import or remove custom specs via CLI, a `.invalidate` flag file is created
+2. **Automatic Detection**: The MCP server checks for this flag on every cache access
+3. **Instant Invalidation**: If the flag exists, cache is cleared and the flag is removed
+4. **Zero Restart Required**: Changes are immediately visible without restarting Claude Desktop or the MCP server
+
+#### Technical Benefits
+- **Cross-Process Communication**: CLI and MCP server communicate via filesystem flags
+- **Immediate Consistency**: No stale cache issues when importing new specs
+- **Performance Optimized**: Only invalidates when actual changes occur
+- **Bulletproof**: Works across all operating systems and process architectures
+
+```bash
+# This workflow now works seamlessly:
+openapi-directory-mcp --import ./new-api.yaml --name new-api --version v1
+# ↑ Creates .invalidate flag
+
+# Immediately available in Claude Desktop (no restart needed)
+# ↑ MCP server detects flag, clears cache, removes flag
+```
+
+---
+
 ## 🛠️ Available Tools
+
+**All 22 tools seamlessly support custom imported APIs with zero configuration required.** Custom APIs are automatically prioritized in search results and tool responses.
 
 ### Core API Discovery Tools (Context Optimized)
 
@@ -260,7 +674,7 @@ claude mcp remove openapi-directory
 | `get_api`             | Get detailed API information                   |
 | `list_all_apis`       | ⚠️ **Use with caution** - Returns massive data |
 | `get_metrics`         | Directory statistics                           |
-| `search_apis`         | 🎯 **Smart search**: relevance ranking + newest versions first (20/page) |
+| `search_apis`         | 🎯 **Smart search**: custom APIs first + relevance ranking + newest versions (20/page) |
 
 ### Progressive Discovery Tools (Recommended)
 
@@ -478,13 +892,47 @@ const popularApis = await get_popular_apis({ limit: 10 });
 
 The server uses a modular, context-optimized architecture:
 
-- **Dual-Source API Client**: Handles communication with both APIs.guru and secondary API sources
-- **Persistent Cache Manager**: Implements 24-hour TTL filesystem caching with management tools
+- **Triple-Source API Client**: Handles communication with APIs.guru, secondary APIs, and custom imported specs
+- **Enhanced Dual-Source Routing**: Intelligent API resolution with custom-first precedence and fallback handling
+- **Custom Spec Management**: Complete import, storage, and lifecycle management for user-provided OpenAPI specs
+- **Context-Aware Security Scanner**: Intelligent security analysis with legitimate pattern recognition  
+- **Flag-Based Cache Invalidation**: Automatic cross-process cache synchronization using filesystem flags
+- **Persistent Cache Manager**: Implements 24-hour TTL filesystem caching with real-time invalidation
+- **CLI Interface**: Full-featured command-line tool with interactive wizards and batch operations
 - **Tool Generator**: Creates MCP tools with pagination and context limits
 - **Resource Handler**: Manages paginated resource streaming (20 pages of 50 APIs each)
 - **Progressive Discovery**: Smart workflow guides preventing context saturation
 - **Prompt System**: 22 context-aware prompts using efficient discovery patterns
 - **Cache Management**: 5 tools for cache inspection and maintenance
+
+### New in v1.3.0
+
+#### Hybrid CLI/MCP Architecture
+The application now operates in **dual mode**:
+- **CLI Mode**: When arguments are provided, runs as a command-line tool for spec management
+- **MCP Mode**: When no arguments are provided, runs as an MCP server for Claude Desktop
+
+```bash
+# CLI Mode - Import management
+openapi-directory-mcp --import ./api.yaml --name my-api --version v1
+
+# MCP Mode - Service for Claude Desktop  
+openapi-directory-mcp  # Starts MCP server
+```
+
+#### Enhanced API Client Architecture
+```
+DualSourceClient
+├── Custom API Detection & Routing
+├── Parameter Pattern Recognition  
+├── Fallback Chain Management
+└── Cache-Aware Resolution
+
+Custom Provider Handling:
+  provider="custom" + service="APIName" 
+  → Routes to: customClient.getAPI("custom", "APIName")
+  → Bypasses standard provider:service:version pattern
+```
 
 ---
 

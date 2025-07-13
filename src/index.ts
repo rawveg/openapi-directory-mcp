@@ -526,9 +526,32 @@ export class OpenAPIDirectoryServer {
 // Export alias for compatibility with tests
 export { OpenAPIDirectoryServer as MCPServer };
 
-// Start the server
-const server = new OpenAPIDirectoryServer();
-server.start().catch((error) => {
-  console.error("Failed to start server:", error);
+// CLI handler for custom spec management
+import { CLIHandler } from "./cli/cli-handler.js";
+
+async function main() {
+  // Parse command line arguments (skip 'node' and script name)
+  const args = process.argv.slice(2);
+
+  // Handle CLI commands if any are provided
+  if (args.length > 0) {
+    const cliHandler = new CLIHandler();
+    const parsedArgs = cliHandler.parseArgs(args);
+    const handled = await cliHandler.handleCommand(parsedArgs);
+
+    // If command was handled, exit
+    if (handled) {
+      process.exit(0);
+    }
+  }
+
+  // No CLI commands, start the MCP server
+  const server = new OpenAPIDirectoryServer();
+  await server.start();
+}
+
+// Start the application
+main().catch((error) => {
+  console.error("Failed to start:", error);
   process.exit(1);
 });

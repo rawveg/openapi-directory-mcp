@@ -240,4 +240,100 @@ export class CacheManager implements ICacheManager {
       maxKeys: this.cache.options.maxKeys || 1000,
     };
   }
+
+  /**
+   * Invalidate cache keys matching a pattern (supports * wildcard)
+   */
+  invalidatePattern(pattern: string): number {
+    if (!this.enabled) {
+      return 0;
+    }
+
+    try {
+      const keys = this.keys();
+      const regex = new RegExp("^" + pattern.replace(/\*/g, ".*") + "$");
+      let deletedCount = 0;
+
+      for (const key of keys) {
+        if (regex.test(key)) {
+          deletedCount += this.cache.del(key);
+        }
+      }
+
+      if (deletedCount > 0) {
+        console.error(
+          `Cache invalidated ${deletedCount} keys matching pattern: ${pattern}`,
+        );
+      }
+
+      return deletedCount;
+    } catch (error) {
+      console.error(
+        `Cache invalidatePattern error for pattern ${pattern}:`,
+        error,
+      );
+      return 0;
+    }
+  }
+
+  /**
+   * Invalidate multiple specific cache keys
+   */
+  invalidateKeys(keys: string[]): number {
+    if (!this.enabled) {
+      return 0;
+    }
+
+    try {
+      let deletedCount = 0;
+
+      for (const key of keys) {
+        deletedCount += this.cache.del(key);
+      }
+
+      if (deletedCount > 0) {
+        console.error(`Cache invalidated ${deletedCount} specific keys`);
+      }
+
+      return deletedCount;
+    } catch (error) {
+      console.error(`Cache invalidateKeys error:`, error);
+      return 0;
+    }
+  }
+
+  /**
+   * Cache warming - fetch data and store it in cache
+   */
+  async warmCache<T>(
+    key: string,
+    fetchFn: () => Promise<T>,
+    ttlMs?: number,
+  ): Promise<T> {
+    if (!this.enabled) {
+      // If cache is disabled, just fetch and return the data
+      return await fetchFn();
+    }
+
+    try {
+      // Check if we already have fresh data
+      const cached = this.get<T>(key);
+      if (cached !== undefined) {
+        return cached;
+      }
+
+      // Fetch fresh data
+      console.error(`Cache warming: ${key}`);
+      const data = await fetchFn();
+
+      // Store in cache
+      this.set(key, data, ttlMs);
+
+      return data;
+    } catch (error) {
+      console.error(`Cache warmCache error for key ${key}:`, error);
+      // On error, try to fetch without caching
+      return await fetchFn();
+    }
+  }
 }
