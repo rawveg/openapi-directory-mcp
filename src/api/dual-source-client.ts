@@ -4,7 +4,11 @@ import { CustomSpecClient } from "../custom-specs/custom-spec-client.js";
 import { MergeUtilities, MergedSearchResult } from "../utils/merge.js";
 import { ICacheManager } from "../cache/types.js";
 import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from "../types/api.js";
-import { VersionData, DEFAULT_DATE } from "../utils/version-data.js";
+import {
+  ProviderStats,
+  calculateProviderStats,
+  CACHE_KEYS,
+} from "../utils/version-data.js";
 
 /**
  * Triple-source API client that combines data from primary (APIs.guru), secondary, and custom sources
@@ -49,7 +53,7 @@ export class DualSourceApiClient {
    * List all providers from all three sources
    */
   async getProviders(): Promise<{ data: string[] }> {
-    return this.fetchWithCache("providers", async () => {
+    return this.fetchWithCache(CACHE_KEYS.PROVIDERS, async () => {
       const [primaryProviders, secondaryProviders, customProviders] =
         await Promise.allSettled([
           this.primaryClient.getProviders(),
@@ -81,25 +85,28 @@ export class DualSourceApiClient {
    * Custom specs take precedence over secondary and primary
    */
   async getProvider(provider: string): Promise<Record<string, ApiGuruAPI>> {
-    return this.fetchWithCache(`provider:${provider}`, async () => {
-      const [primaryAPIs, secondaryAPIs, customAPIs] = await Promise.allSettled(
-        [
-          this.primaryClient.getProvider(provider),
-          this.secondaryClient.getProvider(provider),
-          this.customClient.getProvider(provider),
-        ],
-      );
+    return this.fetchWithCache(
+      `${CACHE_KEYS.PROVIDER_PREFIX}${provider}`,
+      async () => {
+        const [primaryAPIs, secondaryAPIs, customAPIs] =
+          await Promise.allSettled([
+            this.primaryClient.getProvider(provider),
+            this.secondaryClient.getProvider(provider),
+            this.customClient.getProvider(provider),
+          ]);
 
-      const primary =
-        primaryAPIs.status === "fulfilled" ? primaryAPIs.value : {};
-      const secondary =
-        secondaryAPIs.status === "fulfilled" ? secondaryAPIs.value : {};
-      const custom = customAPIs.status === "fulfilled" ? customAPIs.value : {};
+        const primary =
+          primaryAPIs.status === "fulfilled" ? primaryAPIs.value : {};
+        const secondary =
+          secondaryAPIs.status === "fulfilled" ? secondaryAPIs.value : {};
+        const custom =
+          customAPIs.status === "fulfilled" ? customAPIs.value : {};
 
-      // Merge with custom taking highest precedence
-      const merged = MergeUtilities.mergeAPILists(primary, secondary);
-      return MergeUtilities.mergeAPILists(merged, custom);
-    });
+        // Merge with custom taking highest precedence
+        const merged = MergeUtilities.mergeAPILists(primary, secondary);
+        return MergeUtilities.mergeAPILists(merged, custom);
+      },
+    );
   }
 
   /**
@@ -1192,79 +1199,15 @@ export class DualSourceApiClient {
     return recent;
   }
 
-  async getProviderStats(provider: string): Promise<{
-    totalAPIs: number;
-    totalVersions: number;
-    latestUpdate: string;
-    oldestAPI: string;
-    newestAPI: string;
-  }> {
-    return this.fetchWithCache(`stats:${provider}`, async () => {
-      // Get provider APIs from the appropriate source
-      const providerAPIs = await this.getProvider(provider);
-
-      // Handle case where provider doesn't exist or returns empty result
-      if (!providerAPIs || Object.keys(providerAPIs).length === 0) {
-        return {
-          totalAPIs: 0,
-          totalVersions: 0,
-          latestUpdate: DEFAULT_DATE.toISOString(),
-          oldestAPI: "",
-          newestAPI: "",
-        };
-      }
-
-      let totalVersions = 0;
-      let latestUpdate = DEFAULT_DATE;
-      let oldestAPI = "";
-      let newestAPI = "";
-      let oldestDate = new Date();
-      let newestDate = DEFAULT_DATE;
-
-      for (const [apiId, api] of Object.entries(providerAPIs)) {
-        // Handle different API formats:
-        // - Secondary/Custom format: has 'versions' property with multiple versions
-        // - Primary format: API object is the version data directly
-        let versions: VersionData[];
-
-        if (api.versions && typeof api.versions === "object") {
-          // Secondary/Custom format
-          versions = Object.values(api.versions) as VersionData[];
-        } else {
-          // Primary format - treat the API object as a single version
-          versions = [api as unknown as VersionData];
-        }
-
-        totalVersions += versions.length;
-
-        for (const version of versions) {
-          const updated = new Date(version.updated);
-          const added = new Date(version.added);
-
-          if (updated > latestUpdate) {
-            latestUpdate = updated;
-          }
-
-          if (added < oldestDate) {
-            oldestDate = added;
-            oldestAPI = apiId;
-          }
-
-          if (added > newestDate) {
-            newestDate = added;
-            newestAPI = apiId;
-          }
-        }
-      }
-
-      return {
-        totalAPIs: Object.keys(providerAPIs).length,
-        totalVersions,
-        latestUpdate: latestUpdate.toISOString(),
-        oldestAPI,
-        newestAPI,
-      };
-    });
+  async getProviderStats(provider: string): Promise<ProviderStats> {
+    return this.fetchWithCache(
+      `${CACHE_KEYS.STATS_PREFIX}${provider}`,
+      async () => {
+        // Get provider APIs from the appropriate source
+        const providerAPIs = await this.getProvider(provider);
+        return calculateProviderStats(providerAPIs);
+      },
+    );
   }
 
   /**
