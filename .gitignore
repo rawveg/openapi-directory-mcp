@@ -21,6 +21,7 @@ build/
 .idea/
 .claude/
 claude-flow
+CLAUDE.md
 *.swp
 *.swo
 *~

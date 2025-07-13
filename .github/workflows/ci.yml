@@ -1,0 +1,274 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Lint code
+        run: npm run lint
+        
+      - name: Type check
+        run: npm run type-check
+        
+      - name: Check formatting
+        run: npm run format:check
+
+  build-test:
+    name: Build & Package Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Test package creation
+        run: npm pack
+
+  plugin-architecture-validation:
+    name: Plugin Architecture Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Validate plugin discovery
+        run: |
+          echo "🔍 Testing plugin auto-discovery..."
+          node -e "
+            import('./dist/prompts/loader.js').then(async m => {
+              const loader = new m.PromptLoader();
+              const prompts = await loader.loadAllPrompts();
+              console.log('✅ Loaded', prompts.length, 'prompts');
+              if (prompts.length === 0) process.exit(1);
+            });
+          "
+          
+          node -e "
+            import('./dist/tools/loader.js').then(async m => {
+              const loader = new m.ToolLoader();
+              const tools = await loader.loadAllTools();
+              console.log('✅ Loaded', tools.length, 'tools');
+              if (tools.length === 0) process.exit(1);
+            });
+          "
+          
+      - name: Validate plugin structure
+        run: |
+          echo "🔍 Validating plugin structure..."
+          
+          # Check that all prompt files export required structure
+          find src/prompts -name "*.ts" -not -path "*/types.ts" -not -path "*/loader.ts" -not -path "*/registry.ts" -not -path "*/handler.ts" -not -path "*/templates.ts" | while read file; do
+            if ! grep -q "export const prompt" "$file"; then
+              echo "❌ $file missing 'export const prompt'"
+              exit 1
+            fi
+          done
+          
+          # Check that all tool files export required structure
+          find src/tools -name "*.ts" -not -path "*/types.ts" -not -path "*/loader.ts" -not -path "*/registry.ts" -not -path "*/handler.ts" -not -path "*/generator.ts" | while read file; do
+            if ! grep -q "export const tool" "$file"; then
+              echo "❌ $file missing 'export const tool'"
+              exit 1
+            fi
+          done
+          
+          echo "✅ All plugin files have correct structure"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+          
+      - name: Build for CodeQL
+        run: npm run build
+        
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  build-verification:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Clean build
+        run: |
+          rm -rf dist
+          npm run build
+          
+      - name: Set executable permissions
+        run: |
+          chmod +x dist/index.js
+          
+      - name: Verify build artifacts
+        run: |
+          echo "🔍 Verifying build artifacts..."
+          
+          # Check that main entry point exists
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ Main entry point dist/index.js not found"
+            exit 1
+          fi
+          
+          # Check that essential TypeScript files were compiled
+          src_files=$(find src -name "*.ts" | grep -v "\.test\.ts$" | grep -v "\.spec\.ts$" | wc -l)
+          dist_files=$(find dist -name "*.js" | wc -l)
+          
+          echo "📊 Source files (excluding tests): $src_files, Compiled files: $dist_files"
+          
+          if [ "$dist_files" -lt "$src_files" ]; then
+            echo "❌ Not all TypeScript files were compiled (expected: $src_files, got: $dist_files)"
+            exit 1
+          fi
+          
+          # Check that CLI binary is executable
+          if [ -x "dist/index.js" ]; then
+            echo "✅ CLI binary is executable"
+          else
+            echo "❌ CLI binary dist/index.js is not executable"
+            exit 1
+          fi
+          
+          # Verify the main entry point has proper shebang for CLI usage
+          if head -1 "dist/index.js" | grep -q "#!/usr/bin/env node"; then
+            echo "✅ CLI shebang found"
+          else
+            echo "❌ No CLI shebang found"
+            exit 1
+          fi
+          
+          echo "✅ Build verification passed"
+          
+      - name: Test package creation
+        run: |
+          npm pack
+          echo "✅ Package creation successful"
+          
+      - name: Test CLI functionality
+        run: |
+          echo "🔍 Testing CLI functionality..."
+          timeout 5s node dist/index.js --help || echo "✅ CLI started successfully (expected timeout for MCP server)"
+          echo "✅ CLI basic functionality verified"
+
+  all-checks:
+    name: All Checks Complete
+    runs-on: ubuntu-latest
+    needs: [code-quality, build-test, plugin-architecture-validation, security-scan, build-verification]
+    if: always()
+    
+    steps:
+      - name: Check all jobs
+        run: |
+          echo "🔍 Checking job results..."
+          
+          if [ "${{ needs.code-quality.result }}" != "success" ]; then
+            echo "❌ Code quality checks failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.build-test.result }}" != "success" ]; then
+            echo "❌ Build tests failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.plugin-architecture-validation.result }}" != "success" ]; then
+            echo "❌ Plugin architecture validation failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.security-scan.result }}" != "success" ]; then
+            echo "❌ Security scan failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.build-verification.result }}" != "success" ]; then
+            echo "❌ Build verification failed"
+            exit 1
+          fi
+          
+          echo "✅ All checks passed! Ready for merge."

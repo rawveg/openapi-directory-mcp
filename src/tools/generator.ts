@@ -1,4 +1,4 @@
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { Tool } from "@modelcontextprotocol/sdk/types.js";
 
 export class ToolGenerator {
   /**
@@ -7,119 +7,123 @@ export class ToolGenerator {
   async generateTools(): Promise<Tool[]> {
     const tools: Tool[] = [
       {
-        name: 'get_providers',
-        description: 'List all API providers in the directory',
+        name: "get_providers",
+        description: "List all API providers in the directory",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {},
           required: [],
         },
       },
       {
-        name: 'get_provider_apis',
-        description: 'List all APIs for a specific provider',
+        name: "get_provider_apis",
+        description: "List all APIs for a specific provider",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             provider: {
-              type: 'string',
-              description: 'Provider name (e.g., "googleapis.com", "azure.com")',
+              type: "string",
+              description:
+                'Provider name (e.g., "googleapis.com", "azure.com")',
             },
           },
-          required: ['provider'],
+          required: ["provider"],
         },
       },
       {
-        name: 'get_provider_services',
-        description: 'List all services for a specific provider',
+        name: "get_provider_services",
+        description: "List all services for a specific provider",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             provider: {
-              type: 'string',
-              description: 'Provider name (e.g., "googleapis.com", "azure.com")',
+              type: "string",
+              description:
+                'Provider name (e.g., "googleapis.com", "azure.com")',
             },
           },
-          required: ['provider'],
+          required: ["provider"],
         },
       },
       {
-        name: 'get_api',
-        description: 'Get detailed information about a specific API',
+        name: "get_api",
+        description: "Get detailed information about a specific API",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             provider: {
-              type: 'string',
-              description: 'Provider name (e.g., "googleapis.com", "azure.com")',
+              type: "string",
+              description:
+                'Provider name (e.g., "googleapis.com", "azure.com")',
             },
             api: {
-              type: 'string',
+              type: "string",
               description: 'API version (e.g., "v3", "2.0")',
             },
             service: {
-              type: 'string',
-              description: 'Service name (optional, required for some APIs)',
+              type: "string",
+              description: "Service name (optional, required for some APIs)",
             },
           },
-          required: ['provider', 'api'],
+          required: ["provider", "api"],
         },
       },
       {
-        name: 'list_all_apis',
-        description: 'List all APIs in the directory with metadata',
+        name: "list_all_apis",
+        description: "List all APIs in the directory with metadata",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {},
           required: [],
         },
       },
       {
-        name: 'get_metrics',
-        description: 'Get statistics and metrics about the API directory',
+        name: "get_metrics",
+        description: "Get statistics and metrics about the API directory",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {},
           required: [],
         },
       },
       {
-        name: 'search_apis',
-        description: 'Search for APIs by name, description, provider, or keywords with pagination support',
+        name: "search_apis",
+        description:
+          "Search for APIs by name, description, provider, or keywords with pagination support",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             query: {
-              type: 'string',
-              description: 'Search query string',
+              type: "string",
+              description: "Search query string",
             },
             provider: {
-              type: 'string',
-              description: 'Optional provider filter',
+              type: "string",
+              description: "Optional provider filter",
             },
             page: {
-              type: 'number',
-              description: 'Page number (default: 1)',
+              type: "number",
+              description: "Page number (default: 1)",
               default: 1,
             },
             limit: {
-              type: 'number',
-              description: 'Number of results per page (default: 20, max: 50)',
+              type: "number",
+              description: "Number of results per page (default: 20, max: 50)",
               default: 20,
             },
           },
-          required: ['query'],
+          required: ["query"],
         },
       },
       {
-        name: 'get_popular_apis',
-        description: 'Get the most popular APIs based on various metrics',
+        name: "get_popular_apis",
+        description: "Get the most popular APIs based on various metrics",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             limit: {
-              type: 'number',
-              description: 'Maximum number of APIs to return (default: 20)',
+              type: "number",
+              description: "Maximum number of APIs to return (default: 20)",
               default: 20,
             },
           },
@@ -127,14 +131,14 @@ export class ToolGenerator {
         },
       },
       {
-        name: 'get_recently_updated',
-        description: 'Get recently updated APIs',
+        name: "get_recently_updated",
+        description: "Get recently updated APIs",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             limit: {
-              type: 'number',
-              description: 'Maximum number of APIs to return (default: 10)',
+              type: "number",
+              description: "Maximum number of APIs to return (default: 10)",
               default: 10,
             },
           },
@@ -142,153 +146,165 @@ export class ToolGenerator {
         },
       },
       {
-        name: 'get_provider_stats',
-        description: 'Get statistics for a specific provider',
+        name: "get_provider_stats",
+        description: "Get statistics for a specific provider",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             provider: {
-              type: 'string',
-              description: 'Provider name (e.g., "googleapis.com", "azure.com")',
+              type: "string",
+              description:
+                'Provider name (e.g., "googleapis.com", "azure.com")',
             },
           },
-          required: ['provider'],
+          required: ["provider"],
         },
       },
       {
-        name: 'get_openapi_spec',
-        description: 'Get the OpenAPI specification for a specific API',
+        name: "get_openapi_spec",
+        description: "Get the OpenAPI specification for a specific API",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             url: {
-              type: 'string',
-              description: 'URL to the OpenAPI specification (JSON or YAML)',
+              type: "string",
+              description: "URL to the OpenAPI specification (JSON or YAML)",
             },
           },
-          required: ['url'],
+          required: ["url"],
         },
       },
       {
-        name: 'analyze_api_categories',
-        description: 'Analyze API distribution by categories',
+        name: "analyze_api_categories",
+        description: "Analyze API distribution by categories",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             provider: {
-              type: 'string',
-              description: 'Optional provider filter',
+              type: "string",
+              description: "Optional provider filter",
             },
           },
           required: [],
         },
       },
       {
-        name: 'get_api_summary',
-        description: 'Get basic information about a specific API without endpoint details',
+        name: "get_api_summary",
+        description:
+          "Get basic information about a specific API without endpoint details",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             api_id: {
-              type: 'string',
-              description: 'API identifier (e.g., "googleapis.com:admin", "github.com")',
+              type: "string",
+              description:
+                'API identifier (e.g., "googleapis.com:admin", "github.com")',
             },
           },
-          required: ['api_id'],
+          required: ["api_id"],
         },
       },
       {
-        name: 'get_endpoints',
-        description: 'Get a paginated list of endpoints for a specific API with minimal information',
+        name: "get_endpoints",
+        description:
+          "Get a paginated list of endpoints for a specific API with minimal information",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             api_id: {
-              type: 'string',
-              description: 'API identifier (e.g., "googleapis.com:admin", "github.com")',
+              type: "string",
+              description:
+                'API identifier (e.g., "googleapis.com:admin", "github.com")',
             },
             page: {
-              type: 'number',
-              description: 'Page number (default: 1)',
+              type: "number",
+              description: "Page number (default: 1)",
               default: 1,
             },
             limit: {
-              type: 'number',
-              description: 'Number of endpoints per page (default: 30, max: 100)',
+              type: "number",
+              description:
+                "Number of endpoints per page (default: 30, max: 100)",
               default: 30,
             },
             tag: {
-              type: 'string',
-              description: 'Optional tag filter to show only endpoints with specific tag',
+              type: "string",
+              description:
+                "Optional tag filter to show only endpoints with specific tag",
             },
           },
-          required: ['api_id'],
+          required: ["api_id"],
         },
       },
       {
-        name: 'get_endpoint_details',
-        description: 'Get detailed information about a specific API endpoint',
+        name: "get_endpoint_details",
+        description: "Get detailed information about a specific API endpoint",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             api_id: {
-              type: 'string',
-              description: 'API identifier (e.g., "googleapis.com:admin", "github.com")',
+              type: "string",
+              description:
+                'API identifier (e.g., "googleapis.com:admin", "github.com")',
             },
             method: {
-              type: 'string',
-              description: 'HTTP method (GET, POST, PUT, PATCH, DELETE, etc.)',
+              type: "string",
+              description: "HTTP method (GET, POST, PUT, PATCH, DELETE, etc.)",
             },
             path: {
-              type: 'string',
+              type: "string",
               description: 'API endpoint path (e.g., "/users/{id}", "/posts")',
             },
           },
-          required: ['api_id', 'method', 'path'],
+          required: ["api_id", "method", "path"],
         },
       },
       {
-        name: 'get_endpoint_schema',
-        description: 'Get request and response schemas for a specific API endpoint',
+        name: "get_endpoint_schema",
+        description:
+          "Get request and response schemas for a specific API endpoint",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             api_id: {
-              type: 'string',
-              description: 'API identifier (e.g., "googleapis.com:admin", "github.com")',
+              type: "string",
+              description:
+                'API identifier (e.g., "googleapis.com:admin", "github.com")',
             },
             method: {
-              type: 'string',
-              description: 'HTTP method (GET, POST, PUT, PATCH, DELETE, etc.)',
+              type: "string",
+              description: "HTTP method (GET, POST, PUT, PATCH, DELETE, etc.)",
             },
             path: {
-              type: 'string',
+              type: "string",
               description: 'API endpoint path (e.g., "/users/{id}", "/posts")',
             },
           },
-          required: ['api_id', 'method', 'path'],
+          required: ["api_id", "method", "path"],
         },
       },
       {
-        name: 'get_endpoint_examples',
-        description: 'Get request and response examples for a specific API endpoint',
+        name: "get_endpoint_examples",
+        description:
+          "Get request and response examples for a specific API endpoint",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             api_id: {
-              type: 'string',
-              description: 'API identifier (e.g., "googleapis.com:admin", "github.com")',
+              type: "string",
+              description:
+                'API identifier (e.g., "googleapis.com:admin", "github.com")',
             },
             method: {
-              type: 'string',
-              description: 'HTTP method (GET, POST, PUT, PATCH, DELETE, etc.)',
+              type: "string",
+              description: "HTTP method (GET, POST, PUT, PATCH, DELETE, etc.)",
             },
             path: {
-              type: 'string',
+              type: "string",
               description: 'API endpoint path (e.g., "/users/{id}", "/posts")',
             },
           },
-          required: ['api_id', 'method', 'path'],
+          required: ["api_id", "method", "path"],
         },
       },
     ];
@@ -308,20 +324,34 @@ export class ToolGenerator {
 
     // Convert OpenAPI operations to MCP tools
     for (const [path, pathItem] of Object.entries(spec.paths)) {
-      if (typeof pathItem !== 'object' || pathItem === null) {
+      if (typeof pathItem !== "object" || pathItem === null) {
         continue;
       }
 
-      const operations = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace'];
-      
+      const operations = [
+        "get",
+        "post",
+        "put",
+        "patch",
+        "delete",
+        "head",
+        "options",
+        "trace",
+      ];
+
       for (const method of operations) {
         const operation = (pathItem as any)[method];
         if (!operation) continue;
 
-        const toolName = operation.operationId || `${method}_${path.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const toolName =
+          operation.operationId ||
+          `${method}_${path.replace(/[^a-zA-Z0-9]/g, "_")}`;
         const tool: Tool = {
           name: toolName,
-          description: operation.summary || operation.description || `${method.toUpperCase()} ${path}`,
+          description:
+            operation.summary ||
+            operation.description ||
+            `${method.toUpperCase()} ${path}`,
           inputSchema: this.generateInputSchema(operation, path),
         };
 
@@ -345,7 +375,7 @@ export class ToolGenerator {
       for (const param of pathParams) {
         const paramName = param.slice(1, -1); // Remove { and }
         properties[paramName] = {
-          type: 'string',
+          type: "string",
           description: `Path parameter: ${paramName}`,
         };
         required.push(paramName);
@@ -355,17 +385,17 @@ export class ToolGenerator {
     // Extract parameters from operation
     if (operation.parameters) {
       for (const param of operation.parameters) {
-        if (param.in === 'path') {
+        if (param.in === "path") {
           properties[param.name] = {
-            type: param.schema?.type || 'string',
+            type: param.schema?.type || "string",
             description: param.description || `Path parameter: ${param.name}`,
           };
           if (param.required) {
             required.push(param.name);
           }
-        } else if (param.in === 'query') {
+        } else if (param.in === "query") {
           properties[param.name] = {
-            type: param.schema?.type || 'string',
+            type: param.schema?.type || "string",
             description: param.description || `Query parameter: ${param.name}`,
           };
           if (param.required) {
@@ -379,22 +409,22 @@ export class ToolGenerator {
     if (operation.requestBody) {
       const content = operation.requestBody.content;
       if (content) {
-        const jsonContent = content['application/json'];
+        const jsonContent = content["application/json"];
         if (jsonContent?.schema) {
           properties.body = {
-            type: 'object',
-            description: 'Request body',
+            type: "object",
+            description: "Request body",
             properties: jsonContent.schema.properties || {},
           };
           if (operation.requestBody.required) {
-            required.push('body');
+            required.push("body");
           }
         }
       }
     }
 
     return {
-      type: 'object',
+      type: "object",
       properties,
       required,
     };
@@ -406,138 +436,138 @@ export class ToolGenerator {
   generateUtilityTools(): Tool[] {
     return [
       {
-        name: 'validate_openapi_spec',
-        description: 'Validate an OpenAPI specification',
+        name: "validate_openapi_spec",
+        description: "Validate an OpenAPI specification",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             spec: {
-              type: 'object',
-              description: 'OpenAPI specification to validate',
+              type: "object",
+              description: "OpenAPI specification to validate",
             },
           },
-          required: ['spec'],
+          required: ["spec"],
         },
       },
       {
-        name: 'compare_api_versions',
-        description: 'Compare two versions of an API',
+        name: "compare_api_versions",
+        description: "Compare two versions of an API",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             provider: {
-              type: 'string',
-              description: 'Provider name',
+              type: "string",
+              description: "Provider name",
             },
             api: {
-              type: 'string',
-              description: 'API identifier',
+              type: "string",
+              description: "API identifier",
             },
             version1: {
-              type: 'string',
-              description: 'First version to compare',
+              type: "string",
+              description: "First version to compare",
             },
             version2: {
-              type: 'string',
-              description: 'Second version to compare',
+              type: "string",
+              description: "Second version to compare",
             },
           },
-          required: ['provider', 'api', 'version1', 'version2'],
+          required: ["provider", "api", "version1", "version2"],
         },
       },
       {
-        name: 'get_api_dependencies',
-        description: 'Analyze API dependencies and relationships',
+        name: "get_api_dependencies",
+        description: "Analyze API dependencies and relationships",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             provider: {
-              type: 'string',
-              description: 'Provider name',
+              type: "string",
+              description: "Provider name",
             },
             api: {
-              type: 'string',
-              description: 'API identifier',
+              type: "string",
+              description: "API identifier",
             },
           },
-          required: ['provider', 'api'],
+          required: ["provider", "api"],
         },
       },
       {
-        name: 'export_api_collection',
-        description: 'Export a collection of APIs in various formats',
+        name: "export_api_collection",
+        description: "Export a collection of APIs in various formats",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             apis: {
-              type: 'array',
+              type: "array",
               items: {
-                type: 'object',
+                type: "object",
                 properties: {
-                  provider: { type: 'string' },
-                  api: { type: 'string' },
-                  version: { type: 'string' },
+                  provider: { type: "string" },
+                  api: { type: "string" },
+                  version: { type: "string" },
                 },
-                required: ['provider', 'api', 'version'],
+                required: ["provider", "api", "version"],
               },
-              description: 'List of APIs to export',
+              description: "List of APIs to export",
             },
             format: {
-              type: 'string',
-              enum: ['json', 'yaml', 'postman', 'insomnia'],
-              description: 'Export format',
-              default: 'json',
+              type: "string",
+              enum: ["json", "yaml", "postman", "insomnia"],
+              description: "Export format",
+              default: "json",
             },
           },
-          required: ['apis'],
+          required: ["apis"],
         },
       },
       {
-        name: 'cache_stats',
-        description: 'Get cache statistics and information',
+        name: "cache_stats",
+        description: "Get cache statistics and information",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {},
           required: [],
         },
       },
       {
-        name: 'list_cache_keys',
-        description: 'List all cache keys',
+        name: "list_cache_keys",
+        description: "List all cache keys",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {},
           required: [],
         },
       },
       {
-        name: 'clear_cache',
-        description: 'Clear all cache entries',
+        name: "clear_cache",
+        description: "Clear all cache entries",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {},
           required: [],
         },
       },
       {
-        name: 'clear_cache_key',
-        description: 'Clear a specific cache key',
+        name: "clear_cache_key",
+        description: "Clear a specific cache key",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {
             key: {
-              type: 'string',
-              description: 'The cache key to clear',
+              type: "string",
+              description: "The cache key to clear",
             },
           },
-          required: ['key'],
+          required: ["key"],
         },
       },
       {
-        name: 'cache_info',
-        description: 'Get cache configuration and settings',
+        name: "cache_info",
+        description: "Get cache configuration and settings",
         inputSchema: {
-          type: 'object',
+          type: "object",
           properties: {},
           required: [],
         },
