@@ -5,9 +5,9 @@
 
 /* eslint-disable no-console */
 
-import { ImportOptions, ImportResult, CustomSpecEntry } from './types.js';
-import { SpecProcessor } from './spec-processor.js';
-import { ManifestManager } from './manifest-manager.js';
+import { ImportOptions, ImportResult, CustomSpecEntry } from "./types.js";
+import { SpecProcessor } from "./spec-processor.js";
+import { ManifestManager } from "./manifest-manager.js";
 
 export class ImportManager {
   private specProcessor: SpecProcessor;
@@ -30,7 +30,7 @@ export class ImportManager {
       if (!validation.valid) {
         return {
           success: false,
-          message: `Invalid import options: ${validation.errors.join(', ')}`,
+          message: `Invalid import options: ${validation.errors.join(", ")}`,
           errors: validation.errors,
         };
       }
@@ -51,7 +51,10 @@ export class ImportManager {
 
       // Process the specification
       console.log(`🔍 Processing and validating specification...`);
-      const processingResult = await this.specProcessor.processSpec(source, skipSecurity);
+      const processingResult = await this.specProcessor.processSpec(
+        source,
+        skipSecurity,
+      );
 
       // Check security scan results
       if (processingResult.securityScan.issues.length > 0) {
@@ -62,15 +65,18 @@ export class ImportManager {
         // In strict mode, block on any medium+ severity issues
         if (strictSecurity) {
           const blockingIssues = processingResult.securityScan.issues.filter(
-            issue => issue.severity === 'high' || issue.severity === 'critical'
+            (issue) =>
+              issue.severity === "high" || issue.severity === "critical",
           );
-          
+
           if (blockingIssues.length > 0) {
             return {
               success: false,
               message: `Import blocked by ${blockingIssues.length} high/critical security issues in strict mode`,
               securityScan: processingResult.securityScan,
-              errors: blockingIssues.map(issue => `${issue.severity}: ${issue.message}`),
+              errors: blockingIssues.map(
+                (issue) => `${issue.severity}: ${issue.message}`,
+              ),
             };
           }
         }
@@ -78,8 +84,10 @@ export class ImportManager {
 
       // Store the spec file
       const specId = this.manifestManager.generateSpecId(name!, version!);
-      const specContent = this.specProcessor.toNormalizedJSON(processingResult.spec);
-      
+      const specContent = this.specProcessor.toNormalizedJSON(
+        processingResult.spec,
+      );
+
       console.log(`💾 Storing specification...`);
       this.manifestManager.storeSpecFile(name!, version!, specContent);
 
@@ -91,7 +99,7 @@ export class ImportManager {
         title: processingResult.metadata.title,
         description: processingResult.metadata.description,
         originalFormat: processingResult.originalFormat,
-        sourceType: source.startsWith('http') ? 'url' : 'file',
+        sourceType: source.startsWith("http") ? "url" : "file",
         sourcePath: source,
         imported: new Date().toISOString(),
         lastModified: new Date().toISOString(),
@@ -103,19 +111,21 @@ export class ImportManager {
       this.manifestManager.addSpec(entry);
 
       console.log(`✅ Successfully imported custom spec: ${specId}`);
-      
+
       // Trigger cache invalidation and warming if callback is provided
       if (this.onSpecChangeCallback) {
         try {
           await this.onSpecChangeCallback();
         } catch (error) {
-          console.warn('Cache invalidation failed after import:', error);
+          console.warn("Cache invalidation failed after import:", error);
         }
       }
-      
+
       const warnings: string[] = [];
       if (processingResult.securityScan.issues.length > 0) {
-        warnings.push(`Security scan found ${processingResult.securityScan.issues.length} issues`);
+        warnings.push(
+          `Security scan found ${processingResult.securityScan.issues.length} issues`,
+        );
       }
 
       return {
@@ -125,11 +135,11 @@ export class ImportManager {
         securityScan: processingResult.securityScan,
         warnings,
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`❌ Import failed: ${errorMessage}`);
-      
+
       return {
         success: false,
         message: `Import failed: ${errorMessage}`,
@@ -141,28 +151,37 @@ export class ImportManager {
   /**
    * Remove a custom specification
    */
-  async removeSpec(nameOrId: string, version?: string): Promise<{ success: boolean; message: string }> {
+  async removeSpec(
+    nameOrId: string,
+    version?: string,
+  ): Promise<{ success: boolean; message: string }> {
     try {
       let specId: string;
       let parsedName: string;
       let parsedVersion: string;
 
       // Handle both "name:version" and "custom:name:version" formats
-      if (nameOrId.includes(':') && !version) {
+      if (nameOrId.includes(":") && !version) {
         // Full ID provided
-        if (nameOrId.startsWith('custom:')) {
+        if (nameOrId.startsWith("custom:")) {
           specId = nameOrId;
           const parsed = this.manifestManager.parseSpecId(specId);
           if (!parsed) {
-            return { success: false, message: `Invalid spec ID format: ${specId}` };
+            return {
+              success: false,
+              message: `Invalid spec ID format: ${specId}`,
+            };
           }
           parsedName = parsed.name;
           parsedVersion = parsed.version;
         } else {
           // name:version format
-          const parts = nameOrId.split(':');
+          const parts = nameOrId.split(":");
           if (parts.length !== 2) {
-            return { success: false, message: `Invalid name:version format: ${nameOrId}` };
+            return {
+              success: false,
+              message: `Invalid name:version format: ${nameOrId}`,
+            };
           }
           parsedName = parts[0]!;
           parsedVersion = parts[1]!;
@@ -171,7 +190,10 @@ export class ImportManager {
       } else {
         // Name and version provided separately
         if (!version) {
-          return { success: false, message: 'Version required when providing name only' };
+          return {
+            success: false,
+            message: "Version required when providing name only",
+          };
         }
         parsedName = nameOrId;
         parsedVersion = version;
@@ -186,30 +208,36 @@ export class ImportManager {
       // Remove from manifest
       const removed = this.manifestManager.removeSpec(specId);
       if (!removed) {
-        return { success: false, message: `Failed to remove spec from manifest: ${specId}` };
+        return {
+          success: false,
+          message: `Failed to remove spec from manifest: ${specId}`,
+        };
       }
 
       // Remove spec file
-      const fileRemoved = this.manifestManager.deleteSpecFile(parsedName, parsedVersion);
+      const fileRemoved = this.manifestManager.deleteSpecFile(
+        parsedName,
+        parsedVersion,
+      );
       if (!fileRemoved) {
         console.warn(`Warning: Failed to remove spec file for ${specId}`);
       }
 
       console.log(`✅ Successfully removed custom spec: ${specId}`);
-      
+
       // Trigger cache invalidation and warming if callback is provided
       if (this.onSpecChangeCallback) {
         try {
           await this.onSpecChangeCallback();
         } catch (error) {
-          console.warn('Cache invalidation failed after removal:', error);
+          console.warn("Cache invalidation failed after removal:", error);
         }
       }
-      
-      return { success: true, message: `Successfully removed ${specId}` };
 
+      return { success: true, message: `Successfully removed ${specId}` };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`❌ Remove failed: ${errorMessage}`);
       return { success: false, message: `Remove failed: ${errorMessage}` };
     }
@@ -231,19 +259,23 @@ export class ImportManager {
     source: string;
   }> {
     const specs = this.manifestManager.listSpecs();
-    
-    return specs.map(spec => ({
+
+    return specs.map((spec) => ({
       id: spec.id,
       name: spec.name,
       version: spec.version,
       title: spec.title,
-      description: spec.description.length > 100 
-        ? spec.description.substring(0, 100) + '...' 
-        : spec.description,
+      description:
+        spec.description.length > 100
+          ? spec.description.substring(0, 100) + "..."
+          : spec.description,
       imported: spec.imported,
       fileSize: spec.fileSize,
-      securityIssues: spec.securityScan 
-        ? spec.securityScan.summary.critical + spec.securityScan.summary.high + spec.securityScan.summary.medium + spec.securityScan.summary.low
+      securityIssues: spec.securityScan
+        ? spec.securityScan.summary.critical +
+          spec.securityScan.summary.high +
+          spec.securityScan.summary.medium +
+          spec.securityScan.summary.low
         : 0,
       format: spec.originalFormat,
       source: spec.sourceType,
@@ -256,11 +288,11 @@ export class ImportManager {
   getSpecDetails(nameOrId: string, version?: string): CustomSpecEntry | null {
     let specId: string;
 
-    if (nameOrId.startsWith('custom:')) {
+    if (nameOrId.startsWith("custom:")) {
       specId = nameOrId;
-    } else if (nameOrId.includes(':') && !version) {
+    } else if (nameOrId.includes(":") && !version) {
       // name:version format
-      const parts = nameOrId.split(':');
+      const parts = nameOrId.split(":");
       if (parts.length !== 2) return null;
       specId = `custom:${parts[0]}:${parts[1]}`;
     } else if (version) {
@@ -275,40 +307,51 @@ export class ImportManager {
   /**
    * Rescan security for a specific spec
    */
-  async rescanSecurity(nameOrId: string, version?: string): Promise<{ success: boolean; message: string; securityScan?: any }> {
+  async rescanSecurity(
+    nameOrId: string,
+    version?: string,
+  ): Promise<{ success: boolean; message: string; securityScan?: any }> {
     try {
       const spec = this.getSpecDetails(nameOrId, version);
       if (!spec) {
-        return { success: false, message: 'Spec not found' };
+        return { success: false, message: "Spec not found" };
       }
 
       const parsed = this.manifestManager.parseSpecId(spec.id);
       if (!parsed) {
-        return { success: false, message: 'Invalid spec ID' };
+        return { success: false, message: "Invalid spec ID" };
       }
 
       // Read and parse the spec file
-      const specContent = this.manifestManager.readSpecFile(parsed.name, parsed.version);
+      const specContent = this.manifestManager.readSpecFile(
+        parsed.name,
+        parsed.version,
+      );
       const specData = JSON.parse(specContent);
 
       // Get the actual OpenAPI spec from the latest version
       const latestVersion = specData.versions[specData.preferred];
       if (!latestVersion || !latestVersion.spec) {
-        return { success: false, message: 'No spec data found for security scan' };
+        return {
+          success: false,
+          message: "No spec data found for security scan",
+        };
       }
 
       // Run security scan
       console.log(`🔒 Running security scan for ${spec.id}...`);
-      const securityScan = await this.specProcessor.getSecurityScanner().scanSpec(latestVersion.spec);
+      const securityScan = await this.specProcessor
+        .getSecurityScanner()
+        .scanSpec(latestVersion.spec);
 
       // Update manifest with new security scan
-      this.manifestManager.updateSpec(spec.id, { 
+      this.manifestManager.updateSpec(spec.id, {
         securityScan,
         lastModified: new Date().toISOString(),
       });
 
       console.log(`✅ Security scan completed for ${spec.id}`);
-      
+
       const scanner = this.specProcessor.getSecurityScanner();
       console.log(scanner.generateReport(securityScan));
 
@@ -317,11 +360,14 @@ export class ImportManager {
         message: `Security scan completed for ${spec.id}`,
         securityScan,
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`❌ Security scan failed: ${errorMessage}`);
-      return { success: false, message: `Security scan failed: ${errorMessage}` };
+      return {
+        success: false,
+        message: `Security scan failed: ${errorMessage}`,
+      };
     }
   }
 
@@ -349,23 +395,30 @@ export class ImportManager {
   /**
    * Validate import options
    */
-  private validateImportOptions(options: ImportOptions): { valid: boolean; errors: string[] } {
+  private validateImportOptions(options: ImportOptions): {
+    valid: boolean;
+    errors: string[];
+  } {
     const errors: string[] = [];
 
     if (!options.source) {
-      errors.push('Source path or URL is required');
+      errors.push("Source path or URL is required");
     }
 
     if (!options.name) {
-      errors.push('Name is required');
+      errors.push("Name is required");
     } else if (!/^[a-zA-Z0-9_-]+$/.test(options.name)) {
-      errors.push('Name can only contain letters, numbers, hyphens, and underscores');
+      errors.push(
+        "Name can only contain letters, numbers, hyphens, and underscores",
+      );
     }
 
     if (!options.version) {
-      errors.push('Version is required');
+      errors.push("Version is required");
     } else if (!/^[a-zA-Z0-9._-]+$/.test(options.version)) {
-      errors.push('Version can only contain letters, numbers, dots, hyphens, and underscores');
+      errors.push(
+        "Version can only contain letters, numbers, dots, hyphens, and underscores",
+      );
     }
 
     return {
@@ -377,7 +430,9 @@ export class ImportManager {
   /**
    * Quick validation of a spec without importing
    */
-  async quickValidate(source: string): Promise<{ valid: boolean; errors: string[]; warnings: string[] }> {
+  async quickValidate(
+    source: string,
+  ): Promise<{ valid: boolean; errors: string[]; warnings: string[] }> {
     return this.specProcessor.quickValidate(source);
   }
 }

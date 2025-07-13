@@ -5,20 +5,20 @@
 
 /* eslint-disable no-console */
 
-import { ImportManager } from '../custom-specs/index.js';
-import { PersistentCacheManager } from '../cache/persistent-manager.js';
+import { ImportManager } from "../custom-specs/index.js";
+import { PersistentCacheManager } from "../cache/persistent-manager.js";
 
 export interface CLIArgs {
   import?: string | boolean;
   name?: string;
   version?: string;
-  'skip-security'?: boolean;
-  'strict-security'?: boolean;
-  'list-custom'?: boolean;
-  'remove-custom'?: string;
-  'rescan-security'?: string;
-  'validate-integrity'?: boolean;
-  'repair-integrity'?: boolean;
+  "skip-security"?: boolean;
+  "strict-security"?: boolean;
+  "list-custom"?: boolean;
+  "remove-custom"?: string;
+  "rescan-security"?: string;
+  "validate-integrity"?: boolean;
+  "repair-integrity"?: boolean;
   help?: boolean;
 }
 
@@ -32,7 +32,9 @@ export class CLIHandler {
 
     // Create import manager with cache invalidation callback
     this.importManager = new ImportManager(async () => {
-      console.log('🔄 Creating cache invalidation flag after spec import/removal...');
+      console.log(
+        "🔄 Creating cache invalidation flag after spec import/removal...",
+      );
       (this.cacheManager as any).createInvalidationFlag();
     });
   }
@@ -42,14 +44,14 @@ export class CLIHandler {
    */
   parseArgs(args: string[]): CLIArgs {
     const parsed: CLIArgs = {};
-    
+
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
-      
+
       switch (arg) {
-        case '--import': {
+        case "--import": {
           const nextArg = args[i + 1];
-          if (nextArg && !nextArg.startsWith('--')) {
+          if (nextArg && !nextArg.startsWith("--")) {
             parsed.import = nextArg;
             i++; // Skip next argument
           } else {
@@ -57,70 +59,70 @@ export class CLIHandler {
           }
           break;
         }
-          
-        case '--name': {
+
+        case "--name": {
           const nameArg = args[i + 1];
-          if (nameArg && !nameArg.startsWith('--')) {
+          if (nameArg && !nameArg.startsWith("--")) {
             parsed.name = nameArg;
             i++;
           }
           break;
         }
-          
-        case '--version': {
+
+        case "--version": {
           const versionArg = args[i + 1];
-          if (versionArg && !versionArg.startsWith('--')) {
+          if (versionArg && !versionArg.startsWith("--")) {
             parsed.version = versionArg;
             i++;
           }
           break;
         }
-          
-        case '--skip-security':
-          parsed['skip-security'] = true;
+
+        case "--skip-security":
+          parsed["skip-security"] = true;
           break;
-          
-        case '--strict-security':
-          parsed['strict-security'] = true;
+
+        case "--strict-security":
+          parsed["strict-security"] = true;
           break;
-          
-        case '--list-custom':
-          parsed['list-custom'] = true;
+
+        case "--list-custom":
+          parsed["list-custom"] = true;
           break;
-          
-        case '--remove-custom': {
+
+        case "--remove-custom": {
           const removeArg = args[i + 1];
-          if (removeArg && !removeArg.startsWith('--')) {
-            parsed['remove-custom'] = removeArg;
+          if (removeArg && !removeArg.startsWith("--")) {
+            parsed["remove-custom"] = removeArg;
             i++;
           }
           break;
         }
-          
-        case '--rescan-security': {
+
+        case "--rescan-security": {
           const rescanArg = args[i + 1];
-          if (rescanArg && !rescanArg.startsWith('--')) {
-            parsed['rescan-security'] = rescanArg;
+          if (rescanArg && !rescanArg.startsWith("--")) {
+            parsed["rescan-security"] = rescanArg;
             i++;
           }
           break;
         }
-          
-        case '--validate-integrity':
-          parsed['validate-integrity'] = true;
+
+        case "--validate-integrity":
+          parsed["validate-integrity"] = true;
           break;
-          
-        case '--repair-integrity':
-          parsed['repair-integrity'] = true;
+
+        case "--repair-integrity":
+          parsed["repair-integrity"] = true;
           break;
-          
-        case '--help':
-        case '-h':
+
+        case "--help":
+        case "-h":
           parsed.help = true;
           break;
       }
     }
-    
+
     return parsed;
   }
 
@@ -136,31 +138,31 @@ export class CLIHandler {
       }
 
       // List custom specs
-      if (args['list-custom']) {
+      if (args["list-custom"]) {
         await this.listCustomSpecs();
         return true;
       }
 
       // Remove custom spec
-      if (args['remove-custom']) {
-        await this.removeCustomSpec(args['remove-custom']);
+      if (args["remove-custom"]) {
+        await this.removeCustomSpec(args["remove-custom"]);
         return true;
       }
 
       // Rescan security
-      if (args['rescan-security']) {
-        await this.rescanSecurity(args['rescan-security']);
+      if (args["rescan-security"]) {
+        await this.rescanSecurity(args["rescan-security"]);
         return true;
       }
 
       // Validate integrity
-      if (args['validate-integrity']) {
+      if (args["validate-integrity"]) {
         await this.validateIntegrity();
         return true;
       }
 
       // Repair integrity
-      if (args['repair-integrity']) {
+      if (args["repair-integrity"]) {
         await this.repairIntegrity();
         return true;
       }
@@ -179,9 +181,10 @@ export class CLIHandler {
 
       // No command matched, return false to start normal MCP server
       return false;
-
     } catch (error) {
-      console.error(`❌ Command failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(
+        `❌ Command failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       process.exit(1);
     } finally {
       // Clean up cache manager
@@ -248,11 +251,11 @@ EXAMPLES:
   private async interactiveImport(): Promise<void> {
     console.log(`
 📋 Custom OpenAPI Spec Import Wizard
-${'='.repeat(50)}
+${"=".repeat(50)}
 `);
 
     // Import readline for interactive prompts
-    const readline = await import('readline');
+    const readline = await import("readline");
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
@@ -266,36 +269,40 @@ ${'='.repeat(50)}
 
     try {
       // Get source
-      const source = await question('📂 Enter the path or URL to your OpenAPI spec: ');
+      const source = await question(
+        "📂 Enter the path or URL to your OpenAPI spec: ",
+      );
       if (!source.trim()) {
-        throw new Error('Source path or URL is required');
+        throw new Error("Source path or URL is required");
       }
 
       // Quick validation
-      console.log('🔍 Validating specification...');
+      console.log("🔍 Validating specification...");
       const validation = await this.importManager.quickValidate(source.trim());
       if (!validation.valid) {
         console.log(`❌ Validation failed:`);
-        validation.errors.forEach(error => console.log(`   • ${error}`));
-        throw new Error('Invalid OpenAPI specification');
+        validation.errors.forEach((error) => console.log(`   • ${error}`));
+        throw new Error("Invalid OpenAPI specification");
       }
-      console.log('✅ Valid OpenAPI specification detected');
+      console.log("✅ Valid OpenAPI specification detected");
 
       // Get name
-      const name = await question('📝 Enter a name for this API: ');
+      const name = await question("📝 Enter a name for this API: ");
       if (!name.trim()) {
-        throw new Error('Name is required');
+        throw new Error("Name is required");
       }
 
-      // Get version  
-      const version = await question('🏷️  Enter a version identifier: ');
+      // Get version
+      const version = await question("🏷️  Enter a version identifier: ");
       if (!version.trim()) {
-        throw new Error('Version is required');
+        throw new Error("Version is required");
       }
 
       // Security options
-      const securityChoice = await question('🔒 Security scanning? (strict/normal/skip) [normal]: ');
-      const securityOption = securityChoice.trim().toLowerCase() || 'normal';
+      const securityChoice = await question(
+        "🔒 Security scanning? (strict/normal/skip) [normal]: ",
+      );
+      const securityOption = securityChoice.trim().toLowerCase() || "normal";
 
       console.log(`
 📦 Ready to import:
@@ -305,9 +312,9 @@ ${'='.repeat(50)}
    Security: ${securityOption}
 `);
 
-      const confirm = await question('Proceed with import? (Y/n): ');
-      if (confirm.trim().toLowerCase() === 'n') {
-        console.log('❌ Import cancelled');
+      const confirm = await question("Proceed with import? (Y/n): ");
+      if (confirm.trim().toLowerCase() === "n") {
+        console.log("❌ Import cancelled");
         return;
       }
 
@@ -316,23 +323,22 @@ ${'='.repeat(50)}
         source: source.trim(),
         name: name.trim(),
         version: version.trim(),
-        skipSecurity: securityOption === 'skip',
-        strictSecurity: securityOption === 'strict',
+        skipSecurity: securityOption === "skip",
+        strictSecurity: securityOption === "strict",
       });
 
       if (result.success) {
         console.log(`✅ ${result.message}`);
         if (result.warnings && result.warnings.length > 0) {
-          console.log('⚠️  Warnings:');
-          result.warnings.forEach(warning => console.log(`   • ${warning}`));
+          console.log("⚠️  Warnings:");
+          result.warnings.forEach((warning) => console.log(`   • ${warning}`));
         }
       } else {
         console.log(`❌ ${result.message}`);
         if (result.errors) {
-          result.errors.forEach(error => console.log(`   • ${error}`));
+          result.errors.forEach((error) => console.log(`   • ${error}`));
         }
       }
-
     } finally {
       rl.close();
     }
@@ -343,7 +349,9 @@ ${'='.repeat(50)}
    */
   private async directImport(source: string, args: CLIArgs): Promise<void> {
     if (!args.name || !args.version) {
-      throw new Error('Name and version are required for direct import. Use --import without arguments for interactive mode.');
+      throw new Error(
+        "Name and version are required for direct import. Use --import without arguments for interactive mode.",
+      );
     }
 
     console.log(`📥 Importing: ${source}`);
@@ -352,22 +360,22 @@ ${'='.repeat(50)}
       source,
       name: args.name,
       version: args.version,
-      skipSecurity: args['skip-security'] || false,
-      strictSecurity: args['strict-security'] || false,
+      skipSecurity: args["skip-security"] || false,
+      strictSecurity: args["strict-security"] || false,
     });
 
     if (result.success) {
       console.log(`✅ ${result.message}`);
       if (result.warnings && result.warnings.length > 0) {
-        console.log('⚠️  Warnings:');
-        result.warnings.forEach(warning => console.log(`   • ${warning}`));
+        console.log("⚠️  Warnings:");
+        result.warnings.forEach((warning) => console.log(`   • ${warning}`));
       }
     } else {
       console.log(`❌ ${result.message}`);
       if (result.errors) {
-        result.errors.forEach(error => console.log(`   • ${error}`));
+        result.errors.forEach((error) => console.log(`   • ${error}`));
       }
-      throw new Error('Import failed');
+      throw new Error("Import failed");
     }
   }
 
@@ -376,32 +384,38 @@ ${'='.repeat(50)}
    */
   private async listCustomSpecs(): Promise<void> {
     const specs = this.importManager.listSpecs();
-    
+
     if (specs.length === 0) {
-      console.log('📭 No custom specifications imported');
+      console.log("📭 No custom specifications imported");
       return;
     }
 
     console.log(`
 📚 Custom OpenAPI Specifications (${specs.length})
-${'='.repeat(60)}
+${"=".repeat(60)}
 `);
 
     specs.forEach((spec, index) => {
       const sizeKB = Math.round(spec.fileSize / 1024);
       const importedDate = new Date(spec.imported).toLocaleDateString();
-      const securityIcon = spec.securityIssues > 0 ? '⚠️' : '✅';
-      
+      const securityIcon = spec.securityIssues > 0 ? "⚠️" : "✅";
+
       console.log(`${index + 1}. ${spec.name}:${spec.version}`);
       console.log(`   📋 ${spec.title}`);
       console.log(`   📄 ${spec.description}`);
-      console.log(`   📅 Imported: ${importedDate} | 📊 ${sizeKB}KB ${spec.format.toUpperCase()}`);
-      console.log(`   🔒 Security: ${securityIcon} ${spec.securityIssues} issues | 📦 Source: ${spec.source}`);
-      console.log('');
+      console.log(
+        `   📅 Imported: ${importedDate} | 📊 ${sizeKB}KB ${spec.format.toUpperCase()}`,
+      );
+      console.log(
+        `   🔒 Security: ${securityIcon} ${spec.securityIssues} issues | 📦 Source: ${spec.source}`,
+      );
+      console.log("");
     });
 
     const stats = this.importManager.getStats();
-    console.log(`💾 Total: ${stats.totalSpecs} specs, ${Math.round(stats.totalSize / 1024)}KB`);
+    console.log(
+      `💾 Total: ${stats.totalSpecs} specs, ${Math.round(stats.totalSize / 1024)}KB`,
+    );
   }
 
   /**
@@ -409,14 +423,14 @@ ${'='.repeat(60)}
    */
   private async removeCustomSpec(specId: string): Promise<void> {
     console.log(`🗑️  Removing: ${specId}`);
-    
+
     const result = await this.importManager.removeSpec(specId);
-    
+
     if (result.success) {
       console.log(`✅ ${result.message}`);
     } else {
       console.log(`❌ ${result.message}`);
-      throw new Error('Remove failed');
+      throw new Error("Remove failed");
     }
   }
 
@@ -425,14 +439,14 @@ ${'='.repeat(60)}
    */
   private async rescanSecurity(specId: string): Promise<void> {
     console.log(`🔒 Rescanning security for: ${specId}`);
-    
+
     const result = await this.importManager.rescanSecurity(specId);
-    
+
     if (result.success) {
       console.log(`✅ ${result.message}`);
     } else {
       console.log(`❌ ${result.message}`);
-      throw new Error('Security rescan failed');
+      throw new Error("Security rescan failed");
     }
   }
 
@@ -440,15 +454,15 @@ ${'='.repeat(60)}
    * Validate integrity
    */
   private async validateIntegrity(): Promise<void> {
-    console.log('🔍 Validating custom spec integrity...');
-    
+    console.log("🔍 Validating custom spec integrity...");
+
     const result = this.importManager.validateIntegrity();
-    
+
     if (result.valid) {
-      console.log('✅ All custom specs are valid and consistent');
+      console.log("✅ All custom specs are valid and consistent");
     } else {
       console.log(`❌ Found ${result.issues.length} integrity issues:`);
-      result.issues.forEach(issue => console.log(`   • ${issue}`));
+      result.issues.forEach((issue) => console.log(`   • ${issue}`));
     }
   }
 
@@ -456,22 +470,22 @@ ${'='.repeat(60)}
    * Repair integrity
    */
   private async repairIntegrity(): Promise<void> {
-    console.log('🔧 Repairing custom spec integrity...');
-    
+    console.log("🔧 Repairing custom spec integrity...");
+
     const result = this.importManager.repairIntegrity();
-    
+
     if (result.repaired.length > 0) {
       console.log(`✅ Repaired ${result.repaired.length} issues:`);
-      result.repaired.forEach(repair => console.log(`   • ${repair}`));
+      result.repaired.forEach((repair) => console.log(`   • ${repair}`));
     }
-    
+
     if (result.failed.length > 0) {
       console.log(`❌ Failed to repair ${result.failed.length} issues:`);
-      result.failed.forEach(failure => console.log(`   • ${failure}`));
+      result.failed.forEach((failure) => console.log(`   • ${failure}`));
     }
-    
+
     if (result.repaired.length === 0 && result.failed.length === 0) {
-      console.log('✅ No integrity issues found');
+      console.log("✅ No integrity issues found");
     }
   }
 }

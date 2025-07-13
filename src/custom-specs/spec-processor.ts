@@ -5,15 +5,15 @@
 
 /* eslint-disable no-console */
 
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
-import { homedir } from 'os';
-import * as yaml from 'js-yaml';
-import SwaggerParser from '@apidevtools/swagger-parser';
-import axios from 'axios';
-import { ApiGuruAPI } from '../types/api.js';
-import { ValidationResult, SpecProcessingResult } from './types.js';
-import { SecurityScanner } from './security-scanner.js';
+import { readFileSync } from "fs";
+import { resolve } from "path";
+import { homedir } from "os";
+import * as yaml from "js-yaml";
+import SwaggerParser from "@apidevtools/swagger-parser";
+import axios from "axios";
+import { ApiGuruAPI } from "../types/api.js";
+import { ValidationResult, SpecProcessingResult } from "./types.js";
+import { SecurityScanner } from "./security-scanner.js";
 
 export class SpecProcessor {
   private securityScanner: SecurityScanner;
@@ -25,9 +25,12 @@ export class SpecProcessor {
   /**
    * Process an OpenAPI spec from file or URL
    */
-  async processSpec(source: string, skipSecurity = false): Promise<SpecProcessingResult> {
+  async processSpec(
+    source: string,
+    skipSecurity = false,
+  ): Promise<SpecProcessingResult> {
     let content: string;
-    let originalFormat: 'yaml' | 'json';
+    let originalFormat: "yaml" | "json";
 
     // Fetch content
     if (this.isUrl(source)) {
@@ -45,20 +48,24 @@ export class SpecProcessor {
     // Validate OpenAPI spec
     const validation = await this.validateOpenAPISpec(specObject);
     if (!validation.valid) {
-      throw new Error(`Invalid OpenAPI specification: ${validation.errors.join(', ')}`);
+      throw new Error(
+        `Invalid OpenAPI specification: ${validation.errors.join(", ")}`,
+      );
     }
 
     // Convert to ApiGuruAPI format
     const apiGuruSpec = this.convertToApiGuruFormat(specObject);
 
     // Run security scan
-    const securityScan = skipSecurity 
+    const securityScan = skipSecurity
       ? this.createEmptySecurityScan()
       : await this.securityScanner.scanSpec(specObject);
 
     // Check if security issues block import
     if (securityScan.blocked) {
-      throw new Error(`Import blocked by critical security issues:\n${this.securityScanner.generateReport(securityScan)}`);
+      throw new Error(
+        `Import blocked by critical security issues:\n${this.securityScanner.generateReport(securityScan)}`,
+      );
     }
 
     // Extract metadata
@@ -76,7 +83,7 @@ export class SpecProcessor {
    * Check if source is a URL
    */
   private isUrl(source: string): boolean {
-    return source.startsWith('http://') || source.startsWith('https://');
+    return source.startsWith("http://") || source.startsWith("https://");
   }
 
   /**
@@ -87,13 +94,13 @@ export class SpecProcessor {
       const response = await axios.get(url, {
         timeout: 30000,
         headers: {
-          'Accept': 'application/json, application/yaml, text/yaml, text/plain',
-          'User-Agent': 'openapi-directory-mcp/1.2.0',
+          Accept: "application/json, application/yaml, text/yaml, text/plain",
+          "User-Agent": "openapi-directory-mcp/1.2.0",
         },
         maxContentLength: 10 * 1024 * 1024, // 10MB limit
       });
 
-      if (typeof response.data === 'string') {
+      if (typeof response.data === "string") {
         return response.data;
       } else {
         return JSON.stringify(response.data, null, 2);
@@ -112,53 +119,57 @@ export class SpecProcessor {
   private readFromFile(filePath: string): string {
     try {
       // Expand tilde to home directory
-      const expandedPath = filePath.startsWith('~/') 
+      const expandedPath = filePath.startsWith("~/")
         ? resolve(homedir(), filePath.slice(2))
         : filePath;
-      
-      return readFileSync(expandedPath, 'utf-8');
+
+      return readFileSync(expandedPath, "utf-8");
     } catch (error) {
-      throw new Error(`Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to read file: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
   /**
    * Detect if content is YAML or JSON
    */
-  detectFormat(content: string): 'yaml' | 'json' {
+  detectFormat(content: string): "yaml" | "json" {
     const trimmed = content.trim();
-    
+
     // Check if it starts with JSON indicators
-    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-      return 'json';
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      return "json";
     }
-    
+
     // Check for YAML indicators
-    if (trimmed.includes('openapi:') || 
-        trimmed.includes('swagger:') || 
-        trimmed.match(/^[a-zA-Z_][a-zA-Z0-9_]*:\s*$/m)) {
-      return 'yaml';
+    if (
+      trimmed.includes("openapi:") ||
+      trimmed.includes("swagger:") ||
+      trimmed.match(/^[a-zA-Z_][a-zA-Z0-9_]*:\s*$/m)
+    ) {
+      return "yaml";
     }
-    
+
     // Try to parse as JSON first
     try {
       JSON.parse(content);
-      return 'json';
+      return "json";
     } catch {
       // Assume YAML if JSON parse fails
-      return 'yaml';
+      return "yaml";
     }
   }
 
   /**
    * Parse content based on format
    */
-  private parseContent(content: string, format: 'yaml' | 'json'): any {
+  private parseContent(content: string, format: "yaml" | "json"): any {
     try {
-      if (format === 'json') {
+      if (format === "json") {
         return JSON.parse(content);
       } else {
-        return yaml.load(content, { 
+        return yaml.load(content, {
           onWarning: (warning) => {
             console.warn(`YAML warning: ${warning.message}`);
           },
@@ -167,7 +178,9 @@ export class SpecProcessor {
         });
       }
     } catch (error) {
-      throw new Error(`Failed to parse ${format.toUpperCase()}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to parse ${format.toUpperCase()}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -182,7 +195,7 @@ export class SpecProcessor {
       // Check for OpenAPI version
       const version = spec.openapi || spec.swagger;
       if (!version) {
-        errors.push('Missing OpenAPI/Swagger version field');
+        errors.push("Missing OpenAPI/Swagger version field");
         return { valid: false, errors, warnings };
       }
 
@@ -202,7 +215,9 @@ export class SpecProcessor {
       }
 
       if (!spec.paths && !spec.components) {
-        warnings.push('No paths or components defined - this might be an incomplete spec');
+        warnings.push(
+          "No paths or components defined - this might be an incomplete spec",
+        );
       }
 
       return {
@@ -211,11 +226,11 @@ export class SpecProcessor {
         errors,
         warnings,
       };
-
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown validation error';
+      const message =
+        error instanceof Error ? error.message : "Unknown validation error";
       errors.push(message);
-      
+
       return {
         valid: false,
         errors,
@@ -229,26 +244,26 @@ export class SpecProcessor {
    */
   private convertToApiGuruFormat(spec: any): ApiGuruAPI {
     const info = spec.info || {};
-    const version = info.version || '1.0.0';
-    
+    const version = info.version || "1.0.0";
+
     // Create a version entry
     const versionEntry = {
       added: new Date().toISOString(),
       updated: new Date().toISOString(),
-      swaggerUrl: '', // Will be set to local file path
-      swaggerYamlUrl: '', // Will be set to local file path
-      openapiVer: spec.openapi || spec.swagger || '3.0.0',
+      swaggerUrl: "", // Will be set to local file path
+      swaggerYamlUrl: "", // Will be set to local file path
+      openapiVer: spec.openapi || spec.swagger || "3.0.0",
       info: {
         ...info,
-        'x-providerName': 'custom',
-        'x-apisguru-categories': info['x-apisguru-categories'] || ['custom'],
-        'x-origin': [
+        "x-providerName": "custom",
+        "x-apisguru-categories": info["x-apisguru-categories"] || ["custom"],
+        "x-origin": [
           {
-            format: 'openapi',
-            version: spec.openapi || spec.swagger || '3.0.0',
-            url: 'custom-import'
-          }
-        ]
+            format: "openapi",
+            version: spec.openapi || spec.swagger || "3.0.0",
+            url: "custom-import",
+          },
+        ],
       },
       // Include the full spec for analysis
       spec: spec,
@@ -258,21 +273,24 @@ export class SpecProcessor {
       added: new Date().toISOString(),
       preferred: version,
       versions: {
-        [version]: versionEntry
-      }
+        [version]: versionEntry,
+      },
     };
   }
 
   /**
    * Extract metadata from spec
    */
-  private extractMetadata(spec: any, fileSize: number): { title: string; description: string; version: string; fileSize: number } {
+  private extractMetadata(
+    spec: any,
+    fileSize: number,
+  ): { title: string; description: string; version: string; fileSize: number } {
     const info = spec.info || {};
-    
+
     return {
-      title: info.title || 'Untitled API',
-      description: info.description || 'No description provided',
-      version: info.version || '1.0.0',
+      title: info.title || "Untitled API",
+      description: info.description || "No description provided",
+      version: info.version || "1.0.0",
       fileSize,
     };
   }
@@ -299,10 +317,12 @@ export class SpecProcessor {
   /**
    * Validate a spec without full processing (for quick checks)
    */
-  async quickValidate(source: string): Promise<{ valid: boolean; errors: string[]; warnings: string[] }> {
+  async quickValidate(
+    source: string,
+  ): Promise<{ valid: boolean; errors: string[]; warnings: string[] }> {
     try {
       let content: string;
-      
+
       if (this.isUrl(source)) {
         content = await this.fetchFromUrl(source);
       } else {
@@ -311,12 +331,12 @@ export class SpecProcessor {
 
       const format = this.detectFormat(content);
       const spec = this.parseContent(content, format);
-      
+
       return await this.validateOpenAPISpec(spec);
     } catch (error) {
       return {
         valid: false,
-        errors: [error instanceof Error ? error.message : 'Unknown error'],
+        errors: [error instanceof Error ? error.message : "Unknown error"],
         warnings: [],
       };
     }

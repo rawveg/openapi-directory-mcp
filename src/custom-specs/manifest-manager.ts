@@ -5,10 +5,21 @@
 
 /* eslint-disable no-console */
 
-import { join, dirname } from 'path';
-import { homedir } from 'os';
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, statSync } from 'fs';
-import { CustomSpecManifest, CustomSpecEntry, CustomSpecPaths } from './types.js';
+import { join, dirname } from "path";
+import { homedir } from "os";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+  unlinkSync,
+  statSync,
+} from "fs";
+import {
+  CustomSpecManifest,
+  CustomSpecEntry,
+  CustomSpecPaths,
+} from "./types.js";
 
 export class ManifestManager {
   private paths: CustomSpecPaths;
@@ -24,17 +35,18 @@ export class ManifestManager {
    */
   private initializePaths(): CustomSpecPaths {
     const baseDir = process.env.OPENAPI_DIRECTORY_CACHE_DIR
-      ? join(process.env.OPENAPI_DIRECTORY_CACHE_DIR, 'custom-specs')
-      : join(homedir(), '.cache', 'openapi-directory-mcp', 'custom-specs');
+      ? join(process.env.OPENAPI_DIRECTORY_CACHE_DIR, "custom-specs")
+      : join(homedir(), ".cache", "openapi-directory-mcp", "custom-specs");
 
-    const specsDir = join(baseDir, 'custom');
-    const manifestFile = join(baseDir, 'manifest.json');
+    const specsDir = join(baseDir, "custom");
+    const manifestFile = join(baseDir, "manifest.json");
 
     return {
       baseDir,
       manifestFile,
       specsDir,
-      getSpecFile: (name: string, version: string) => join(specsDir, name, `${version}.json`),
+      getSpecFile: (name: string, version: string) =>
+        join(specsDir, name, `${version}.json`),
     };
   }
 
@@ -59,12 +71,12 @@ export class ManifestManager {
     }
 
     try {
-      const content = readFileSync(this.paths.manifestFile, 'utf-8');
+      const content = readFileSync(this.paths.manifestFile, "utf-8");
       const manifest = JSON.parse(content) as CustomSpecManifest;
-      
+
       // Validate manifest structure
       if (!manifest.version || !manifest.specs || !manifest.lastUpdated) {
-        console.warn('Invalid manifest structure, creating new one');
+        console.warn("Invalid manifest structure, creating new one");
         return this.createEmptyManifest();
       }
 
@@ -80,7 +92,7 @@ export class ManifestManager {
    */
   private createEmptyManifest(): CustomSpecManifest {
     return {
-      version: '1.0.0',
+      version: "1.0.0",
       specs: {},
       lastUpdated: new Date().toISOString(),
     };
@@ -91,14 +103,16 @@ export class ManifestManager {
    */
   private saveManifest(): void {
     this.ensureDirectories();
-    
+
     this.manifest.lastUpdated = new Date().toISOString();
-    
+
     try {
       const content = JSON.stringify(this.manifest, null, 2);
-      writeFileSync(this.paths.manifestFile, content, 'utf-8');
+      writeFileSync(this.paths.manifestFile, content, "utf-8");
     } catch (error) {
-      throw new Error(`Failed to save manifest: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to save manifest: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -185,10 +199,12 @@ export class ManifestManager {
     }
 
     try {
-      writeFileSync(specFile, content, 'utf-8');
+      writeFileSync(specFile, content, "utf-8");
       return specFile;
     } catch (error) {
-      throw new Error(`Failed to store spec file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to store spec file: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -197,15 +213,17 @@ export class ManifestManager {
    */
   readSpecFile(name: string, version: string): string {
     const specFile = this.paths.getSpecFile(name, version);
-    
+
     if (!existsSync(specFile)) {
       throw new Error(`Spec file not found: ${specFile}`);
     }
 
     try {
-      return readFileSync(specFile, 'utf-8');
+      return readFileSync(specFile, "utf-8");
     } catch (error) {
-      throw new Error(`Failed to read spec file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to read spec file: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -214,25 +232,25 @@ export class ManifestManager {
    */
   deleteSpecFile(name: string, version: string): boolean {
     const specFile = this.paths.getSpecFile(name, version);
-    
+
     if (!existsSync(specFile)) {
       return false;
     }
 
     try {
       unlinkSync(specFile);
-      
+
       // Try to remove directory if empty
       const specDir = dirname(specFile);
       try {
-        const files = require('fs').readdirSync(specDir);
+        const files = require("fs").readdirSync(specDir);
         if (files.length === 0) {
-          require('fs').rmdirSync(specDir);
+          require("fs").rmdirSync(specDir);
         }
       } catch {
         // Ignore errors when trying to remove directory
       }
-      
+
       return true;
     } catch (error) {
       console.warn(`Failed to delete spec file: ${error}`);
@@ -245,7 +263,7 @@ export class ManifestManager {
    */
   getSpecFileSize(name: string, version: string): number {
     const specFile = this.paths.getSpecFile(name, version);
-    
+
     if (!existsSync(specFile)) {
       return 0;
     }
@@ -267,12 +285,14 @@ export class ManifestManager {
   /**
    * Parse spec ID into components
    */
-  parseSpecId(id: string): { provider: string; name: string; version: string } | null {
-    const parts = id.split(':');
-    if (parts.length !== 3 || parts[0] !== 'custom') {
+  parseSpecId(
+    id: string,
+  ): { provider: string; name: string; version: string } | null {
+    const parts = id.split(":");
+    if (parts.length !== 3 || parts[0] !== "custom") {
       return null;
     }
-    
+
     return {
       provider: parts[0]!,
       name: parts[1]!,
@@ -291,17 +311,17 @@ export class ManifestManager {
     lastUpdated: string;
   } {
     const specs = this.listSpecs();
-    
+
     return {
       totalSpecs: specs.length,
       totalSize: specs.reduce((sum, spec) => sum + spec.fileSize, 0),
       byFormat: {
-        yaml: specs.filter(s => s.originalFormat === 'yaml').length,
-        json: specs.filter(s => s.originalFormat === 'json').length,
+        yaml: specs.filter((s) => s.originalFormat === "yaml").length,
+        json: specs.filter((s) => s.originalFormat === "json").length,
       },
       bySource: {
-        file: specs.filter(s => s.sourceType === 'file').length,
-        url: specs.filter(s => s.sourceType === 'url').length,
+        file: specs.filter((s) => s.sourceType === "file").length,
+        url: specs.filter((s) => s.sourceType === "url").length,
       },
       lastUpdated: this.manifest.lastUpdated,
     };
@@ -335,7 +355,9 @@ export class ManifestManager {
       // Check file size consistency
       const actualSize = this.getSpecFileSize(parsed.name, parsed.version);
       if (actualSize !== spec.fileSize && actualSize > 0) {
-        issues.push(`File size mismatch for ${spec.id}: expected ${spec.fileSize}, found ${actualSize}`);
+        issues.push(
+          `File size mismatch for ${spec.id}: expected ${spec.fileSize}, found ${actualSize}`,
+        );
       }
     }
 
@@ -358,7 +380,7 @@ export class ManifestManager {
     }
 
     const specs = this.listSpecs();
-    
+
     for (const spec of specs) {
       const parsed = this.parseSpecId(spec.id);
       if (!parsed) {
@@ -368,7 +390,7 @@ export class ManifestManager {
       }
 
       const specFile = this.paths.getSpecFile(parsed.name, parsed.version);
-      
+
       // Remove specs with missing files
       if (!existsSync(specFile)) {
         this.removeSpec(spec.id);

@@ -71,7 +71,7 @@ export class PersistentCacheManager implements ICacheManager {
       console.error("Cache invalidation flag detected, clearing cache...");
       this.cacheData.clear();
       try {
-        require('fs').unlinkSync(this.invalidateFlag);
+        require("fs").unlinkSync(this.invalidateFlag);
         console.error("Cache invalidation flag removed");
       } catch (error) {
         console.error("Failed to remove invalidation flag:", error);
@@ -449,7 +449,7 @@ export class PersistentCacheManager implements ICacheManager {
 
     try {
       const keys = this.keys();
-      const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+      const regex = new RegExp("^" + pattern.replace(/\*/g, ".*") + "$");
       let deletedCount = 0;
 
       for (const key of keys) {
@@ -461,12 +461,17 @@ export class PersistentCacheManager implements ICacheManager {
       }
 
       if (deletedCount > 0) {
-        console.error(`Cache invalidated ${deletedCount} keys matching pattern: ${pattern}`);
+        console.error(
+          `Cache invalidated ${deletedCount} keys matching pattern: ${pattern}`,
+        );
       }
 
       return deletedCount;
     } catch (error) {
-      console.error(`Cache invalidatePattern error for pattern ${pattern}:`, error);
+      console.error(
+        `Cache invalidatePattern error for pattern ${pattern}:`,
+        error,
+      );
       return 0;
     }
   }
@@ -502,7 +507,11 @@ export class PersistentCacheManager implements ICacheManager {
   /**
    * Cache warming - fetch data and store it in cache
    */
-  async warmCache<T>(key: string, fetchFn: () => Promise<T>, ttlMs?: number): Promise<T> {
+  async warmCache<T>(
+    key: string,
+    fetchFn: () => Promise<T>,
+    ttlMs?: number,
+  ): Promise<T> {
     if (!this.enabled) {
       // If cache is disabled, just fetch and return the data
       return await fetchFn();
@@ -518,10 +527,10 @@ export class PersistentCacheManager implements ICacheManager {
       // Fetch fresh data
       console.error(`Cache warming: ${key}`);
       const data = await fetchFn();
-      
+
       // Store in cache
       this.set(key, data, ttlMs);
-      
+
       return data;
     } catch (error) {
       console.error(`Cache warmCache error for key ${key}:`, error);

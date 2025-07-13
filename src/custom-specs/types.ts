@@ -13,8 +13,8 @@ export interface CustomSpecEntry {
   version: string; // User-provided version
   title: string; // From OpenAPI spec title
   description: string; // From OpenAPI spec description
-  originalFormat: 'yaml' | 'json';
-  sourceType: 'file' | 'url';
+  originalFormat: "yaml" | "json";
+  sourceType: "file" | "url";
   sourcePath: string; // Original file path or URL
   imported: string; // ISO timestamp
   lastModified: string; // ISO timestamp
@@ -50,10 +50,14 @@ export interface SecurityScanResult {
  * Individual security issue found in a spec
  */
 export interface SecurityIssue {
-  type: 'prompt_injection' | 'script_injection' | 'suspicious_content' | 'eval_usage';
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  type:
+    | "prompt_injection"
+    | "script_injection"
+    | "suspicious_content"
+    | "eval_usage";
+  severity: "low" | "medium" | "high" | "critical";
   location: string; // JSON path to the issue
-  context: 'example' | 'description' | 'parameter' | 'schema' | 'metadata';
+  context: "example" | "description" | "parameter" | "schema" | "metadata";
   pattern: string; // The pattern that was detected
   message: string; // Human-readable description
   suggestion?: string; // How to fix or mitigate
@@ -65,10 +69,11 @@ export interface SecurityIssue {
  */
 export interface SecurityRule {
   id: string;
-  pattern: RegExp;
-  type: SecurityIssue['type'];
-  severity: SecurityIssue['severity'];
-  contexts: SecurityIssue['context'][];
+  pattern?: RegExp; // Optional - not needed when using detect function
+  detect?: (content: string) => boolean; // Optional custom detection function for more sophisticated checks
+  type: SecurityIssue["type"];
+  severity: SecurityIssue["severity"];
+  contexts: SecurityIssue["context"][];
   message: string;
   suggestion?: string;
   allowInExamples?: boolean; // For legitimate cases like Datadog eval
@@ -80,7 +85,7 @@ export interface SecurityRule {
  */
 export interface SpecProcessingResult {
   spec: ApiGuruAPI;
-  originalFormat: 'yaml' | 'json';
+  originalFormat: "yaml" | "json";
   securityScan: SecurityScanResult;
   metadata: {
     title: string;

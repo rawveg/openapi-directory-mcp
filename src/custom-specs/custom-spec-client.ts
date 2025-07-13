@@ -43,12 +43,12 @@ export class CustomSpecClient {
   async getProviders(): Promise<{ data: string[] }> {
     return this.fetchWithCache("providers", async () => {
       const specs = this.manifestManager.listSpecs();
-      
+
       // Custom specs always use "custom" as provider
       if (specs.length > 0) {
         return { data: ["custom"] };
       }
-      
+
       return { data: [] };
     });
   }
@@ -70,9 +70,12 @@ export class CustomSpecClient {
           const parsed = this.manifestManager.parseSpecId(specEntry.id);
           if (!parsed) continue;
 
-          const specContent = this.manifestManager.readSpecFile(parsed.name, parsed.version);
+          const specContent = this.manifestManager.readSpecFile(
+            parsed.name,
+            parsed.version,
+          );
           const spec = JSON.parse(specContent);
-          
+
           apis[specEntry.id] = spec;
         } catch (error) {
           console.warn(`Failed to load spec ${specEntry.id}: ${error}`);
@@ -105,9 +108,9 @@ export class CustomSpecClient {
 
     return this.fetchWithCache(`api:${provider}:${api}`, async () => {
       const specs = this.manifestManager.listSpecs();
-      
+
       // Find spec by name (api parameter is the name part)
-      const specEntry = specs.find(s => {
+      const specEntry = specs.find((s) => {
         const parsed = this.manifestManager.parseSpecId(s.id);
         return parsed && parsed.name === api;
       });
@@ -121,7 +124,10 @@ export class CustomSpecClient {
         throw new Error(`Invalid spec ID: ${specEntry.id}`);
       }
 
-      const specContent = this.manifestManager.readSpecFile(parsed.name, parsed.version);
+      const specContent = this.manifestManager.readSpecFile(
+        parsed.name,
+        parsed.version,
+      );
       return JSON.parse(specContent);
     });
   }
@@ -153,9 +159,12 @@ export class CustomSpecClient {
           const parsed = this.manifestManager.parseSpecId(specEntry.id);
           if (!parsed) continue;
 
-          const specContent = this.manifestManager.readSpecFile(parsed.name, parsed.version);
+          const specContent = this.manifestManager.readSpecFile(
+            parsed.name,
+            parsed.version,
+          );
           const spec = JSON.parse(specContent);
-          
+
           // The spec file is already in ApiGuruAPI format
           apis[specEntry.id] = spec;
         } catch (error) {
@@ -174,7 +183,7 @@ export class CustomSpecClient {
     return this.fetchWithCache("metrics", async () => {
       const stats = this.manifestManager.getStats();
       const specs = this.manifestManager.listSpecs();
-      
+
       // Calculate approximate endpoints by parsing specs
       let totalEndpoints = 0;
       for (const specEntry of specs) {
@@ -182,16 +191,32 @@ export class CustomSpecClient {
           const parsed = this.manifestManager.parseSpecId(specEntry.id);
           if (!parsed) continue;
 
-          const specContent = this.manifestManager.readSpecFile(parsed.name, parsed.version);
+          const specContent = this.manifestManager.readSpecFile(
+            parsed.name,
+            parsed.version,
+          );
           const specData = JSON.parse(specContent);
-          
+
           // Count endpoints from the latest version
           const latestVersion = specData.versions[specData.preferred];
           if (latestVersion && latestVersion.spec && latestVersion.spec.paths) {
             const paths = Object.keys(latestVersion.spec.paths);
             totalEndpoints += paths.reduce((count, path) => {
               const methods = Object.keys(latestVersion.spec.paths[path]);
-              return count + methods.filter(m => ['get', 'post', 'put', 'delete', 'patch', 'head', 'options'].includes(m.toLowerCase())).length;
+              return (
+                count +
+                methods.filter((m) =>
+                  [
+                    "get",
+                    "post",
+                    "put",
+                    "delete",
+                    "patch",
+                    "head",
+                    "options",
+                  ].includes(m.toLowerCase()),
+                ).length
+              );
             }, 0);
           }
         } catch (error) {
@@ -221,7 +246,7 @@ export class CustomSpecClient {
     if (provider !== "custom") {
       return false;
     }
-    
+
     const specs = this.manifestManager.listSpecs();
     return specs.length > 0;
   }
@@ -258,15 +283,17 @@ export class CustomSpecClient {
         const endIndex = startIndex + limit;
         const paginatedSpecs = specs.slice(startIndex, endIndex);
 
-        const results = paginatedSpecs.map(spec => {
+        const results = paginatedSpecs.map((spec) => {
           const parsed = this.manifestManager.parseSpecId(spec.id);
           return {
             id: spec.id,
             title: spec.title,
-            description: spec.description.substring(0, 200) + (spec.description.length > 200 ? '...' : ''),
-            provider: 'custom',
-            preferred: parsed?.version || '1.0.0',
-            categories: ['custom'],
+            description:
+              spec.description.substring(0, 200) +
+              (spec.description.length > 200 ? "..." : ""),
+            provider: "custom",
+            preferred: parsed?.version || "1.0.0",
+            categories: ["custom"],
           };
         });
 
@@ -330,15 +357,15 @@ export class CustomSpecClient {
     }
 
     const cacheKey = `search:${query}:${provider || "all"}:${page}:${limit}`;
-    
+
     return this.fetchWithCache(
       cacheKey,
       async () => {
         const specs = this.manifestManager.listSpecs();
         const queryLower = query.toLowerCase();
-        
+
         // Filter specs that match the query
-        const matchingSpecs = specs.filter(spec => {
+        const matchingSpecs = specs.filter((spec) => {
           return (
             spec.id.toLowerCase().includes(queryLower) ||
             spec.title.toLowerCase().includes(queryLower) ||
@@ -352,15 +379,17 @@ export class CustomSpecClient {
         const endIndex = startIndex + limit;
         const paginatedSpecs = matchingSpecs.slice(startIndex, endIndex);
 
-        const results = paginatedSpecs.map(spec => {
+        const results = paginatedSpecs.map((spec) => {
           const parsed = this.manifestManager.parseSpecId(spec.id);
           return {
             id: spec.id,
             title: spec.title,
-            description: spec.description.substring(0, 200) + (spec.description.length > 200 ? '...' : ''),
-            provider: 'custom',
-            preferred: parsed?.version || '1.0.0',
-            categories: ['custom'],
+            description:
+              spec.description.substring(0, 200) +
+              (spec.description.length > 200 ? "..." : ""),
+            provider: "custom",
+            preferred: parsed?.version || "1.0.0",
+            categories: ["custom"],
           };
         });
 
@@ -393,7 +422,7 @@ export class CustomSpecClient {
    * Invalidate all custom spec caches (called when specs are imported/removed)
    */
   invalidateCache(): void {
-    const deletedCount = this.cache.invalidatePattern('custom:*');
+    const deletedCount = this.cache.invalidatePattern("custom:*");
     console.log(`Invalidated ${deletedCount} custom spec cache entries`);
   }
 
@@ -425,7 +454,7 @@ export class CustomSpecClient {
       by_format: stats.byFormat,
       by_source: stats.bySource,
       last_updated: stats.lastUpdated,
-      specs: specs.map(spec => {
+      specs: specs.map((spec) => {
         const baseSpec = {
           id: spec.id,
           name: spec.name,
@@ -434,15 +463,19 @@ export class CustomSpecClient {
           imported: spec.imported,
           size: spec.fileSize,
         };
-        
+
         // Only add security_issues if we have a valid count
         if (spec.securityScan?.summary) {
           return {
             ...baseSpec,
-            security_issues: spec.securityScan.summary.critical + spec.securityScan.summary.high + spec.securityScan.summary.medium + spec.securityScan.summary.low,
+            security_issues:
+              spec.securityScan.summary.critical +
+              spec.securityScan.summary.high +
+              spec.securityScan.summary.medium +
+              spec.securityScan.summary.low,
           };
         }
-        
+
         return baseSpec;
       }),
     };
@@ -464,7 +497,10 @@ export class CustomSpecClient {
     }
 
     // Get the spec content
-    const specContent = this.manifestManager.readSpecFile(parsed.name, parsed.version);
+    const specContent = this.manifestManager.readSpecFile(
+      parsed.name,
+      parsed.version,
+    );
     const spec = JSON.parse(specContent);
 
     // Get the latest version spec
@@ -496,7 +532,11 @@ export class CustomSpecClient {
 
     for (const [path, pathMethods] of Object.entries(paths)) {
       for (const [method, operation] of Object.entries(pathMethods as any)) {
-        if (['get', 'post', 'put', 'delete', 'patch', 'head', 'options'].includes(method.toLowerCase())) {
+        if (
+          ["get", "post", "put", "delete", "patch", "head", "options"].includes(
+            method.toLowerCase(),
+          )
+        ) {
           const op = operation as any; // Type assertion for OpenAPI operation object
           const endpoint = {
             path,

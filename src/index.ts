@@ -58,7 +58,6 @@ export class OpenAPIDirectoryServer {
     this.setupHandlers();
   }
 
-
   private setupHandlers() {
     // List available resources
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
@@ -533,19 +532,19 @@ import { CLIHandler } from "./cli/cli-handler.js";
 async function main() {
   // Parse command line arguments (skip 'node' and script name)
   const args = process.argv.slice(2);
-  
+
   // Handle CLI commands if any are provided
   if (args.length > 0) {
     const cliHandler = new CLIHandler();
     const parsedArgs = cliHandler.parseArgs(args);
     const handled = await cliHandler.handleCommand(parsedArgs);
-    
+
     // If command was handled, exit
     if (handled) {
       process.exit(0);
     }
   }
-  
+
   // No CLI commands, start the MCP server
   const server = new OpenAPIDirectoryServer();
   await server.start();

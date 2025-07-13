@@ -49,11 +49,12 @@ export class DualSourceApiClient {
    */
   async getProviders(): Promise<{ data: string[] }> {
     return this.fetchWithCache("providers", async () => {
-      const [primaryProviders, secondaryProviders, customProviders] = await Promise.allSettled([
-        this.primaryClient.getProviders(),
-        this.secondaryClient.getProviders(),
-        this.customClient.getProviders(),
-      ]);
+      const [primaryProviders, secondaryProviders, customProviders] =
+        await Promise.allSettled([
+          this.primaryClient.getProviders(),
+          this.secondaryClient.getProviders(),
+          this.customClient.getProviders(),
+        ]);
 
       const primary =
         primaryProviders.status === "fulfilled"
@@ -80,18 +81,19 @@ export class DualSourceApiClient {
    */
   async getProvider(provider: string): Promise<Record<string, ApiGuruAPI>> {
     return this.fetchWithCache(`provider:${provider}`, async () => {
-      const [primaryAPIs, secondaryAPIs, customAPIs] = await Promise.allSettled([
-        this.primaryClient.getProvider(provider),
-        this.secondaryClient.getProvider(provider),
-        this.customClient.getProvider(provider),
-      ]);
+      const [primaryAPIs, secondaryAPIs, customAPIs] = await Promise.allSettled(
+        [
+          this.primaryClient.getProvider(provider),
+          this.secondaryClient.getProvider(provider),
+          this.customClient.getProvider(provider),
+        ],
+      );
 
       const primary =
         primaryAPIs.status === "fulfilled" ? primaryAPIs.value : {};
       const secondary =
         secondaryAPIs.status === "fulfilled" ? secondaryAPIs.value : {};
-      const custom =
-        customAPIs.status === "fulfilled" ? customAPIs.value : {};
+      const custom = customAPIs.status === "fulfilled" ? customAPIs.value : {};
 
       // Merge with custom taking highest precedence
       const merged = MergeUtilities.mergeAPILists(primary, secondary);
@@ -180,7 +182,9 @@ export class DualSourceApiClient {
         // For custom provider, check if it's actually a direct API call
         if (provider === "custom") {
           // Try to find the API by name first (service parameter)
-          const hasCustomByName = await this.customClient.hasAPI(`custom:${service}:v1`);
+          const hasCustomByName = await this.customClient.hasAPI(
+            `custom:${service}:v1`,
+          );
           if (hasCustomByName) {
             try {
               return await this.customClient.getAPI(provider, service);
@@ -232,18 +236,19 @@ export class DualSourceApiClient {
    */
   async listAPIs(): Promise<Record<string, ApiGuruAPI>> {
     return this.fetchWithCache("all_apis", async () => {
-      const [primaryAPIs, secondaryAPIs, customAPIs] = await Promise.allSettled([
-        this.primaryClient.listAPIs(),
-        this.secondaryClient.listAPIs(),
-        this.customClient.listAPIs(),
-      ]);
+      const [primaryAPIs, secondaryAPIs, customAPIs] = await Promise.allSettled(
+        [
+          this.primaryClient.listAPIs(),
+          this.secondaryClient.listAPIs(),
+          this.customClient.listAPIs(),
+        ],
+      );
 
       const primary =
         primaryAPIs.status === "fulfilled" ? primaryAPIs.value : {};
       const secondary =
         secondaryAPIs.status === "fulfilled" ? secondaryAPIs.value : {};
-      const custom =
-        customAPIs.status === "fulfilled" ? customAPIs.value : {};
+      const custom = customAPIs.status === "fulfilled" ? customAPIs.value : {};
 
       // Merge with custom taking highest precedence
       const merged = MergeUtilities.mergeAPILists(primary, secondary);
@@ -280,11 +285,12 @@ export class DualSourceApiClient {
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        const [primaryResults, secondaryResults, customResults] = await Promise.allSettled([
-          this.primaryClient.getPaginatedAPIs(1, 10000), // Get all from all sources
-          this.secondaryClient.listAPIs(),
-          this.customClient.listAPIs(),
-        ]);
+        const [primaryResults, secondaryResults, customResults] =
+          await Promise.allSettled([
+            this.primaryClient.getPaginatedAPIs(1, 10000), // Get all from all sources
+            this.secondaryClient.listAPIs(),
+            this.customClient.listAPIs(),
+          ]);
 
         const primary =
           primaryResults.status === "fulfilled"
@@ -436,12 +442,7 @@ export class DualSourceApiClient {
           page,
           limit,
         );
-        return MergeUtilities.mergePaginatedAPIs(
-          merged,
-          custom,
-          page,
-          limit,
-        );
+        return MergeUtilities.mergePaginatedAPIs(merged, custom, page, limit);
       },
       300000,
     ); // Cache for 5 minutes
@@ -543,9 +544,17 @@ export class DualSourceApiClient {
    * Get combined metrics from all three sources accounting for overlaps
    */
   async getMetrics(): Promise<ApiGuruMetrics> {
-    return this.fetchWithCache("metrics", async () => {
-      const [primaryMetrics, secondaryMetrics, customMetrics, primaryAPIs, secondaryAPIs, customAPIs] =
-        await Promise.allSettled([
+    return this.fetchWithCache(
+      "metrics",
+      async () => {
+        const [
+          primaryMetrics,
+          secondaryMetrics,
+          customMetrics,
+          primaryAPIs,
+          secondaryAPIs,
+          customAPIs,
+        ] = await Promise.allSettled([
           this.primaryClient.getMetrics(),
           this.secondaryClient.getMetrics(),
           this.customClient.getMetrics(),
@@ -554,41 +563,43 @@ export class DualSourceApiClient {
           this.customClient.listAPIs(),
         ]);
 
-      const primary =
-        primaryMetrics.status === "fulfilled"
-          ? primaryMetrics.value
-          : { numSpecs: 0, numAPIs: 0, numEndpoints: 0 };
-      const secondary =
-        secondaryMetrics.status === "fulfilled"
-          ? secondaryMetrics.value
-          : { numSpecs: 0, numAPIs: 0, numEndpoints: 0 };
-      const custom =
-        customMetrics.status === "fulfilled"
-          ? customMetrics.value
-          : { numSpecs: 0, numAPIs: 0, numEndpoints: 0 };
-      const primaryApiList =
-        primaryAPIs.status === "fulfilled" ? primaryAPIs.value : {};
-      const secondaryApiList =
-        secondaryAPIs.status === "fulfilled" ? secondaryAPIs.value : {};
-      const customApiList =
-        customAPIs.status === "fulfilled" ? customAPIs.value : {};
+        const primary =
+          primaryMetrics.status === "fulfilled"
+            ? primaryMetrics.value
+            : { numSpecs: 0, numAPIs: 0, numEndpoints: 0 };
+        const secondary =
+          secondaryMetrics.status === "fulfilled"
+            ? secondaryMetrics.value
+            : { numSpecs: 0, numAPIs: 0, numEndpoints: 0 };
+        const custom =
+          customMetrics.status === "fulfilled"
+            ? customMetrics.value
+            : { numSpecs: 0, numAPIs: 0, numEndpoints: 0 };
+        const primaryApiList =
+          primaryAPIs.status === "fulfilled" ? primaryAPIs.value : {};
+        const secondaryApiList =
+          secondaryAPIs.status === "fulfilled" ? secondaryAPIs.value : {};
+        const customApiList =
+          customAPIs.status === "fulfilled" ? customAPIs.value : {};
 
-      // First merge primary and secondary
-      const merged = await MergeUtilities.aggregateMetrics(
-        primary,
-        secondary,
-        primaryApiList,
-        secondaryApiList,
-      );
-      
-      // Then merge custom on top (custom always wins)
-      return await MergeUtilities.aggregateMetrics(
-        merged,
-        custom,
-        { ...primaryApiList, ...secondaryApiList },
-        customApiList,
-      );
-    }, 300000); // Cache for 5 minutes to reflect custom spec changes
+        // First merge primary and secondary
+        const merged = await MergeUtilities.aggregateMetrics(
+          primary,
+          secondary,
+          primaryApiList,
+          secondaryApiList,
+        );
+
+        // Then merge custom on top (custom always wins)
+        return await MergeUtilities.aggregateMetrics(
+          merged,
+          custom,
+          { ...primaryApiList, ...secondaryApiList },
+          customApiList,
+        );
+      },
+      300000,
+    ); // Cache for 5 minutes to reflect custom spec changes
   }
 
   /**
@@ -625,11 +636,12 @@ export class DualSourceApiClient {
     return this.fetchWithCache(
       cacheKey,
       async () => {
-        const [primaryResults, secondaryResults, customResults] = await Promise.allSettled([
-          this.primaryClient.searchAPIs(query, provider, 1, 1000), // Get many results for merging
-          this.secondaryClient.listAPIs(), // Search in secondary manually
-          this.customClient.listAPIs(), // Search in custom manually
-        ]);
+        const [primaryResults, secondaryResults, customResults] =
+          await Promise.allSettled([
+            this.primaryClient.searchAPIs(query, provider, 1, 1000), // Get many results for merging
+            this.secondaryClient.listAPIs(), // Search in secondary manually
+            this.customClient.listAPIs(), // Search in custom manually
+          ]);
 
         const primary =
           primaryResults.status === "fulfilled"
@@ -955,12 +967,7 @@ export class DualSourceApiClient {
 
     if (hasCustom) {
       try {
-        return await this.customClient.getAPIEndpoints(
-          apiId,
-          page,
-          limit,
-          tag,
-        );
+        return await this.customClient.getAPIEndpoints(apiId, page, limit, tag);
       } catch (error) {
         // Fallback to secondary/primary
       }
@@ -972,7 +979,12 @@ export class DualSourceApiClient {
     if (hasSecondary) {
       try {
         // Secondary client may not have getAPIEndpoints, fall back to primary
-        return await this.primaryClient.getAPIEndpoints(apiId, page, limit, tag);
+        return await this.primaryClient.getAPIEndpoints(
+          apiId,
+          page,
+          limit,
+          tag,
+        );
       } catch (error) {
         // Fallback to primary
       }
@@ -1153,22 +1165,20 @@ export class DualSourceApiClient {
   invalidateCustomSpecCaches(): void {
     // Invalidate custom spec caches
     this.customClient.invalidateCache();
-    
+
     // Invalidate aggregated caches that include custom spec data
     const aggregatedKeys = [
-      'triple:providers',
-      'triple:all_apis', 
-      'triple:metrics',
-      'triple:api_summary',
+      "triple:providers",
+      "triple:all_apis",
+      "triple:metrics",
+      "triple:api_summary",
     ];
-    
-    const deletedCount = this.cache.invalidateKeys(aggregatedKeys);
-    
+
+    this.cache.invalidateKeys(aggregatedKeys);
+
     // Also invalidate paginated and search caches since they include custom data
-    const paginatedDeleted = this.cache.invalidatePattern('triple:paginated_apis:*');
-    const searchDeleted = this.cache.invalidatePattern('triple:search:*');
-    
-    console.log(`Invalidated ${deletedCount} aggregated cache entries, ${paginatedDeleted} paginated entries, ${searchDeleted} search entries`);
+    this.cache.invalidatePattern("triple:paginated_apis:*");
+    this.cache.invalidatePattern("triple:search:*");
   }
 
   /**
@@ -1178,14 +1188,14 @@ export class DualSourceApiClient {
     try {
       // Warm the most commonly accessed caches
       await Promise.allSettled([
-        this.cache.warmCache('triple:providers', () => this.getProviders()),
-        this.cache.warmCache('triple:metrics', () => this.getMetrics(), 300000), // 5 minutes TTL
-        this.cache.warmCache('triple:all_apis', () => this.listAPIs()),
+        this.cache.warmCache("triple:providers", () => this.getProviders()),
+        this.cache.warmCache("triple:metrics", () => this.getMetrics(), 300000), // 5 minutes TTL
+        this.cache.warmCache("triple:all_apis", () => this.listAPIs()),
       ]);
-      
-      console.log('Critical caches warmed successfully');
+
+      // Critical caches warmed successfully
     } catch (error) {
-      console.warn('Cache warming failed:', error);
+      // Cache warming failed - continue silently
     }
   }
 }
