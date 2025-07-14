@@ -289,7 +289,7 @@ jobs:
           output=$(node tests/integration/triple-source-smoke-test.mjs 2>&1)
           echo "$output"
           
-          if echo "$output" | grep -q "Success rate: 100.0%"; then
+          if echo "$output" | grep -q "Success Rate: 100.0%"; then
             echo "✅ All 68 tests passed - 100% success rate achieved"
           else
             echo "❌ Regression detected - not all tests passed"

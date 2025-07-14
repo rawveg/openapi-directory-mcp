@@ -111,13 +111,13 @@ export class RateLimiter {
     if (this.shouldStop) {
       return Promise.resolve();
     }
-    
+
     return new Promise((resolve) => {
       const timeout = setTimeout(() => {
         this.activeTimeouts.delete(timeout);
         resolve();
       }, ms);
-      
+
       this.activeTimeouts.add(timeout);
     });
   }
@@ -127,11 +127,11 @@ export class RateLimiter {
    */
   clear(): void {
     this.shouldStop = true;
-    
+
     // Clear all active timeouts
     this.activeTimeouts.forEach((timeout) => clearTimeout(timeout));
     this.activeTimeouts.clear();
-    
+
     // Reject all queued requests
     this.queue.forEach((item) =>
       item.reject(new Error("Rate limiter cleared")),
@@ -186,24 +186,24 @@ export const rateLimiters = new Proxy({} as Record<string, RateLimiter>, {
         }),
       };
     }
-    
+
     return _rateLimiters[prop];
   },
-  
+
   // Allow iteration for cleanup
   ownKeys() {
     if (!_rateLimiters) return [];
     return Object.keys(_rateLimiters);
   },
-  
+
   getOwnPropertyDescriptor(_target, prop) {
     if (!_rateLimiters || !(prop in _rateLimiters)) return undefined;
     return {
       enumerable: true,
       configurable: true,
-      value: _rateLimiters[prop as string]
+      value: _rateLimiters[prop as string],
     };
-  }
+  },
 });
 
 /**
@@ -211,8 +211,8 @@ export const rateLimiters = new Proxy({} as Record<string, RateLimiter>, {
  */
 export function cleanupRateLimiters(): void {
   if (_rateLimiters) {
-    Object.values(_rateLimiters).forEach(limiter => {
-      if (limiter && typeof limiter.clear === 'function') {
+    Object.values(_rateLimiters).forEach((limiter) => {
+      if (limiter && typeof limiter.clear === "function") {
         limiter.clear();
       }
     });

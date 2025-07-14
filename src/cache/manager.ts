@@ -13,7 +13,10 @@ export class CacheManager implements ICacheManager {
 
     this.cache = new NodeCache({
       stdTTL: Math.floor(ttlMs / 1000), // NodeCache uses seconds
-      checkperiod: process.env.NODE_ENV === 'test' ? 0 : Math.floor((ttlMs / 1000) * CACHE_LIMITS.CHECK_PERIOD_RATIO), // Disable periodic checks in tests
+      checkperiod:
+        process.env.NODE_ENV === "test"
+          ? 0
+          : Math.floor((ttlMs / 1000) * CACHE_LIMITS.CHECK_PERIOD_RATIO), // Disable periodic checks in tests
       useClones: false, // Better performance, but be careful with mutations
       deleteOnExpire: true,
       maxKeys: CACHE_LIMITS.MAX_KEYS,
@@ -152,13 +155,13 @@ export class CacheManager implements ICacheManager {
    */
   destroy(): void {
     if (!this.enabled) return;
-    
+
     try {
       // Clear all data
       this.cache.flushAll();
-      
+
       // Close the cache to stop any internal timers
-      if (typeof (this.cache as any).close === 'function') {
+      if (typeof (this.cache as any).close === "function") {
         (this.cache as any).close();
       }
     } catch (error) {

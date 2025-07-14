@@ -54,7 +54,7 @@ export class PersistentCacheManager implements ICacheManager {
       console.error(`Persistent cache initialized: ${this.cacheFile}`);
 
       // Set up automatic persistence interval (disabled in test environment)
-      if (process.env.NODE_ENV !== 'test') {
+      if (process.env.NODE_ENV !== "test") {
         this.persistTimer = setInterval(() => {
           this.persistToDisk();
         }, this.persistInterval);
@@ -178,7 +178,7 @@ export class PersistentCacheManager implements ICacheManager {
 
     try {
       this.cacheData.clear();
-      
+
       // Also delete the cache file
       if (existsSync(this.cacheFile)) {
         try {
@@ -188,7 +188,7 @@ export class PersistentCacheManager implements ICacheManager {
           console.error("Failed to delete cache file:", error);
         }
       }
-      
+
       console.error("Cache cleared");
     } catch (error) {
       console.error("Cache clear error:", error);
@@ -446,7 +446,7 @@ export class PersistentCacheManager implements ICacheManager {
     try {
       // Clean expired entries before persisting
       this.cleanExpired();
-      
+
       const cacheObject = Object.fromEntries(this.cacheData.entries());
       writeFileSync(
         this.cacheFile,

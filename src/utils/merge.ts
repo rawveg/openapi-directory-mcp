@@ -51,16 +51,20 @@ export class MergeUtilities {
     secondaryProviders: { data: string[] },
   ): { data: string[] } {
     // Import validation here to avoid circular dependencies
-    const { DataValidator } = require('./validation.js');
-    
+    const { DataValidator } = require("./validation.js");
+
     // Validate and sanitize both provider lists
     const validatedPrimary = DataValidator.validateProviders(primaryProviders);
-    const validatedSecondary = DataValidator.validateProviders(secondaryProviders);
-    
+    const validatedSecondary =
+      DataValidator.validateProviders(secondaryProviders);
+
     // Log any validation issues
-    DataValidator.logValidationResults(validatedPrimary, 'primaryProviders');
-    DataValidator.logValidationResults(validatedSecondary, 'secondaryProviders');
-    
+    DataValidator.logValidationResults(validatedPrimary, "primaryProviders");
+    DataValidator.logValidationResults(
+      validatedSecondary,
+      "secondaryProviders",
+    );
+
     const uniqueProviders = new Set([
       ...validatedPrimary.data.data,
       ...validatedSecondary.data.data,
@@ -277,15 +281,15 @@ export class MergeUtilities {
     secondaryAPIs: Record<string, ApiGuruAPI>,
   ): Promise<ApiGuruMetrics> {
     // Import validation here to avoid circular dependencies
-    const { DataValidator } = require('./validation.js');
-    
+    const { DataValidator } = require("./validation.js");
+
     // Validate and sanitize both metrics objects
     const validatedPrimary = DataValidator.validateMetrics(primaryMetrics);
     const validatedSecondary = DataValidator.validateMetrics(secondaryMetrics);
-    
+
     // Log any validation issues
-    DataValidator.logValidationResults(validatedPrimary, 'primaryMetrics');
-    DataValidator.logValidationResults(validatedSecondary, 'secondaryMetrics');
+    DataValidator.logValidationResults(validatedPrimary, "primaryMetrics");
+    DataValidator.logValidationResults(validatedSecondary, "secondaryMetrics");
     // Identify overlaps
     const primaryApiIds = new Set(Object.keys(primaryAPIs));
     const secondaryApiIds = new Set(Object.keys(secondaryAPIs));

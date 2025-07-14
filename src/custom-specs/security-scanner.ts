@@ -13,7 +13,7 @@ export class SecurityScanner {
     this.rules = this.initializeRules();
     // Debug: Verify rules are loaded
     if (this.rules.length === 0) {
-      console.error('SecurityScanner: No rules loaded!');
+      console.error("SecurityScanner: No rules loaded!");
     }
   }
 
@@ -51,10 +51,10 @@ export class SecurityScanner {
    * Recursively scan an object for security issues with circular reference check
    */
   private scanObjectWithCircularCheck(
-    obj: any, 
-    path: string, 
-    issues: SecurityIssue[], 
-    visited: WeakSet<any>
+    obj: any,
+    path: string,
+    issues: SecurityIssue[],
+    visited: WeakSet<any>,
   ): void {
     if (obj === null || obj === undefined) {
       return;
@@ -72,7 +72,12 @@ export class SecurityScanner {
       this.scanString(obj, path, issues);
     } else if (Array.isArray(obj)) {
       obj.forEach((item, index) => {
-        this.scanObjectWithCircularCheck(item, `${path}[${index}]`, issues, visited);
+        this.scanObjectWithCircularCheck(
+          item,
+          `${path}[${index}]`,
+          issues,
+          visited,
+        );
       });
     } else if (typeof obj === "object") {
       Object.entries(obj).forEach(([key, value]) => {
@@ -291,8 +296,7 @@ export class SecurityScanner {
         contexts: ["description", "example", "parameter", "schema", "metadata"],
         message: "Data URI with script content detected",
         suggestion: "Avoid data URIs containing scripts",
-        description:
-          "Detects data URIs that contain HTML with script tags",
+        description: "Detects data URIs that contain HTML with script tags",
       },
       {
         id: "eval-function",

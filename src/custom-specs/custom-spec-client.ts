@@ -38,14 +38,14 @@ export class CustomSpecClient {
     }
 
     const result = await fetchFn();
-    
+
     try {
       this.cache.set(`custom:${key}`, result, ttl);
     } catch (error) {
       // Log but don't fail if cache write fails
       console.warn(`Failed to cache result for key ${key}:`, error);
     }
-    
+
     return result;
   }
 
@@ -90,7 +90,7 @@ export class CustomSpecClient {
 
           // Structure the API with version as expected by tests
           apis[`custom:${parsed.name}`] = {
-            [parsed.version]: spec
+            [parsed.version]: spec,
           };
         } catch (error) {
           console.warn(`Failed to load spec ${specEntry.id}: ${error}`);
@@ -135,12 +135,12 @@ export class CustomSpecClient {
     // Handle both single parameter (ID) and two parameter (provider, api) calls
     if (api === undefined) {
       // Single parameter: parse ID like "custom:test-api" or "custom:test-api:1.0.0"
-      const parts = providerOrId.split(':');
-      if (parts.length < 2 || parts[0] !== 'custom') {
+      const parts = providerOrId.split(":");
+      if (parts.length < 2 || parts[0] !== "custom") {
         throw new Error(`Invalid API ID: ${providerOrId}`);
       }
       provider = parts[0];
-      apiName = parts[1] || '';
+      apiName = parts[1] || "";
       version = parts[2]; // Optional version
     } else {
       // Two parameters
@@ -152,51 +152,54 @@ export class CustomSpecClient {
       throw new Error(`Provider ${provider} not found in custom specs`);
     }
 
-    return this.fetchWithCache(`api:${provider}:${apiName}${version ? ':' + version : ''}`, async () => {
-      // If version specified, look for exact match
-      let specId: string;
-      if (version) {
-        specId = `custom:${apiName}:${version}`;
-        const spec = this.manifestManager.getSpec(specId);
-        if (!spec) {
-          throw new Error(`API not found: custom:${apiName}:${version}`);
+    return this.fetchWithCache(
+      `api:${provider}:${apiName}${version ? ":" + version : ""}`,
+      async () => {
+        // If version specified, look for exact match
+        let specId: string;
+        if (version) {
+          specId = `custom:${apiName}:${version}`;
+          const spec = this.manifestManager.getSpec(specId);
+          if (!spec) {
+            throw new Error(`API not found: custom:${apiName}:${version}`);
+          }
+        } else {
+          // Find latest version
+          const specs = this.manifestManager.listSpecs();
+          const matchingSpecs = specs.filter((s) => {
+            const parsed = this.manifestManager.parseSpecId(s.id);
+            return parsed && parsed.name === apiName;
+          });
+
+          if (matchingSpecs.length === 0) {
+            throw new Error(`API not found: custom:${apiName}`);
+          }
+
+          // Use first match (could be improved to find latest version)
+          const firstMatch = matchingSpecs[0];
+          if (!firstMatch) {
+            throw new Error(`API not found: custom:${apiName}`);
+          }
+          specId = firstMatch.id;
         }
-      } else {
-        // Find latest version
-        const specs = this.manifestManager.listSpecs();
-        const matchingSpecs = specs.filter((s) => {
-          const parsed = this.manifestManager.parseSpecId(s.id);
-          return parsed && parsed.name === apiName;
-        });
 
-        if (matchingSpecs.length === 0) {
-          throw new Error(`API not found: custom:${apiName}`);
+        const parsed = this.manifestManager.parseSpecId(specId);
+        if (!parsed) {
+          throw new Error(`Invalid spec ID: ${specId}`);
         }
 
-        // Use first match (could be improved to find latest version)
-        const firstMatch = matchingSpecs[0];
-        if (!firstMatch) {
-          throw new Error(`API not found: custom:${apiName}`);
+        const specContent = this.manifestManager.readSpecFile(
+          parsed.name,
+          parsed.version,
+        );
+
+        try {
+          return JSON.parse(specContent);
+        } catch (error) {
+          throw new Error("Invalid JSON in spec file");
         }
-        specId = firstMatch.id;
-      }
-
-      const parsed = this.manifestManager.parseSpecId(specId);
-      if (!parsed) {
-        throw new Error(`Invalid spec ID: ${specId}`);
-      }
-
-      const specContent = this.manifestManager.readSpecFile(
-        parsed.name,
-        parsed.version,
-      );
-      
-      try {
-        return JSON.parse(specContent);
-      } catch (error) {
-        throw new Error('Invalid JSON in spec file');
-      }
-    });
+      },
+    );
   }
 
   /**
@@ -221,7 +224,7 @@ export class CustomSpecClient {
     if (page !== undefined && limit !== undefined) {
       return this.listAPIsPaginated(page, limit);
     }
-    
+
     // Otherwise return the original format
     return this.fetchWithCache("all_apis", async () => {
       const specs = this.manifestManager.listSpecs();
@@ -450,8 +453,8 @@ export class CustomSpecClient {
     let provider: string | undefined;
     let page: number;
     let limit: number;
-    
-    if (typeof pageOrProvider === 'number') {
+
+    if (typeof pageOrProvider === "number") {
       // Called as searchAPIs(query, page, limit)
       page = pageOrProvider;
       limit = limitOrPage || 20;
@@ -1159,7 +1162,10 @@ export class CustomSpecClient {
   /**
    * List APIs with pagination support (for testing compatibility)
    */
-  private async listAPIsPaginated(page: number = 1, limit: number = 20): Promise<{
+  private async listAPIsPaginated(
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{
     data: Array<{
       id: string;
       title: string;
@@ -1177,37 +1183,37 @@ export class CustomSpecClient {
     };
   }> {
     const cacheKey = `list:paginated:${page}:${limit}`;
-    
+
     return this.fetchWithCache(cacheKey, async () => {
       const specs = this.manifestManager.listSpecs();
-      
+
       // Convert specs to API format
-      const apiList = specs.map(spec => {
+      const apiList = specs.map((spec) => {
         this.manifestManager.parseSpecId(spec.id);
         return {
           id: spec.id,
           title: spec.title,
           description: spec.description,
           version: spec.version,
-          provider: 'custom',
+          provider: "custom",
           added: spec.imported,
-          preferred: spec.version
+          preferred: spec.version,
         };
       });
-      
+
       // Apply pagination
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
       const paginatedData = apiList.slice(startIndex, endIndex);
-      
+
       return {
         data: paginatedData,
         pagination: {
           page,
           limit,
           total: apiList.length,
-          totalPages: Math.ceil(apiList.length / limit)
-        }
+          totalPages: Math.ceil(apiList.length / limit),
+        },
       };
     });
   }

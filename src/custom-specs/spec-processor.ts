@@ -69,7 +69,10 @@ export class SpecProcessor {
     }
 
     // Extract metadata - use byte length instead of string length
-    const metadata = this.extractMetadata(specObject, Buffer.byteLength(content, 'utf8'));
+    const metadata = this.extractMetadata(
+      specObject,
+      Buffer.byteLength(content, "utf8"),
+    );
 
     return {
       spec: apiGuruSpec,
@@ -249,7 +252,7 @@ export class SpecProcessor {
 
     // Determine file extensions based on original format
     const basePath = "custom/spec";
-    
+
     const apiVersion: ApiGuruApiVersion = {
       added,
       updated: added,
@@ -269,8 +272,8 @@ export class SpecProcessor {
       added,
       preferred: version,
       versions: {
-        [version]: apiVersion
-      }
+        [version]: apiVersion,
+      },
     };
   }
 

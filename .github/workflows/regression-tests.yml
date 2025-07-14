@@ -94,7 +94,7 @@ jobs:
           echo "$output"
           
           # Check for 100% success rate
-          if echo "$output" | grep -q "Success rate: 100.0%"; then
+          if echo "$output" | grep -q "Success Rate: 100.0%"; then
             echo "✅ ZERO REGRESSIONS - All 68 tests passed (100% success rate)"
           else
             echo "❌ REGRESSIONS DETECTED - Tests failed"

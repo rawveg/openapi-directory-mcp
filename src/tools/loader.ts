@@ -8,7 +8,7 @@ import { ToolRegistry } from "./registry.js";
 const getToolsDir = (): string => {
   try {
     // Use dynamic evaluation to avoid Jest parsing issues with import.meta
-    const importMeta = eval('import.meta');
+    const importMeta = eval("import.meta");
     if (typeof importMeta !== "undefined" && importMeta.url) {
       const __filename = fileURLToPath(importMeta.url);
       return path.dirname(__filename);
@@ -19,7 +19,7 @@ const getToolsDir = (): string => {
   // Fallback for environments where import.meta is not available
   const fallbackPath = path.join(process.cwd(), "src", "tools");
   const distPath = path.join(process.cwd(), "dist", "tools");
-  
+
   // In test environments, prefer compiled tools in dist directory
   try {
     if (fs.existsSync(distPath)) {

@@ -5,7 +5,12 @@ import { MergeUtilities, MergedSearchResult } from "../utils/merge.js";
 import { ICacheManager } from "../cache/types.js";
 import { PaginationHelper } from "../utils/pagination.js";
 import { PAGINATION } from "../utils/constants.js";
-import { ApiGuruAPI, ApiGuruApiVersion, ApiGuruMetrics, ApiGuruServices } from "../types/api.js";
+import {
+  ApiGuruAPI,
+  ApiGuruApiVersion,
+  ApiGuruMetrics,
+  ApiGuruServices,
+} from "../types/api.js";
 import {
   ProviderStats,
   calculateProviderStats,
