@@ -4,6 +4,8 @@
 
 import { createHash } from "crypto";
 import { homedir } from "os";
+import DOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
 import { VALIDATION, FILE_EXTENSIONS } from "./constants.js";
 import { ValidationError } from "./errors.js";
 
@@ -672,18 +674,46 @@ export class DataValidator {
 
   /**
    * Check for potentially suspicious content (XSS, injection attempts)
+   * Uses DOMPurify for robust HTML sanitization instead of regex patterns
    */
   private static containsSuspiciousContent(str: string): boolean {
-    const suspiciousPatterns = [
-      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-      /javascript:/gi,
-      /on\w+\s*=/gi,
-      /\bDROP\s+TABLE\b/gi,
-      /\bSELECT\s+\*\s+FROM\b/gi,
-      /['";].*--/gi,
-    ];
+    try {
+      // Create a DOM implementation for Node.js
+      const window = new JSDOM("").window;
+      const purify = DOMPurify(window as any);
 
-    return suspiciousPatterns.some((pattern) => pattern.test(str));
+      // Sanitize the string with very strict settings
+      const sanitized = purify.sanitize(str, {
+        ALLOWED_TAGS: [], // No HTML tags allowed
+        ALLOWED_ATTR: [], // No attributes allowed
+        KEEP_CONTENT: true, // Keep text content
+        FORBID_TAGS: ["script", "style", "iframe", "object", "embed"],
+        FORBID_ATTR: ["onclick", "onload", "onerror", "javascript", "vbscript"],
+      });
+
+      // Check for SQL injection patterns separately since DOMPurify focuses on HTML/XSS
+      const sqlPatterns = [
+        /\bDROP\s+TABLE\b/gi,
+        /\bSELECT\s+\*\s+FROM\b/gi,
+        /['";].*--/gi,
+      ];
+
+      const hasSqlInjection = sqlPatterns.some((pattern) => pattern.test(str));
+
+      // If sanitized content differs from original or SQL patterns found, it's suspicious
+      return sanitized !== str || hasSqlInjection;
+    } catch (error) {
+      // If DOMPurify fails, fall back to basic checks
+      const basicPatterns = [
+        /<script/i,
+        /javascript:/i,
+        /on\w+\s*=/i,
+        /\bDROP\s+TABLE\b/gi,
+        /\bSELECT\s+\*\s+FROM\b/gi,
+      ];
+
+      return basicPatterns.some((pattern) => pattern.test(str));
+    }
   }
 
   /**

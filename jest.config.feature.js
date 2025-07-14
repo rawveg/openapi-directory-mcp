@@ -30,11 +30,6 @@ export default {
       }
     }]
   },
-  globals: {
-    'ts-jest': {
-      useESM: true
-    }
-  },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {

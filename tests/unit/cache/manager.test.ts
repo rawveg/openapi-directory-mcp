@@ -362,9 +362,14 @@ describe('CacheManager', () => {
         call => call[0] === 'expired'
       )?.[1];
       
+      // Mock console.log to capture Logger.cache calls
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+      
       expiredHandler?.('expired-key', 'expired-value');
       
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Cache expired: expired-key');
+      expect(consoleLogSpy).toHaveBeenCalledWith('[CACHE] expired: expired-key');
+      
+      consoleLogSpy.mockRestore();
     });
 
     test('should log set keys', () => {
@@ -372,9 +377,14 @@ describe('CacheManager', () => {
         call => call[0] === 'set'
       )?.[1];
       
+      // Mock console.log to capture Logger.cache calls
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+      
       setHandler?.('new-key', 'new-value');
       
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Cache set: new-key');
+      expect(consoleLogSpy).toHaveBeenCalledWith('[CACHE] set: new-key');
+      
+      consoleLogSpy.mockRestore();
     });
   });
 

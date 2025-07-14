@@ -28,14 +28,23 @@ if (typeof global !== 'undefined') {
 
 // Global cleanup for rate limiters
 afterAll(async () => {
-  // Dynamic import to handle ES modules
+  // Try both source and built versions for robustness
   try {
+    // Try built version first
     const { cleanupRateLimiters } = await import('./dist/utils/rate-limiter.js');
     if (cleanupRateLimiters) {
       cleanupRateLimiters();
     }
   } catch (error) {
-    // Ignore errors during cleanup
+    try {
+      // Fallback to source version
+      const { cleanupRateLimiters } = await import('./src/utils/rate-limiter.ts');
+      if (cleanupRateLimiters) {
+        cleanupRateLimiters();
+      }
+    } catch (fallbackError) {
+      // Ignore all cleanup errors - this is best effort
+    }
   }
   
   // Force clear all timers as a last resort
@@ -45,11 +54,20 @@ afterAll(async () => {
 // Also clean after each test file to prevent cross-file contamination
 afterEach(async () => {
   try {
+    // Try built version first
     const { cleanupRateLimiters } = await import('./dist/utils/rate-limiter.js');
     if (cleanupRateLimiters) {
       cleanupRateLimiters();
     }
   } catch (error) {
-    // Ignore errors during cleanup
+    try {
+      // Fallback to source version
+      const { cleanupRateLimiters } = await import('./src/utils/rate-limiter.ts');
+      if (cleanupRateLimiters) {
+        cleanupRateLimiters();
+      }
+    } catch (fallbackError) {
+      // Ignore all cleanup errors - this is best effort
+    }
   }
 });

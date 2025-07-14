@@ -3,6 +3,7 @@ import { ICacheManager } from "./types.js";
 import { CACHE_TTL, CACHE_LIMITS } from "../utils/constants.js";
 import { CacheValidator } from "../utils/validation.js";
 import { CacheError, ErrorHandler } from "../utils/errors.js";
+import { Logger } from "../utils/logger.js";
 
 export class CacheManager implements ICacheManager {
   private cache: NodeCache;
@@ -24,11 +25,11 @@ export class CacheManager implements ICacheManager {
 
     // Set up cache statistics logging
     this.cache.on("expired", (key) => {
-      console.error(`Cache expired: ${key}`);
+      Logger.cache("expired", key);
     });
 
     this.cache.on("set", (key) => {
-      console.error(`Cache set: ${key}`);
+      Logger.cache("set", key);
     });
   }
 
@@ -45,12 +46,12 @@ export class CacheManager implements ICacheManager {
       if (wrappedValue !== undefined) {
         // Validate cache entry integrity
         if (!this.validateCacheEntry(key, wrappedValue)) {
-          console.error(`Cache corruption detected for key: ${key}`);
+          Logger.warn(`Cache corruption detected for key: ${key}`);
           this.delete(key);
           return undefined;
         }
 
-        console.error(`Cache hit: ${key}`);
+        Logger.cache("hit", key);
 
         // Return the unwrapped value
         return wrappedValue.value as T;
@@ -97,7 +98,7 @@ export class CacheManager implements ICacheManager {
         const ttlSeconds = ttlMs
           ? Math.max(1, Math.floor(ttlMs / 1000))
           : "default";
-        console.error(`Cache set: ${key} (TTL: ${ttlSeconds}s)`);
+        Logger.cache("set", key, { ttl: `${ttlSeconds}s` });
       }
 
       return success;
@@ -125,11 +126,11 @@ export class CacheManager implements ICacheManager {
     try {
       const deleted = this.cache.del(key);
       if (deleted > 0) {
-        console.error(`Cache deleted: ${key}`);
+        Logger.cache("delete", key);
       }
       return deleted;
     } catch (error) {
-      console.error(`Cache delete error for key ${key}:`, error);
+      Logger.error(`Cache delete error for key ${key}:`, error);
       return 0;
     }
   }
@@ -144,9 +145,9 @@ export class CacheManager implements ICacheManager {
 
     try {
       this.cache.flushAll();
-      console.error("Cache cleared");
+      Logger.cache("clear", "all");
     } catch (error) {
-      console.error("Cache clear error:", error);
+      Logger.error("Cache clear error:", error);
     }
   }
 
@@ -165,7 +166,7 @@ export class CacheManager implements ICacheManager {
         (this.cache as any).close();
       }
     } catch (error) {
-      console.error("Cache destroy error:", error);
+      Logger.error("Cache destroy error:", error);
     }
   }
 
@@ -322,14 +323,12 @@ export class CacheManager implements ICacheManager {
       }
 
       if (deletedCount > 0) {
-        console.error(
-          `Cache invalidated ${deletedCount} keys matching pattern: ${pattern}`,
-        );
+        Logger.cache("invalidatePattern", pattern, { count: deletedCount });
       }
 
       return deletedCount;
     } catch (error) {
-      console.error(
+      Logger.error(
         `Cache invalidatePattern error for pattern ${pattern}:`,
         error,
       );
@@ -353,12 +352,12 @@ export class CacheManager implements ICacheManager {
       }
 
       if (deletedCount > 0) {
-        console.error(`Cache invalidated ${deletedCount} specific keys`);
+        Logger.cache("invalidateKeys", "multiple", { count: deletedCount });
       }
 
       return deletedCount;
     } catch (error) {
-      console.error(`Cache invalidateKeys error:`, error);
+      Logger.error(`Cache invalidateKeys error:`, error);
       return 0;
     }
   }
@@ -384,7 +383,7 @@ export class CacheManager implements ICacheManager {
       }
 
       // Fetch fresh data
-      console.error(`Cache warming: ${key}`);
+      Logger.cache("warming", key);
       const data = await fetchFn();
 
       // Store in cache
@@ -392,7 +391,7 @@ export class CacheManager implements ICacheManager {
 
       return data;
     } catch (error) {
-      console.error(`Cache warmCache error for key ${key}:`, error);
+      Logger.error(`Cache warmCache error for key ${key}:`, error);
       // On error, try to fetch without caching
       return await fetchFn();
     }
@@ -432,7 +431,7 @@ export class CacheManager implements ICacheManager {
 
       return true;
     } catch (error) {
-      console.error(`Cache validation error for key ${key}:`, error);
+      Logger.error(`Cache validation error for key ${key}:`, error);
       return false;
     }
   }
@@ -465,9 +464,11 @@ export class CacheManager implements ICacheManager {
 
     const memoryUsage = this.getMemoryUsage();
 
-    console.error(
-      `Cache health check: ${cleanedKeys} corrupted entries cleaned out of ${keys.length} total`,
-    );
+    Logger.cache("healthCheck", "completed", {
+      cleaned: cleanedKeys,
+      total: keys.length,
+      corrupted: corruptedKeys,
+    });
 
     return {
       totalKeys: keys.length,
