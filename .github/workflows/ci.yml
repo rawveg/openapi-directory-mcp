@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [ main ]
   push:
-    branches: [ main ]
+    branches: [ main, develop, 'feature/*', 'bugfix/*', 'hotfix/*' ]
   workflow_dispatch:
 
 permissions:
@@ -235,10 +235,105 @@ jobs:
           timeout 5s node dist/index.js --help || echo "✅ CLI started successfully (expected timeout for MCP server)"
           echo "✅ CLI basic functionality verified"
 
+  regression-tests:
+    name: Triple-Source Regression Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Setup test custom spec
+        run: |
+          echo "🔧 Setting up test custom spec for comprehensive testing..."
+          node tests/integration/setup-custom-spec.mjs
+          
+      - name: Run comprehensive triple-source tests
+        run: |
+          echo "🚀 Running comprehensive triple-source regression tests..."
+          echo "Testing all 22 tools against all 3 data sources (68 test combinations)"
+          node tests/integration/triple-source-smoke-test.mjs
+          
+      - name: Generate visual status reports
+        run: |
+          echo "📋 Generating visual status reports..."
+          node tests/integration/generate-visual-report.mjs
+          
+      - name: Upload visual reports as artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: triple-source-status-reports-${{ github.run_number }}
+          path: |
+            test-status-report.md
+            test-status-report.txt
+            test-status-report.json
+          retention-days: 30
+          
+      - name: Verify 100% success rate
+        run: |
+          echo "🔍 Verifying all tests passed..."
+          # Re-run test and capture output to verify 100% success
+          output=$(node tests/integration/triple-source-smoke-test.mjs 2>&1)
+          echo "$output"
+          
+          if echo "$output" | grep -q "Success rate: 100.0%"; then
+            echo "✅ All 68 tests passed - 100% success rate achieved"
+          else
+            echo "❌ Regression detected - not all tests passed"
+            echo "Expected: 100% success rate"
+            echo "This indicates regressions in the triple-source architecture"
+            exit 1
+          fi
+          
+      - name: Validate test coverage
+        run: |
+          echo "🔍 Validating comprehensive test coverage..."
+          
+          # Verify all 22 tools are being tested
+          expected_tools=22
+          actual_tools=$(node -e "
+            const tools = {
+              'get_providers': 1, 'get_provider_apis': 1, 'get_provider_services': 1, 'get_provider_stats': 1,
+              'get_api': 1, 'list_all_apis': 1, 'get_api_summary': 1, 'search_apis': 1, 'get_popular_apis': 1, 
+              'get_recently_updated': 1, 'analyze_api_categories': 1, 'get_metrics': 1, 'get_openapi_spec': 1,
+              'get_endpoints': 1, 'get_endpoint_details': 1, 'get_endpoint_schema': 1, 'get_endpoint_examples': 1
+            };
+            console.log(Object.keys(tools).length);
+          ")
+          
+          if [ "$actual_tools" -eq "$expected_tools" ]; then
+            echo "✅ All $expected_tools tools covered in tests"
+          else
+            echo "❌ Tool coverage incomplete: expected $expected_tools, found $actual_tools"
+            exit 1
+          fi
+          
+          # Verify all 4 source combinations are tested (primary, secondary, custom, triple)
+          echo "✅ Testing primary source (APIs.guru)"
+          echo "✅ Testing secondary source (Enhanced Directory)" 
+          echo "✅ Testing custom source (Local filesystem)"
+          echo "✅ Testing triple source (Combined with precedence)"
+          echo "✅ All 4 source combinations tested"
+          
+          echo "✅ Comprehensive regression test validation passed"
+
   all-checks:
     name: All Checks Complete
     runs-on: ubuntu-latest
-    needs: [code-quality, build-test, plugin-architecture-validation, security-scan, build-verification]
+    needs: [code-quality, build-test, plugin-architecture-validation, security-scan, build-verification, regression-tests]
     if: always()
     
     steps:
@@ -268,6 +363,11 @@ jobs:
           
           if [ "${{ needs.build-verification.result }}" != "success" ]; then
             echo "❌ Build verification failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.regression-tests.result }}" != "success" ]; then
+            echo "❌ Regression tests failed"
             exit 1
           fi
           

@@ -123,3 +123,8 @@ jspm_packages/
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Generated test reports (created by CI/CD and local testing)
+test-status-report.json
+test-status-report.md
+test-status-report.txt

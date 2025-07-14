@@ -150,11 +150,11 @@ export class CustomSpecClient {
   async getServiceAPI(
     provider: string,
     service: string,
-    api: string,
+    _api: string,
   ): Promise<ApiGuruAPI> {
-    // Custom specs don't use services, treat service as part of name
-    const fullApiName = `${service}-${api}`;
-    return this.getAPI(provider, fullApiName);
+    // For custom specs, service is the API name and api is the version
+    // Just use service as the API name since custom specs are identified by name
+    return this.getAPI(provider, service);
   }
 
   /**
@@ -584,6 +584,176 @@ export class CustomSpecClient {
         has_previous: page > 1,
       },
     };
+  }
+
+  /**
+   * Get provider statistics for custom source
+   */
+  async getProviderStats(provider: string): Promise<any> {
+    if (provider !== "custom") {
+      throw new Error(`Provider ${provider} not found in custom specs`);
+    }
+
+    return this.fetchWithCache(`provider_stats:${provider}`, async () => {
+      const specs = this.manifestManager.listSpecs();
+
+      return {
+        provider,
+        api_count: specs.length,
+        source: "custom",
+      };
+    });
+  }
+
+  /**
+   * Get API summary by ID for custom source
+   */
+  async getAPISummaryById(apiId: string): Promise<any> {
+    return this.fetchWithCache(`api_summary:${apiId}`, async () => {
+      const [, name, version] = apiId.split(":");
+      if (!name || !version) {
+        throw new Error(
+          `Invalid custom API ID format: ${apiId}. Expected format: custom:name:version`,
+        );
+      }
+
+      const specContent = this.manifestManager.readSpecFile(name, version);
+      const api = JSON.parse(specContent);
+
+      return {
+        id: apiId,
+        info: api.info,
+        versions: api.versions,
+        preferred: api.preferred,
+        source: "custom",
+      };
+    });
+  }
+
+  /**
+   * Get popular APIs from custom source (returns all since custom specs are curated)
+   */
+  async getPopularAPIs(limit?: number): Promise<any> {
+    return this.fetchWithCache(`popular:${limit}`, async () => {
+      const specs = this.manifestManager.listSpecs();
+
+      return {
+        results: specs.slice(0, limit || 20).map((spec) => spec),
+        source: "custom",
+      };
+    });
+  }
+
+  /**
+   * Get recently updated APIs from custom source
+   */
+  async getRecentlyUpdatedAPIs(limit?: number): Promise<any> {
+    return this.fetchWithCache(`recent:${limit}`, async () => {
+      const specs = this.manifestManager.listSpecs();
+
+      // Sort by imported date (most recent first)
+      specs.sort(
+        (a, b) =>
+          new Date(b.imported).getTime() - new Date(a.imported).getTime(),
+      );
+
+      return {
+        results: specs.slice(0, limit || 10).map((spec) => spec),
+        source: "custom",
+      };
+    });
+  }
+
+  /**
+   * Get OpenAPI specification for a custom API
+   */
+  async getOpenAPISpec(url: string): Promise<any> {
+    // For custom specs, the URL might be a spec ID
+    if (url.startsWith("custom:")) {
+      return this.fetchWithCache(`spec:${url}`, async () => {
+        const [, name, version] = url.split(":");
+        if (!name || !version) {
+          throw new Error(`Invalid custom API ID format: ${url}`);
+        }
+
+        const specContent = this.manifestManager.readSpecFile(name, version);
+        const api = JSON.parse(specContent);
+
+        // Return the actual OpenAPI spec from the preferred version
+        const preferredVersion = api.versions[api.preferred];
+        return preferredVersion.spec;
+      });
+    }
+
+    // For external URLs, throw error since custom client doesn't fetch external specs
+    throw new Error(`External URL not supported in custom client: ${url}`);
+  }
+
+  /**
+   * Get endpoint schema for custom source
+   */
+  async getEndpointSchema(
+    apiId: string,
+    method: string,
+    path: string,
+  ): Promise<any> {
+    const cacheKey = `endpoint_schema:${apiId}:${method}:${path}`;
+
+    return this.fetchWithCache(cacheKey, async () => {
+      const [, name, version] = apiId.split(":");
+      if (!name || !version) {
+        throw new Error(
+          `Invalid custom API ID format: ${apiId}. Expected format: custom:name:version`,
+        );
+      }
+
+      const specContent = this.manifestManager.readSpecFile(name, version);
+      const api = JSON.parse(specContent);
+
+      const preferredVersion = api.versions[api.preferred];
+      const spec = preferredVersion.spec;
+
+      const pathItem = spec.paths?.[path];
+      const operation = pathItem?.[method.toLowerCase()];
+
+      if (!operation) {
+        throw new Error(`Endpoint not found: ${method} ${path}`);
+      }
+
+      return {
+        api_id: apiId,
+        method: method.toUpperCase(),
+        path,
+        parameters: operation.parameters || [],
+        requestBody: operation.requestBody,
+        responses: operation.responses || {},
+        source: "custom",
+      };
+    });
+  }
+
+  /**
+   * Get endpoint examples for custom source
+   */
+  async getEndpointExamples(
+    apiId: string,
+    method: string,
+    path: string,
+  ): Promise<any> {
+    const cacheKey = `endpoint_examples:${apiId}:${method}:${path}`;
+
+    return this.fetchWithCache(cacheKey, async () => {
+      await this.getEndpointSchema(apiId, method, path);
+
+      return {
+        api_id: apiId,
+        method: method.toUpperCase(),
+        path,
+        request_examples: [], // Custom source doesn't have examples
+        response_examples: [], // Custom source doesn't have examples
+        source: "custom",
+      };
+    });
   }
 
   /**

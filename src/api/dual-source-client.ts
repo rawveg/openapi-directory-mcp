@@ -987,13 +987,23 @@ export class DualSourceApiClient {
 
     if (hasSecondary) {
       try {
-        // Secondary client may not have getAPIEndpoints, fall back to primary
-        return await this.primaryClient.getAPIEndpoints(
-          apiId,
-          page,
-          limit,
-          tag,
-        );
+        // Try secondary client first, fall back to primary if method doesn't exist
+        if (typeof this.secondaryClient.getAPIEndpoints === "function") {
+          return await this.secondaryClient.getAPIEndpoints(
+            apiId,
+            page,
+            limit,
+            tag,
+          );
+        } else {
+          // Secondary client doesn't have getAPIEndpoints, use primary with secondary data
+          return await this.primaryClient.getAPIEndpoints(
+            apiId,
+            page,
+            limit,
+            tag,
+          );
+        }
       } catch (error) {
         // Fallback to primary
       }
