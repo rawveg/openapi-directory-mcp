@@ -3,6 +3,8 @@ import { SecondaryApiClient } from "./secondary-client.js";
 import { CustomSpecClient } from "../custom-specs/custom-spec-client.js";
 import { MergeUtilities, MergedSearchResult } from "../utils/merge.js";
 import { ICacheManager } from "../cache/types.js";
+import { PaginationHelper } from "../utils/pagination.js";
+import { PAGINATION } from "../utils/constants.js";
 import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from "../types/api.js";
 import {
   ProviderStats,
@@ -294,9 +296,30 @@ export class DualSourceApiClient {
     return this.fetchWithCache(
       cacheKey,
       async () => {
+        // Use pagination helper to fetch data efficiently
         const [primaryResults, secondaryResults, customResults] =
           await Promise.allSettled([
-            this.primaryClient.getPaginatedAPIs(1, 10000), // Get all from all sources
+            PaginationHelper.smartFetch(
+              async (page, limit) => {
+                const response = await this.primaryClient.getPaginatedAPIs(
+                  page,
+                  limit,
+                );
+                return {
+                  data: response.results,
+                  total: response.pagination.total_results,
+                  hasMore: response.pagination.has_next,
+                };
+              },
+              {
+                maxTotal: PAGINATION.LARGE_FETCH_LIMIT,
+                chunkSize: PAGINATION.CHUNKED_FETCH_SIZE,
+              },
+            ).then((result) => ({
+              data: result.data,
+              total: result.totalFetched,
+              hasMore: false,
+            })),
             this.secondaryClient.listAPIs(),
             this.customClient.listAPIs(),
           ]);
@@ -987,13 +1010,23 @@ export class DualSourceApiClient {
 
     if (hasSecondary) {
       try {
-        // Secondary client may not have getAPIEndpoints, fall back to primary
-        return await this.primaryClient.getAPIEndpoints(
-          apiId,
-          page,
-          limit,
-          tag,
-        );
+        // Try secondary client first, fall back to primary if method doesn't exist
+        if (typeof this.secondaryClient.getAPIEndpoints === "function") {
+          return await this.secondaryClient.getAPIEndpoints(
+            apiId,
+            page,
+            limit,
+            tag,
+          );
+        } else {
+          // Secondary client doesn't have getAPIEndpoints, use primary with secondary data
+          return await this.primaryClient.getAPIEndpoints(
+            apiId,
+            page,
+            limit,
+            tag,
+          );
+        }
       } catch (error) {
         // Fallback to primary
       }

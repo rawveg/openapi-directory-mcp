@@ -1,20 +1,22 @@
 import NodeCache from "node-cache";
 import { ICacheManager } from "./types.js";
+import { CACHE_TTL, CACHE_LIMITS } from "../utils/constants.js";
+import { CacheValidator } from "../utils/validation.js";
+import { CacheError, ErrorHandler } from "../utils/errors.js";
 
 export class CacheManager implements ICacheManager {
   private cache: NodeCache;
   private enabled: boolean;
 
-  constructor(ttlMs: number = 86400000) {
-    // 24 hours default
+  constructor(ttlMs: number = CACHE_TTL.DEFAULT) {
     this.enabled = process.env.DISABLE_CACHE !== "true";
 
     this.cache = new NodeCache({
       stdTTL: Math.floor(ttlMs / 1000), // NodeCache uses seconds
-      checkperiod: Math.floor(ttlMs / 1000 / 10), // Check every 10% of TTL
+      checkperiod: Math.floor((ttlMs / 1000) * CACHE_LIMITS.CHECK_PERIOD_RATIO), // Check every 10% of TTL
       useClones: false, // Better performance, but be careful with mutations
       deleteOnExpire: true,
-      maxKeys: 1000, // Limit memory usage
+      maxKeys: CACHE_LIMITS.MAX_KEYS,
     });
 
     // Set up cache statistics logging
@@ -28,7 +30,7 @@ export class CacheManager implements ICacheManager {
   }
 
   /**
-   * Get value from cache
+   * Get value from cache with validation
    */
   get<T>(key: string): T | undefined {
     if (!this.enabled) {
@@ -36,19 +38,36 @@ export class CacheManager implements ICacheManager {
     }
 
     try {
-      const value = this.cache.get<T>(key);
-      if (value !== undefined) {
+      const wrappedValue = this.cache.get<any>(key);
+      if (wrappedValue !== undefined) {
+        // Validate cache entry integrity
+        if (!this.validateCacheEntry(key, wrappedValue)) {
+          console.error(`Cache corruption detected for key: ${key}`);
+          this.delete(key);
+          return undefined;
+        }
+
         console.error(`Cache hit: ${key}`);
+
+        // Return the unwrapped value
+        return wrappedValue.value as T;
       }
-      return value;
+      return undefined;
     } catch (error) {
-      console.error(`Cache get error for key ${key}:`, error);
+      const cacheError = new CacheError(`Cache get error for key ${key}`, {
+        operation: "get",
+        details: {
+          key,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+      ErrorHandler.logError(cacheError);
       return undefined;
     }
   }
 
   /**
-   * Set value in cache
+   * Set value in cache with enhanced metadata
    */
   set<T>(key: string, value: T, ttlMs?: number): boolean {
     if (!this.enabled) {
@@ -56,9 +75,20 @@ export class CacheManager implements ICacheManager {
     }
 
     try {
+      // Wrap value with metadata for validation
+      const wrappedValue = {
+        value,
+        timestamp: new Date().toISOString(),
+        integrity: CacheValidator.generateIntegrityHash(value),
+      };
+
       const success = ttlMs
-        ? this.cache.set(key, value, Math.max(1, Math.floor(ttlMs / 1000)))
-        : this.cache.set(key, value);
+        ? this.cache.set(
+            key,
+            wrappedValue,
+            Math.max(1, Math.floor(ttlMs / 1000)),
+          )
+        : this.cache.set(key, wrappedValue);
 
       if (success) {
         const ttlSeconds = ttlMs
@@ -69,7 +99,14 @@ export class CacheManager implements ICacheManager {
 
       return success;
     } catch (error) {
-      console.error(`Cache set error for key ${key}:`, error);
+      const cacheError = new CacheError(`Cache set error for key ${key}`, {
+        operation: "set",
+        details: {
+          key,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+      ErrorHandler.logError(cacheError);
       return false;
     }
   }
@@ -335,5 +372,84 @@ export class CacheManager implements ICacheManager {
       // On error, try to fetch without caching
       return await fetchFn();
     }
+  }
+
+  /**
+   * Validate cache entry integrity
+   */
+  private validateCacheEntry(key: string, wrappedValue: any): boolean {
+    try {
+      // Check if it's a wrapped value with metadata
+      if (!wrappedValue || typeof wrappedValue !== "object") {
+        return false;
+      }
+
+      // For backward compatibility, allow unwrapped values
+      if (
+        !wrappedValue.value &&
+        !wrappedValue.timestamp &&
+        !wrappedValue.integrity
+      ) {
+        return true; // Old format, assume valid
+      }
+
+      // Use cache validator for integrity check
+      if (!CacheValidator.validateCacheEntry(key, wrappedValue)) {
+        return false;
+      }
+
+      // Verify integrity hash if present
+      if (wrappedValue.integrity) {
+        return CacheValidator.verifyCacheIntegrity(
+          wrappedValue.value,
+          wrappedValue.integrity,
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.error(`Cache validation error for key ${key}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Perform cache health check and cleanup
+   */
+  performHealthCheck(): {
+    totalKeys: number;
+    corruptedKeys: number;
+    cleanedKeys: number;
+    memoryUsage: number;
+  } {
+    if (!this.enabled) {
+      return { totalKeys: 0, corruptedKeys: 0, cleanedKeys: 0, memoryUsage: 0 };
+    }
+
+    const keys = this.keys();
+    let corruptedKeys = 0;
+    let cleanedKeys = 0;
+
+    for (const key of keys) {
+      const wrappedValue = this.cache.get(key);
+      if (!this.validateCacheEntry(key, wrappedValue)) {
+        this.delete(key);
+        corruptedKeys++;
+        cleanedKeys++;
+      }
+    }
+
+    const memoryUsage = this.getMemoryUsage();
+
+    console.error(
+      `Cache health check: ${cleanedKeys} corrupted entries cleaned out of ${keys.length} total`,
+    );
+
+    return {
+      totalKeys: keys.length,
+      corruptedKeys,
+      cleanedKeys,
+      memoryUsage,
+    };
   }
 }
