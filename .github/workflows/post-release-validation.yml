@@ -11,6 +11,7 @@ on:
 permissions:
   contents: read
   issues: write
+  actions: read  # For workflow_run access
 
 jobs:
   wait-for-propagation:
@@ -25,25 +26,58 @@ jobs:
       - name: Extract version from workflow
         id: extract-version
         run: |
-          # Extract version from the tag that triggered the release
+          # Extract version from the tag that triggered the release workflow
           echo "Extracting version from completed release workflow..."
           
-          # Get the release tag from the workflow run
-          RELEASE_TAG=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}" \
-            | jq -r '.head_branch // empty')
-            
-          if [[ "$RELEASE_TAG" =~ ^v(.+)$ ]]; then
+          # Get workflow run details including the triggering ref
+          WORKFLOW_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}")
+          
+          # First try: Extract from head_commit message if it contains version info
+          COMMIT_MESSAGE=$(echo "$WORKFLOW_DATA" | jq -r '.head_commit.message // empty')
+          if [[ "$COMMIT_MESSAGE" =~ Release[[:space:]]+v([0-9]+\.[0-9]+\.[0-9]+.*) ]]; then
             VERSION="${BASH_REMATCH[1]}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "📦 Detected version: $VERSION"
-          else
-            # Fallback: get latest release
-            VERSION=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/${{ github.repository }}/releases/latest" \
-              | jq -r '.tag_name // empty' | sed 's/^v//')
+            echo "📦 Extracted from commit message: $VERSION"
+            exit 0
+          fi
+          
+          # Second try: Get the ref (should be the tag for tag-triggered workflows)
+          HEAD_REF=$(echo "$WORKFLOW_DATA" | jq -r '.head_branch // empty')
+          if [[ "$HEAD_REF" =~ ^v([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
+            VERSION="${BASH_REMATCH[1]}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "📦 Fallback to latest release version: $VERSION"
+            echo "📦 Extracted from head_branch: $VERSION"
+            exit 0
+          fi
+          
+          # Third try: Check if head_sha corresponds to a tag
+          HEAD_SHA=$(echo "$WORKFLOW_DATA" | jq -r '.head_sha // empty')
+          if [ -n "$HEAD_SHA" ]; then
+            TAG_DATA=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/git/refs/tags" \
+              | jq -r --arg sha "$HEAD_SHA" '.[] | select(.object.sha == $sha) | .ref' | head -1)
+            
+            if [[ "$TAG_DATA" =~ refs/tags/v([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
+              VERSION="${BASH_REMATCH[1]}"
+              echo "version=$VERSION" >> $GITHUB_OUTPUT
+              echo "📦 Extracted from tag ref: $VERSION"
+              exit 0
+            fi
+          fi
+          
+          # Fallback: Get latest release
+          echo "⚠️  Could not extract version from workflow, falling back to latest release"
+          VERSION=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest" \
+            | jq -r '.tag_name // empty' | sed 's/^v//')
+          
+          if [ -n "$VERSION" ] && [ "$VERSION" != "null" ]; then
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "📦 Fallback to latest release: $VERSION"
+          else
+            echo "❌ Could not determine version"
+            exit 1
           fi
           
       - name: Wait for registry propagation
@@ -68,7 +102,7 @@ jobs:
       - name: Test package availability
         id: availability-test
         run: |
-          echo "🔍 Testing package availability on NPM registry..."
+          echo "🔍 Testing package availability on NPM registry with retry logic..."
           VERSION="${{ needs.wait-for-propagation.outputs.version }}"
           
           if [ -z "$VERSION" ]; then
@@ -78,35 +112,56 @@ jobs:
           
           echo "📦 Testing: openapi-directory-mcp@$VERSION"
           
-          # Test npm view command
-          if npm view "openapi-directory-mcp@$VERSION" version; then
-            echo "✅ Package version found on registry"
-            echo "package_found=true" >> $GITHUB_OUTPUT
-          else
-            echo "❌ Package version not found on registry"
-            echo "package_found=false" >> $GITHUB_OUTPUT
-            exit 1
-          fi
+          # Test npm view command with retry logic
+          for i in {1..3}; do
+            echo "🔄 Attempt $i of 3..."
+            
+            if npm view "openapi-directory-mcp@$VERSION" version; then
+              echo "✅ Package version found on registry (attempt $i)"
+              echo "package_found=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            
+            if [ $i -lt 3 ]; then
+              echo "⏳ Attempt $i failed, waiting 30 seconds before retry..."
+              sleep 30
+            fi
+          done
+          
+          echo "❌ Package version not found on registry after 3 attempts"
+          echo "package_found=false" >> $GITHUB_OUTPUT
+          exit 1
           
       - name: Test package installation
         run: |
-          echo "🧪 Testing package installation..."
+          echo "🧪 Testing package installation with retry logic..."
           VERSION="${{ needs.wait-for-propagation.outputs.version }}"
           
           # Create clean test environment
           mkdir npm-install-test
           cd npm-install-test
-          
-          # Initialize and install
           npm init -y
-          echo "📥 Installing openapi-directory-mcp@$VERSION..."
           
-          if npm install "openapi-directory-mcp@$VERSION"; then
-            echo "✅ Package installation successful"
-          else
-            echo "❌ Package installation failed"
-            exit 1
-          fi
+          # Install with retry logic
+          for i in {1..3}; do
+            echo "🔄 Installation attempt $i of 3..."
+            echo "📥 Installing openapi-directory-mcp@$VERSION..."
+            
+            if npm install "openapi-directory-mcp@$VERSION"; then
+              echo "✅ Package installation successful (attempt $i)"
+              exit 0
+            fi
+            
+            if [ $i -lt 3 ]; then
+              echo "⏳ Installation attempt $i failed, waiting 30 seconds before retry..."
+              # Clean up for next attempt
+              rm -rf node_modules package-lock.json 2>/dev/null || true
+              sleep 30
+            fi
+          done
+          
+          echo "❌ Package installation failed after 3 attempts"
+          exit 1
           
       - name: Test CLI functionality
         run: |
