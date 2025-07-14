@@ -46,7 +46,7 @@ export class MockCacheManager implements ICacheManager {
   }
   
   invalidatePattern(pattern: string): number {
-    const regex = new RegExp(pattern.replace('*', '.*'));
+    const regex = new RegExp(pattern.replace(/\*/g, '.*'));
     let count = 0;
     for (const key of this.store.keys()) {
       if (regex.test(key)) {
