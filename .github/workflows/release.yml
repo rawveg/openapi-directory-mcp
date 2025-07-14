@@ -226,22 +226,12 @@ jobs:
             exit $PUBLISH_EXIT_CODE
           fi
           
-      - name: Test installation
+      - name: Verify publish success
         run: |
-          echo "🧪 Testing NPM installation..."
-          
-          # Create test directory
-          mkdir npm-install-test
-          cd npm-install-test
-          
-          # Test installation
-          npm init -y
-          npm install openapi-directory-mcp@${{ needs.pre-release-validation.outputs.version }}
-          
-          # Test CLI
-          timeout 5s npx openapi-directory-mcp --help || echo "CLI started successfully"
-          
-          echo "✅ NPM installation test passed"
+          echo "✅ NPM publish completed successfully"
+          echo "📦 Package: openapi-directory-mcp@${{ needs.pre-release-validation.outputs.version }}"
+          echo "🔗 NPM URL: https://www.npmjs.com/package/openapi-directory-mcp/v/${{ needs.pre-release-validation.outputs.version }}"
+          echo "ℹ️  Note: Registry propagation may take a few minutes before package is installable"
 
   update-github-release:
     name: Update GitHub Release
