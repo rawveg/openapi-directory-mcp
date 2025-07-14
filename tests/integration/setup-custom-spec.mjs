@@ -15,6 +15,20 @@ async function setupCustomSpec() {
   const specPath = join(process.cwd(), 'tests/fixtures/test-custom-spec.json');
   const specContent = readFileSync(specPath, 'utf-8');
   
+  // DEBUG: Log what we're trying to validate
+  console.log('🔍 DEBUG: Raw file content structure...');
+  const parsedContent = JSON.parse(specContent);
+  console.log('🔍 Root level keys:', Object.keys(parsedContent));
+  console.log('🔍 Has openapi field at root:', !!parsedContent.openapi);
+  console.log('🔍 Has swagger field at root:', !!parsedContent.swagger);
+  console.log('🔍 Has versions field:', !!parsedContent.versions);
+  if (parsedContent.versions && parsedContent.versions['1.0.0']) {
+    console.log('🔍 Has spec in versions[1.0.0]:', !!parsedContent.versions['1.0.0'].spec);
+    if (parsedContent.versions['1.0.0'].spec) {
+      console.log('🔍 Spec has openapi field:', !!parsedContent.versions['1.0.0'].spec.openapi);
+    }
+  }
+  
   const specName = 'testapi';
   const specVersion = '1.0.0';
   const specId = `custom:${specName}:${specVersion}`;

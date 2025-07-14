@@ -106,5 +106,5 @@ export const VALIDATION = {
 
   // Path validation
   MAX_PATH_LENGTH: 4096,
-  ALLOWED_PATH_CHARS: /^[a-zA-Z0-9._\-\/\\:]+$/,
+  ALLOWED_PATH_CHARS: /^[a-zA-Z0-9._\-/\\:]+$/,
 } as const;

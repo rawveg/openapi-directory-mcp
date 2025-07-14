@@ -256,12 +256,14 @@ export class ErrorHandler {
   static logError(error: OpenAPIDirectoryError | Error): void {
     if (error instanceof OpenAPIDirectoryError) {
       const level = ErrorHandler.getLogLevel(error.code);
+      // eslint-disable-next-line no-console
       console[level](`[${error.code}] ${error.message}`, {
         userMessage: error.userMessage,
         context: error.context,
         timestamp: error.timestamp,
       });
     } else {
+      // eslint-disable-next-line no-console
       console.error("Unhandled error:", error);
     }
   }
