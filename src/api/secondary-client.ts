@@ -157,7 +157,7 @@ export class SecondaryApiClient {
    * Get OpenAPI specification for a specific API version
    */
   async getOpenAPISpec(url: string): Promise<any> {
-    return this.fetchWithCache(
+    return this.fetchWithCacheNoRateLimit(
       `spec:${url}`,
       async () => {
         const response = await axios.get(url, {
@@ -167,6 +167,35 @@ export class SecondaryApiClient {
       },
       CACHE_TTL.SPECS,
     );
+  }
+
+  /**
+   * Fetch with cache but without rate limiting (for internal calls)
+   */
+  private async fetchWithCacheNoRateLimit<T>(
+    key: string,
+    fetchFn: () => Promise<T>,
+    ttl?: number,
+  ): Promise<T> {
+    const cacheKey = `secondary:${key}`;
+    const cached = this.cache.get<T>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      const result = await fetchFn();
+      this.cache.set(cacheKey, result, ttl || CACHE_TTL.DEFAULT);
+      return result;
+    } catch (error) {
+      const enhancedError = ErrorFactory.fromHttpError(error, {
+        operation: "fetchWithCacheNoRateLimit",
+        source: "secondary",
+        details: { key, cacheKey },
+      });
+      ErrorHandler.logError(enhancedError);
+      throw enhancedError;
+    }
   }
 
   /**
@@ -385,10 +414,10 @@ export class SecondaryApiClient {
       if (!preferredVersion) {
         throw new Error(`Preferred version not found for API: ${apiId}`);
       }
-      const specUrl = preferredVersion.swaggerUrl;
-      const spec = await this.getOpenAPISpec(
-        this.http.defaults.baseURL + specUrl,
-      );
+      const specUrl = preferredVersion.swaggerUrl.startsWith("http")
+        ? preferredVersion.swaggerUrl
+        : this.http.defaults.baseURL + preferredVersion.swaggerUrl;
+      const spec = await this.getOpenAPISpec(specUrl);
 
       const pathItem = spec.paths?.[path];
       const operation = pathItem?.[method.toLowerCase()];
@@ -492,10 +521,11 @@ export class SecondaryApiClient {
         }
 
         // Fetch the OpenAPI spec
-        const specUrl = preferredVersion.swaggerUrl;
-        const spec = await this.getOpenAPISpec(
-          this.http.defaults.baseURL + specUrl,
-        );
+        const rawUrl = preferredVersion.swaggerUrl;
+        const specUrl = rawUrl.startsWith("http")
+          ? rawUrl
+          : this.http.defaults.baseURL + rawUrl;
+        const spec = await this.getOpenAPISpec(specUrl);
 
         // Extract endpoints from spec
         const endpoints: Array<{
