@@ -1,6 +1,9 @@
 import axios, { AxiosInstance } from "axios";
 import { ICacheManager } from "../cache/types.js";
 import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from "../types/api.js";
+import { rateLimiters } from "../utils/rate-limiter.js";
+import { HTTP_TIMEOUTS, CACHE_TTL, USER_AGENT } from "../utils/constants.js";
+import { ErrorFactory, ErrorHandler } from "../utils/errors.js";
 
 /**
  * Secondary API client for the enhanced OpenAPI directory
@@ -13,10 +16,10 @@ export class SecondaryApiClient {
   constructor(baseURL: string, cacheManager: ICacheManager) {
     this.http = axios.create({
       baseURL,
-      timeout: 30000,
+      timeout: HTTP_TIMEOUTS.DEFAULT,
       headers: {
         Accept: "application/json",
-        "User-Agent": "openapi-directory-mcp/1.0.6-dual-source",
+        "User-Agent": USER_AGENT.WITH_DUAL_SOURCE,
       },
     });
 
@@ -28,26 +31,42 @@ export class SecondaryApiClient {
     fetchFn: () => Promise<T>,
     ttl?: number,
   ): Promise<T> {
-    const cached = this.cache.get<T>(`secondary:${key}`);
+    const cacheKey = `secondary:${key}`;
+    const cached = this.cache.get<T>(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const result = await fetchFn();
-    this.cache.set(`secondary:${key}`, result, ttl);
-    return result;
+    try {
+      // Apply rate limiting to external API calls
+      const result = await rateLimiters.secondary.execute(fetchFn);
+      this.cache.set(cacheKey, result, ttl || CACHE_TTL.DEFAULT);
+      return result;
+    } catch (error) {
+      const enhancedError = ErrorFactory.fromHttpError(error, {
+        operation: "fetchWithCache",
+        source: "secondary",
+        details: { key, cacheKey },
+      });
+      ErrorHandler.logError(enhancedError);
+      throw enhancedError;
+    }
   }
 
   /**
    * List all providers in the secondary directory
    */
   async getProviders(): Promise<{ data: string[] }> {
-    return this.fetchWithCache("providers", async () => {
-      const response = await this.http.get<{ data: string[] }>(
-        "/providers.json",
-      );
-      return response.data;
-    });
+    return this.fetchWithCache(
+      "providers",
+      async () => {
+        const response = await this.http.get<{ data: string[] }>(
+          "/providers.json",
+        );
+        return response.data;
+      },
+      CACHE_TTL.PROVIDERS,
+    );
   }
 
   /**
@@ -109,31 +128,45 @@ export class SecondaryApiClient {
    * List all APIs in the secondary directory
    */
   async listAPIs(): Promise<Record<string, ApiGuruAPI>> {
-    return this.fetchWithCache("all_apis", async () => {
-      const response =
-        await this.http.get<Record<string, ApiGuruAPI>>("/list.json");
-      return response.data;
-    });
+    return this.fetchWithCache(
+      "all_apis",
+      async () => {
+        const response =
+          await this.http.get<Record<string, ApiGuruAPI>>("/list.json");
+        return response.data;
+      },
+      CACHE_TTL.APIS,
+    );
   }
 
   /**
    * Get basic metrics for the secondary directory
    */
   async getMetrics(): Promise<ApiGuruMetrics> {
-    return this.fetchWithCache("metrics", async () => {
-      const response = await this.http.get<ApiGuruMetrics>("/metrics.json");
-      return response.data;
-    });
+    return this.fetchWithCache(
+      "metrics",
+      async () => {
+        const response = await this.http.get<ApiGuruMetrics>("/metrics.json");
+        return response.data;
+      },
+      CACHE_TTL.METRICS,
+    );
   }
 
   /**
    * Get OpenAPI specification for a specific API version
    */
   async getOpenAPISpec(url: string): Promise<any> {
-    return this.fetchWithCache(`spec:${url}`, async () => {
-      const response = await axios.get(url);
-      return response.data;
-    });
+    return this.fetchWithCache(
+      `spec:${url}`,
+      async () => {
+        const response = await axios.get(url, {
+          timeout: HTTP_TIMEOUTS.SPEC_FETCH,
+        });
+        return response.data;
+      },
+      CACHE_TTL.SPECS,
+    );
   }
 
   /**

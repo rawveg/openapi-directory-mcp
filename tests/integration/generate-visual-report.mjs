@@ -10,6 +10,9 @@ import { SecondaryApiClient } from '../../dist/api/secondary-client.js';
 import { CustomSpecClient } from '../../dist/custom-specs/custom-spec-client.js';
 import { ToolHandler } from '../../dist/tools/handler.js';
 
+// Rate limiting for testing
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 const TOOL_CONFIGURATIONS = {
   // Provider Tools
   get_providers: {},
@@ -50,7 +53,14 @@ const TOOL_CONFIGURATIONS = {
     api_id: 'googleapis.com:admin', 
     method: 'GET', 
     path: '/admin/directory/v1/groups' 
-  }
+  },
+  
+  // Cache Tools
+  cache_info: {},
+  cache_stats: {},
+  clear_cache: {},
+  clear_cache_key: { key: 'test-key' },
+  list_cache_keys: {}
 };
 
 const SECONDARY_CONFIGURATIONS = {
@@ -107,7 +117,8 @@ const TOOL_CATEGORIES = {
   'API Discovery': ['get_api', 'list_all_apis', 'get_api_summary', 'get_metrics'],
   'Search & Discovery': ['search_apis', 'get_popular_apis', 'get_recently_updated', 'analyze_api_categories'],
   'OpenAPI Specs': ['get_openapi_spec'],
-  'Endpoint Tools': ['get_endpoints', 'get_endpoint_details', 'get_endpoint_schema', 'get_endpoint_examples']
+  'Endpoint Tools': ['get_endpoints', 'get_endpoint_details', 'get_endpoint_schema', 'get_endpoint_examples'],
+  'Cache Tools': ['cache_info', 'cache_stats', 'clear_cache', 'clear_cache_key', 'list_cache_keys']
 };
 
 async function testTool(toolName, config, client, cacheManager) {
@@ -117,6 +128,9 @@ async function testTool(toolName, config, client, cacheManager) {
   const context = { apiClient: client, cacheManager };
   
   try {
+    // Add delay to prevent overwhelming APIs during batch testing
+    await delay(100); // 100ms delay between tool tests
+    
     await toolHandler.callTool(toolName, config, context);
     return { status: 'PASS', error: null };
   } catch (error) {

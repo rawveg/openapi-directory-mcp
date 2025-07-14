@@ -5,7 +5,7 @@
 
 /* eslint-disable no-console */
 
-import { join, dirname } from "path";
+import { join, dirname, resolve, normalize } from "path";
 import { homedir } from "os";
 import {
   existsSync,
@@ -14,12 +14,16 @@ import {
   writeFileSync,
   unlinkSync,
   statSync,
+  readdirSync,
+  rmdirSync,
 } from "fs";
 import {
   CustomSpecManifest,
   CustomSpecEntry,
   CustomSpecPaths,
 } from "./types.js";
+import { PathValidator, FileValidator } from "../utils/validation.js";
+import { ValidationError, ErrorHandler } from "../utils/errors.js";
 
 export class ManifestManager {
   private paths: CustomSpecPaths;
@@ -31,23 +35,54 @@ export class ManifestManager {
   }
 
   /**
-   * Initialize storage paths
+   * Initialize storage paths with validation
    */
   private initializePaths(): CustomSpecPaths {
-    const baseDir = process.env.OPENAPI_DIRECTORY_CACHE_DIR
-      ? join(process.env.OPENAPI_DIRECTORY_CACHE_DIR, "custom-specs")
-      : join(homedir(), ".cache", "openapi-directory-mcp", "custom-specs");
+    try {
+      const baseDir = process.env.OPENAPI_DIRECTORY_CACHE_DIR
+        ? join(process.env.OPENAPI_DIRECTORY_CACHE_DIR, "custom-specs")
+        : join(homedir(), ".cache", "openapi-directory-mcp", "custom-specs");
 
-    const specsDir = join(baseDir, "custom");
-    const manifestFile = join(baseDir, "manifest.json");
+      // Validate and normalize base directory path
+      PathValidator.validatePath(baseDir);
+      const validatedBaseDir = normalize(resolve(baseDir));
 
-    return {
-      baseDir,
-      manifestFile,
-      specsDir,
-      getSpecFile: (name: string, version: string) =>
-        join(specsDir, name, `${version}.json`),
-    };
+      const specsDir = join(validatedBaseDir, "custom");
+      const manifestFile = join(validatedBaseDir, "manifest.json");
+
+      // Validate all paths
+      PathValidator.validatePath(specsDir);
+      PathValidator.validatePath(manifestFile);
+
+      return {
+        baseDir: validatedBaseDir,
+        manifestFile,
+        specsDir,
+        getSpecFile: (name: string, version: string) => {
+          // Validate input parameters
+          if (!name || !version) {
+            throw new ValidationError(
+              "Name and version are required for spec file path",
+            );
+          }
+
+          // Sanitize name and version to prevent path traversal
+          const safeName = name.replace(/[^a-zA-Z0-9_.-]/g, "_");
+          const safeVersion = version.replace(/[^a-zA-Z0-9_.-]/g, "_");
+
+          const specFile = join(specsDir, safeName, `${safeVersion}.json`);
+          PathValidator.validatePath(specFile);
+
+          return normalize(specFile);
+        },
+      };
+    } catch (error) {
+      throw ErrorHandler.handleError(
+        error,
+        "Failed to initialize storage paths",
+        "INIT_PATHS_ERROR",
+      );
+    }
   }
 
   /**
@@ -63,14 +98,17 @@ export class ManifestManager {
   }
 
   /**
-   * Load manifest from disk
+   * Load manifest from disk with validation
    */
   private loadManifest(): CustomSpecManifest {
-    if (!existsSync(this.paths.manifestFile)) {
-      return this.createEmptyManifest();
-    }
-
     try {
+      // Validate manifest file path
+      PathValidator.validatePath(this.paths.manifestFile);
+
+      if (!existsSync(this.paths.manifestFile)) {
+        return this.createEmptyManifest();
+      }
+
       const content = readFileSync(this.paths.manifestFile, "utf-8");
       const manifest = JSON.parse(content) as CustomSpecManifest;
 
@@ -99,19 +137,28 @@ export class ManifestManager {
   }
 
   /**
-   * Save manifest to disk
+   * Save manifest to disk with validation
    */
   private saveManifest(): void {
-    this.ensureDirectories();
-
-    this.manifest.lastUpdated = new Date().toISOString();
-
     try {
+      this.ensureDirectories();
+
+      // Validate manifest file path before writing
+      PathValidator.validatePath(this.paths.manifestFile);
+
+      this.manifest.lastUpdated = new Date().toISOString();
+
       const content = JSON.stringify(this.manifest, null, 2);
+
+      // Validate content size before writing
+      FileValidator.validateFileSize(content.length);
+
       writeFileSync(this.paths.manifestFile, content, "utf-8");
     } catch (error) {
-      throw new Error(
-        `Failed to save manifest: ${error instanceof Error ? error.message : "Unknown error"}`,
+      throw ErrorHandler.handleError(
+        error,
+        "Failed to save manifest",
+        "SAVE_MANIFEST_ERROR",
       );
     }
   }
@@ -187,65 +234,107 @@ export class ManifestManager {
   }
 
   /**
-   * Store spec file on disk
+   * Store spec file on disk with validation
    */
   storeSpecFile(name: string, version: string, content: string): string {
-    const specDir = join(this.paths.specsDir, name);
-    const specFile = this.paths.getSpecFile(name, version);
-
-    // Ensure spec directory exists
-    if (!existsSync(specDir)) {
-      mkdirSync(specDir, { recursive: true });
-    }
-
     try {
+      // Validate inputs
+      if (!name || !version || !content) {
+        throw new ValidationError("Name, version, and content are required");
+      }
+
+      // Validate content size and structure
+      FileValidator.validateFileSize(content.length);
+      FileValidator.validateOpenAPIContent(content);
+
+      // Get validated spec file path
+      const specFile = this.paths.getSpecFile(name, version);
+      const specDir = dirname(specFile);
+
+      // Validate the directory path before creating
+      PathValidator.validatePath(specDir);
+
+      // Ensure spec directory exists
+      if (!existsSync(specDir)) {
+        mkdirSync(specDir, { recursive: true });
+      }
+
+      // Write file with validated path
       writeFileSync(specFile, content, "utf-8");
       return specFile;
     } catch (error) {
-      throw new Error(
-        `Failed to store spec file: ${error instanceof Error ? error.message : "Unknown error"}`,
+      throw ErrorHandler.handleError(
+        error,
+        `Failed to store spec file for ${name}:${version}`,
+        "STORE_SPEC_ERROR",
       );
     }
   }
 
   /**
-   * Read spec file from disk
+   * Read spec file from disk with validation
    */
   readSpecFile(name: string, version: string): string {
-    const specFile = this.paths.getSpecFile(name, version);
-
-    if (!existsSync(specFile)) {
-      throw new Error(`Spec file not found: ${specFile}`);
-    }
-
     try {
-      return readFileSync(specFile, "utf-8");
+      // Validate inputs
+      if (!name || !version) {
+        throw new ValidationError("Name and version are required");
+      }
+
+      // Get validated spec file path
+      const specFile = this.paths.getSpecFile(name, version);
+
+      // Additional path validation before file operations
+      PathValidator.validatePath(specFile);
+
+      if (!existsSync(specFile)) {
+        throw new ValidationError(`Spec file not found: ${specFile}`);
+      }
+
+      const content = readFileSync(specFile, "utf-8");
+
+      // Note: Content validation is handled by the CustomSpecClient
+      // which extracts the actual OpenAPI spec from the wrapper structure
+
+      return content;
     } catch (error) {
-      throw new Error(
-        `Failed to read spec file: ${error instanceof Error ? error.message : "Unknown error"}`,
+      throw ErrorHandler.handleError(
+        error,
+        `Failed to read spec file for ${name}:${version}`,
+        "READ_SPEC_ERROR",
       );
     }
   }
 
   /**
-   * Delete spec file from disk
+   * Delete spec file from disk with validation
    */
   deleteSpecFile(name: string, version: string): boolean {
-    const specFile = this.paths.getSpecFile(name, version);
-
-    if (!existsSync(specFile)) {
-      return false;
-    }
-
     try {
+      // Validate inputs
+      if (!name || !version) {
+        throw new ValidationError("Name and version are required");
+      }
+
+      // Get validated spec file path
+      const specFile = this.paths.getSpecFile(name, version);
+
+      // Additional path validation before file operations
+      PathValidator.validatePath(specFile);
+
+      if (!existsSync(specFile)) {
+        return false;
+      }
+
       unlinkSync(specFile);
 
       // Try to remove directory if empty
       const specDir = dirname(specFile);
       try {
-        const files = require("fs").readdirSync(specDir);
+        PathValidator.validatePath(specDir);
+        const files = readdirSync(specDir);
         if (files.length === 0) {
-          require("fs").rmdirSync(specDir);
+          rmdirSync(specDir);
         }
       } catch {
         // Ignore errors when trying to remove directory
@@ -253,22 +342,31 @@ export class ManifestManager {
 
       return true;
     } catch (error) {
-      console.warn(`Failed to delete spec file: ${error}`);
+      console.warn(`Failed to delete spec file for ${name}:${version}:`, error);
       return false;
     }
   }
 
   /**
-   * Get file size of a spec
+   * Get file size of a spec with validation
    */
   getSpecFileSize(name: string, version: string): number {
-    const specFile = this.paths.getSpecFile(name, version);
-
-    if (!existsSync(specFile)) {
-      return 0;
-    }
-
     try {
+      // Validate inputs
+      if (!name || !version) {
+        return 0;
+      }
+
+      // Get validated spec file path
+      const specFile = this.paths.getSpecFile(name, version);
+
+      // Additional path validation before file operations
+      PathValidator.validatePath(specFile);
+
+      if (!existsSync(specFile)) {
+        return 0;
+      }
+
       return statSync(specFile).size;
     } catch {
       return 0;
@@ -328,37 +426,53 @@ export class ManifestManager {
   }
 
   /**
-   * Validate manifest integrity
+   * Validate manifest integrity with path validation
    */
   validateIntegrity(): { valid: boolean; issues: string[] } {
     const issues: string[] = [];
-    const specs = this.listSpecs();
 
-    for (const spec of specs) {
-      // Check if spec file exists
-      const parsed = this.parseSpecId(spec.id);
-      if (!parsed) {
-        issues.push(`Invalid spec ID format: ${spec.id}`);
-        continue;
-      }
+    try {
+      const specs = this.listSpecs();
 
-      const specFile = this.paths.getSpecFile(parsed.name, parsed.version);
-      if (!existsSync(specFile)) {
-        issues.push(`Spec file missing for ${spec.id}: ${specFile}`);
-      }
+      for (const spec of specs) {
+        try {
+          // Check if spec file exists
+          const parsed = this.parseSpecId(spec.id);
+          if (!parsed) {
+            issues.push(`Invalid spec ID format: ${spec.id}`);
+            continue;
+          }
 
-      // Validate required fields
-      if (!spec.name || !spec.version || !spec.title) {
-        issues.push(`Missing required fields for ${spec.id}`);
-      }
+          // Validate the spec file path
+          const specFile = this.paths.getSpecFile(parsed.name, parsed.version);
+          PathValidator.validatePath(specFile);
 
-      // Check file size consistency
-      const actualSize = this.getSpecFileSize(parsed.name, parsed.version);
-      if (actualSize !== spec.fileSize && actualSize > 0) {
-        issues.push(
-          `File size mismatch for ${spec.id}: expected ${spec.fileSize}, found ${actualSize}`,
-        );
+          if (!existsSync(specFile)) {
+            issues.push(`Spec file missing for ${spec.id}: ${specFile}`);
+            continue;
+          }
+
+          // Validate required fields
+          if (!spec.name || !spec.version || !spec.title) {
+            issues.push(`Missing required fields for ${spec.id}`);
+          }
+
+          // Check file size consistency
+          const actualSize = this.getSpecFileSize(parsed.name, parsed.version);
+          if (actualSize !== spec.fileSize && actualSize > 0) {
+            issues.push(
+              `File size mismatch for ${spec.id}: expected ${spec.fileSize}, found ${actualSize}`,
+            );
+          }
+
+          // Note: Spec content validation is handled by CustomSpecClient
+          // as it needs to extract the actual OpenAPI spec from the wrapper
+        } catch (specError) {
+          issues.push(`Error validating spec ${spec.id}: ${specError}`);
+        }
       }
+    } catch (error) {
+      issues.push(`Error during integrity validation: ${error}`);
     }
 
     return {

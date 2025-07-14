@@ -51,7 +51,14 @@ const TOOL_CONFIGURATIONS = {
     api_id: 'googleapis.com:admin', 
     method: 'GET', 
     path: '/admin/directory/v1/groups' 
-  }
+  },
+  
+  // Cache Tools
+  cache_info: {},
+  cache_stats: {},
+  clear_cache: {},
+  clear_cache_key: { key: 'test-key' },
+  list_cache_keys: {}
 };
 
 const CUSTOM_CONFIGURATIONS = {
@@ -83,7 +90,14 @@ const CUSTOM_CONFIGURATIONS = {
     api_id: 'custom:testapi:1.0.0', 
     method: 'GET', 
     path: '/users' 
-  }
+  },
+  
+  // Cache Tools (same for all sources)
+  cache_info: {},
+  cache_stats: {},
+  clear_cache: {},
+  clear_cache_key: { key: 'test-key' },
+  list_cache_keys: {}
 };
 
 const SECONDARY_CONFIGURATIONS = {
@@ -108,7 +122,14 @@ const SECONDARY_CONFIGURATIONS = {
     api_id: 'datadoghq.com:main', 
     method: 'GET', 
     path: '/api/v2/actions/app_key_registrations' 
-  }
+  },
+  
+  // Cache Tools (same for all sources)
+  cache_info: {},
+  cache_stats: {},
+  clear_cache: {},
+  clear_cache_key: { key: 'test-key' },
+  list_cache_keys: {}
 };
 
 async function testTripleSource() {
