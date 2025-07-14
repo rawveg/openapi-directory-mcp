@@ -13,21 +13,21 @@ async function setupCustomSpec() {
   
   // Read the test spec
   const specPath = join(process.cwd(), 'tests/fixtures/test-custom-spec.json');
-  const specContent = readFileSync(specPath, 'utf-8');
+  const rawContent = readFileSync(specPath, 'utf-8');
   
-  // DEBUG: Log what we're trying to validate
-  console.log('🔍 DEBUG: Raw file content structure...');
-  const parsedContent = JSON.parse(specContent);
-  console.log('🔍 Root level keys:', Object.keys(parsedContent));
-  console.log('🔍 Has openapi field at root:', !!parsedContent.openapi);
-  console.log('🔍 Has swagger field at root:', !!parsedContent.swagger);
-  console.log('🔍 Has versions field:', !!parsedContent.versions);
-  if (parsedContent.versions && parsedContent.versions['1.0.0']) {
-    console.log('🔍 Has spec in versions[1.0.0]:', !!parsedContent.versions['1.0.0'].spec);
-    if (parsedContent.versions['1.0.0'].spec) {
-      console.log('🔍 Spec has openapi field:', !!parsedContent.versions['1.0.0'].spec.openapi);
-    }
-  }
+  // Parse the wrapper format and extract the actual OpenAPI spec
+  const parsedWrapper = JSON.parse(rawContent);
+  
+  // Extract the actual OpenAPI spec from the wrapper
+  const preferredVersion = parsedWrapper.preferred || '1.0.0';
+  const actualSpec = parsedWrapper.versions[preferredVersion].spec;
+  
+  // Convert the spec back to string for storage
+  const specContent = JSON.stringify(actualSpec, null, 2);
+  
+  console.log('📄 Extracted OpenAPI spec from wrapper format');
+  console.log('🔍 Spec has openapi field:', !!actualSpec.openapi);
+  console.log('🔍 Spec has info field:', !!actualSpec.info);
   
   const specName = 'testapi';
   const specVersion = '1.0.0';
