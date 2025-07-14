@@ -2,7 +2,7 @@ import { PromptTemplate } from "./types.js";
 import { PromptLoader } from "./loader.js";
 
 // Re-export the PromptTemplate type for backward compatibility
-export { PromptTemplate } from "./types.js";
+export type { PromptTemplate } from "./types.js";
 
 // Create a global loader instance
 const loader = new PromptLoader();

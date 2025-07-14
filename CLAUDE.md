@@ -94,4 +94,35 @@ npm run validate   # Full validation (lint + typecheck + test)
 - `npm version patch/minor/major` then `git push origin --tags`
 - Never commit or push without explicit user instruction
 
+## 🚨 CRITICAL CODE QUALITY STANDARDS - MANDATORY COMPLIANCE
+
+### CODE REVIEW ENFORCEMENT
+**ALL WORK IS SUBJECT TO 3-STAGE INDEPENDENT QUORUM CODE REVIEW**
+- Stage 1: User review
+- Stage 2: AI Agent review #1  
+- Stage 3: AI Agent review #2
+
+**ZERO TOLERANCE POLICY:**
+- NO shortcuts of any kind
+- NO hacky fixes or workarounds
+- NO commenting out tests
+- NO removing test suites
+- NO bypassing CI/CD stages
+- NO avoiding problems instead of fixing them
+
+**MANDATORY PRE-COMMIT VALIDATION:**
+- ALL tests must pass: `npm test`, `npm run test:ci`, `npm run test:regression`
+- ALL CI stages must pass: `npm run lint`, `npm run type-check`, `npm run build`
+- ALL validation must complete successfully: `npm run validate`
+- If ANY stage fails, commit is FORBIDDEN until fixed
+- Pre-commit hooks WILL be implemented if this is consistently skipped
+
+**PROFESSIONAL STANDARDS REQUIRED:**
+- Code quality is PARAMOUNT
+- Security is PARAMOUNT  
+- No exceptions will be tolerated
+- Failed code reviews result in immediate rework requirement
+
+**Due to extremely high number of failures and regressions, these measures are non-negotiable.**
+
 ## Remember: NEVER COMMIT WITHOUT EXPLICIT USER PERMISSION

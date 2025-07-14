@@ -4,8 +4,19 @@ import { fileURLToPath } from "url";
 import { ToolDefinition, ToolCategory } from "./types.js";
 import { ToolRegistry } from "./registry.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// ES module compatibility - avoid conflicts in test environments
+const getToolsDir = (): string => {
+  try {
+    if (typeof import.meta !== "undefined" && import.meta.url) {
+      const __filename = fileURLToPath(import.meta.url);
+      return path.dirname(__filename);
+    }
+  } catch (error) {
+    // Fallback for test environments
+  }
+  // Fallback for environments where import.meta is not available
+  return path.join(process.cwd(), "src", "tools");
+};
 
 export class ToolLoader {
   private registry: ToolRegistry = new ToolRegistry();
@@ -20,7 +31,7 @@ export class ToolLoader {
   }
 
   private async scanAndLoadCategories(): Promise<void> {
-    const toolsDir = __dirname;
+    const toolsDir = getToolsDir();
 
     try {
       const entries = fs.readdirSync(toolsDir, { withFileTypes: true });
@@ -37,7 +48,7 @@ export class ToolLoader {
   }
 
   private async loadCategory(categoryName: string): Promise<void> {
-    const categoryPath = path.join(__dirname, categoryName);
+    const categoryPath = path.join(getToolsDir(), categoryName);
 
     try {
       const files = fs
@@ -60,7 +71,7 @@ export class ToolLoader {
     filename: string,
   ): Promise<void> {
     const filePath = path.join(categoryPath, filename);
-    const relativePath = path.relative(__dirname, filePath);
+    const relativePath = path.relative(getToolsDir(), filePath);
 
     try {
       // Use dynamic import to load the module

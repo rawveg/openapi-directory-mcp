@@ -174,10 +174,30 @@ export class CustomSpecClient {
             parsed.name,
             parsed.version,
           );
-          const spec = JSON.parse(specContent);
+          const openApiSpec = JSON.parse(specContent);
 
-          // The spec file is already in ApiGuruAPI format
-          apis[specEntry.id] = spec;
+          // Create ApiGuruAPI entry from manifest and OpenAPI spec
+          const apiGuruEntry: ApiGuruAPI = {
+            added: specEntry.imported,
+            preferred: parsed.version,
+            versions: {
+              [parsed.version]: {
+                added: specEntry.imported,
+                info: {
+                  ...openApiSpec.info,
+                  "x-apisguru-categories": ["custom"],
+                  "x-providerName": parsed.name.split(".")[0],
+                },
+                updated: specEntry.imported,
+                swaggerUrl: `/custom/${parsed.name}/${parsed.version}.json`,
+                swaggerYamlUrl: `/custom/${parsed.name}/${parsed.version}.yaml`,
+                openapiVer: openApiSpec.openapi || "3.0.0",
+                link: openApiSpec.info?.contact?.url || "",
+              },
+            },
+          };
+
+          apis[specEntry.id] = apiGuruEntry;
         } catch (error) {
           console.warn(`Failed to load spec ${specEntry.id}: ${error}`);
         }
@@ -514,8 +534,87 @@ export class CustomSpecClient {
     );
     const spec = JSON.parse(specContent);
 
-    // Get the latest version spec
-    const latestVersion = spec.versions[spec.preferred];
+    // Check if this is a direct OpenAPI spec (without ApiGuru wrapper)
+    if (spec.openapi || spec.swagger) {
+      // This is a direct OpenAPI spec, not wrapped in ApiGuru format
+      if (!spec.paths) {
+        return {
+          endpoints: [],
+          pagination: {
+            page,
+            limit,
+            total_endpoints: 0,
+            total_pages: 0,
+            has_next: false,
+            has_previous: false,
+          },
+        };
+      }
+
+      // Extract endpoints directly from the OpenAPI spec
+      const paths = spec.paths;
+      const allEndpoints: Array<{
+        path: string;
+        method: string;
+        summary?: string;
+        description?: string;
+        tags?: string[];
+        operationId?: string;
+      }> = [];
+
+      for (const [path, pathMethods] of Object.entries(paths)) {
+        for (const [method, operation] of Object.entries(pathMethods as any)) {
+          if (
+            [
+              "get",
+              "post",
+              "put",
+              "delete",
+              "patch",
+              "head",
+              "options",
+            ].includes(method.toLowerCase())
+          ) {
+            const op = operation as any;
+            const endpoint = {
+              path,
+              method: method.toUpperCase(),
+              summary: op.summary,
+              description: op.description,
+              tags: op.tags,
+              operationId: op.operationId,
+            };
+
+            // Filter by tag if provided
+            if (!tag || (op.tags && op.tags.includes(tag))) {
+              allEndpoints.push(endpoint);
+            }
+          }
+        }
+      }
+
+      // Apply pagination
+      const totalEndpoints = allEndpoints.length;
+      const totalPages = Math.ceil(totalEndpoints / limit);
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const endpoints = allEndpoints.slice(startIndex, endIndex);
+
+      return {
+        endpoints,
+        pagination: {
+          page,
+          limit,
+          total_endpoints: totalEndpoints,
+          total_pages: totalPages,
+          has_next: page < totalPages,
+          has_previous: page > 1,
+        },
+      };
+    }
+
+    // This is ApiGuru format - get the latest version spec
+    const latestVersion = spec.versions?.[spec.preferred];
     if (!latestVersion || !latestVersion.spec || !latestVersion.spec.paths) {
       return {
         endpoints: [],
@@ -677,11 +776,27 @@ export class CustomSpecClient {
         }
 
         const specContent = this.manifestManager.readSpecFile(name, version);
-        const api = JSON.parse(specContent);
+        return JSON.parse(specContent);
+      });
+    }
 
-        // Return the actual OpenAPI spec from the preferred version
-        const preferredVersion = api.versions[api.preferred];
-        return preferredVersion.spec;
+    // Handle custom spec URLs in the format /custom/name/version.json
+    if (url.startsWith("/custom/")) {
+      return this.fetchWithCache(`spec:${url}`, async () => {
+        const pathParts = url.split("/");
+        if (pathParts.length < 4) {
+          throw new Error(`Invalid custom spec URL format: ${url}`);
+        }
+
+        const name = pathParts[2];
+        const versionFile = pathParts[3];
+        if (!name || !versionFile) {
+          throw new Error(`Invalid custom spec URL format: ${url}`);
+        }
+
+        const version = versionFile.replace(/\.(json|yaml)$/, "");
+        const specContent = this.manifestManager.readSpecFile(name, version);
+        return JSON.parse(specContent);
       });
     }
 
@@ -708,12 +823,22 @@ export class CustomSpecClient {
       }
 
       const specContent = this.manifestManager.readSpecFile(name, version);
-      const api = JSON.parse(specContent);
+      const spec = JSON.parse(specContent);
 
-      const preferredVersion = api.versions[api.preferred];
-      const spec = preferredVersion.spec;
+      // Handle both direct OpenAPI spec and ApiGuru wrapper format
+      let openApiSpec;
+      if (spec.openapi || spec.swagger) {
+        // Direct OpenAPI spec
+        openApiSpec = spec;
+      } else if (spec.versions && spec.preferred) {
+        // ApiGuru wrapper format
+        const preferredVersion = spec.versions[spec.preferred];
+        openApiSpec = preferredVersion.spec;
+      } else {
+        throw new Error(`Invalid spec format for: ${apiId}`);
+      }
 
-      const pathItem = spec.paths?.[path];
+      const pathItem = openApiSpec.paths?.[path];
       const operation = pathItem?.[method.toLowerCase()];
 
       if (!operation) {
@@ -743,6 +868,7 @@ export class CustomSpecClient {
     const cacheKey = `endpoint_examples:${apiId}:${method}:${path}`;
 
     return this.fetchWithCache(cacheKey, async () => {
+      // Validate that the endpoint exists by calling getEndpointSchema
       await this.getEndpointSchema(apiId, method, path);
 
       return {
@@ -808,17 +934,25 @@ export class CustomSpecClient {
           throw new Error(`API not found: ${apiId}`);
         }
 
-        // Load the OpenAPI spec - custom specs are stored in ApiGuruAPI format
+        // Load the OpenAPI spec
         const specContent = this.manifestManager.readSpecFile(name, version);
-        const apiData = JSON.parse(specContent);
+        const specData = JSON.parse(specContent);
 
-        // Navigate to the actual OpenAPI spec
-        const preferredVersion = apiData.versions[apiData.preferred];
-        if (!preferredVersion || !preferredVersion.spec) {
-          throw new Error(`OpenAPI spec not available for: ${apiId}`);
+        // Handle both direct OpenAPI spec and ApiGuru wrapper format
+        let spec;
+        if (specData.openapi || specData.swagger) {
+          // Direct OpenAPI spec
+          spec = specData;
+        } else if (specData.versions && specData.preferred) {
+          // ApiGuru wrapper format
+          const preferredVersion = specData.versions[specData.preferred];
+          if (!preferredVersion || !preferredVersion.spec) {
+            throw new Error(`OpenAPI spec not available for: ${apiId}`);
+          }
+          spec = preferredVersion.spec;
+        } else {
+          throw new Error(`Invalid spec format for: ${apiId}`);
         }
-
-        const spec = preferredVersion.spec;
 
         if (!spec.paths || !spec.paths[path]) {
           throw new Error(`Path not found: ${path} in API: ${apiId}`);

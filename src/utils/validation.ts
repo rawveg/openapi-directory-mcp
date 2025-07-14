@@ -3,15 +3,9 @@
  */
 
 import { createHash } from "crypto";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
 import { homedir } from "os";
 import { VALIDATION, FILE_EXTENSIONS } from "./constants.js";
 import { ValidationError } from "./errors.js";
-
-// ES module compatibility
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 /**
  * Path validation to prevent path traversal attacks
@@ -55,7 +49,6 @@ export class PathValidator {
       "/tmp/",
       "/var/tmp/",
       process.cwd(),
-      __dirname,
       homedir(), // Allow home directory for cache files
     ];
 

@@ -3,8 +3,19 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { PromptTemplate } from "./types.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// ES module compatibility - avoid conflicts in test environments
+const getPromptsDir = (): string => {
+  try {
+    if (typeof import.meta !== "undefined" && import.meta.url) {
+      const __filename = fileURLToPath(import.meta.url);
+      return path.dirname(__filename);
+    }
+  } catch (error) {
+    // Fallback for test environments
+  }
+  // Fallback for environments where import.meta is not available
+  return path.join(process.cwd(), "src", "prompts");
+};
 
 export interface PromptCategory {
   name: string;
@@ -70,7 +81,7 @@ export class PromptLoader {
   }
 
   private async scanAndLoadCategories(): Promise<void> {
-    const promptsDir = __dirname;
+    const promptsDir = getPromptsDir();
 
     try {
       const entries = fs.readdirSync(promptsDir, { withFileTypes: true });
@@ -87,7 +98,7 @@ export class PromptLoader {
   }
 
   private async loadCategory(categoryName: string): Promise<void> {
-    const categoryPath = path.join(__dirname, categoryName);
+    const categoryPath = path.join(getPromptsDir(), categoryName);
 
     try {
       const files = fs
@@ -110,7 +121,7 @@ export class PromptLoader {
     filename: string,
   ): Promise<void> {
     const filePath = path.join(categoryPath, filename);
-    const relativePath = path.relative(__dirname, filePath);
+    const relativePath = path.relative(getPromptsDir(), filePath);
 
     try {
       // Use dynamic import to load the module
