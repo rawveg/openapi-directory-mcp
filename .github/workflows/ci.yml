@@ -309,7 +309,8 @@ jobs:
               'get_providers': 1, 'get_provider_apis': 1, 'get_provider_services': 1, 'get_provider_stats': 1,
               'get_api': 1, 'list_all_apis': 1, 'get_api_summary': 1, 'search_apis': 1, 'get_popular_apis': 1, 
               'get_recently_updated': 1, 'analyze_api_categories': 1, 'get_metrics': 1, 'get_openapi_spec': 1,
-              'get_endpoints': 1, 'get_endpoint_details': 1, 'get_endpoint_schema': 1, 'get_endpoint_examples': 1
+              'get_endpoints': 1, 'get_endpoint_details': 1, 'get_endpoint_schema': 1, 'get_endpoint_examples': 1,
+              'cache_info': 1, 'cache_stats': 1, 'clear_cache': 1, 'clear_cache_key': 1, 'list_cache_keys': 1
             };
             console.log(Object.keys(tools).length);
           ")
