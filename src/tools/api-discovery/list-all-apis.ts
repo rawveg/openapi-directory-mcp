@@ -9,7 +9,7 @@ export const tool: ToolDefinition = {
     required: [],
   },
   async execute(_args: any, context: ToolContext): Promise<any> {
-    return await context.apiClient.listAPIs();
+    return await context.apiClient.getPaginatedAPIs();
   },
 };
 

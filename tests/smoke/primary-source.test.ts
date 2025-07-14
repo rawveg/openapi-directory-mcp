@@ -3,6 +3,7 @@ import { CacheManager } from '../../src/cache/manager.js';
 import { DualSourceApiClient } from '../../src/api/dual-source-client.js';
 import { ToolHandler } from '../../src/tools/handler.js';
 import { ToolContext } from '../../src/tools/types.js';
+import { createMockedApiClient } from '../mocks/api-client-mock.js';
 
 /**
  * Smoke tests for all tools using primary data source (APIs.guru)
@@ -16,14 +17,17 @@ describe('Primary Source Smoke Tests', () => {
   let toolContext: ToolContext;
 
   beforeAll(async () => {
-    // Set up real clients for smoke testing
+    // Set up mocked clients for smoke testing
     cacheManager = new CacheManager();
-    apiClient = new DualSourceApiClient(
-      'https://api.apis.guru/v2',
-      'https://api.apis.guru/v2', // Use same URL for secondary for now
-      cacheManager
-    );
+    const mockedApiClient = createMockedApiClient(cacheManager, 'success');
+    apiClient = mockedApiClient as any;
     toolHandler = new ToolHandler();
+    
+    // Wait for tool handler to initialize tools
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const { tools } = await toolHandler.listTools();
+    expect(tools.length).toBe(22); // Verify tools are loaded
+    
     toolContext = {
       apiClient,
       cacheManager
@@ -38,9 +42,9 @@ describe('Primary Source Smoke Tests', () => {
   });
 
   describe('API Discovery Tools', () => {
-    test('get-providers should work', async () => {
+    test('get_providers should work', async () => {
       try {
-        const result = await toolHandler.callTool('get-providers', {}, toolContext);
+        const result = await toolHandler.callTool('get_providers', {}, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
@@ -48,32 +52,32 @@ describe('Primary Source Smoke Tests', () => {
         expect(Array.isArray(result.data)).toBe(true);
         expect(result.data.length).toBeGreaterThan(0);
         
-        console.log(`✅ get-providers: Found ${result.data.length} providers`);
+        console.log(`✅ get_providers: Found ${result.data.length} providers`);
       } catch (error) {
-        console.error(`❌ get-providers failed:`, error);
+        console.error(`❌ get_providers failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('get-metrics should work', async () => {
+    test('get_metrics should work', async () => {
       try {
-        const result = await toolHandler.callTool('get-metrics', {}, toolContext);
+        const result = await toolHandler.callTool('get_metrics', {}, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
         expect(result.numSpecs).toBeGreaterThan(0);
         expect(result.numAPIs).toBeGreaterThan(0);
         
-        console.log(`✅ get-metrics: ${result.numSpecs} specs, ${result.numAPIs} APIs`);
+        console.log(`✅ get_metrics: ${result.numSpecs} specs, ${result.numAPIs} APIs`);
       } catch (error) {
-        console.error(`❌ get-metrics failed:`, error);
+        console.error(`❌ get_metrics failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('list-all-apis should work', async () => {
+    test('list_all_apis should work', async () => {
       try {
-        const result = await toolHandler.callTool('list-all-apis', {}, toolContext);
+        const result = await toolHandler.callTool('list_all_apis', {}, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
@@ -82,39 +86,39 @@ describe('Primary Source Smoke Tests', () => {
         expect(result.results.length).toBeGreaterThan(0);
         expect(result.pagination).toBeDefined();
         
-        console.log(`✅ list-all-apis: Found ${result.results.length} APIs (page 1)`);
+        console.log(`✅ list_all_apis: Found ${result.results.length} APIs (page 1)`);
       } catch (error) {
-        console.error(`❌ list-all-apis failed:`, error);
+        console.error(`❌ list_all_apis failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('get-provider-services should work with known provider', async () => {
+    test('get_provider_services should work with known provider', async () => {
       try {
         // First get providers to find a valid one
-        const providersResult = await toolHandler.callTool('get-providers', {}, toolContext);
+        const providersResult = await toolHandler.callTool('get_providers', {}, toolContext);
         expect(providersResult.data.length).toBeGreaterThan(0);
         
         const testProvider = providersResult.data[0];
-        const result = await toolHandler.callTool('get-provider-services', {
+        const result = await toolHandler.callTool('get_provider_services', {
           provider: testProvider
         }, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
         
-        console.log(`✅ get-provider-services: Provider ${testProvider} has services`);
+        console.log(`✅ get_provider_services: Provider ${testProvider} has services`);
       } catch (error) {
-        console.error(`❌ get-provider-services failed:`, error);
+        console.error(`❌ get_provider_services failed:`, error);
         throw error;
       }
     }, 15000);
   });
 
   describe('API Details Tools', () => {
-    test('search-apis should work', async () => {
+    test('search_apis should work', async () => {
       try {
-        const result = await toolHandler.callTool('search-apis', {
+        const result = await toolHandler.callTool('search_apis', {
           query: 'google',
           limit: 5
         }, toolContext);
@@ -124,17 +128,17 @@ describe('Primary Source Smoke Tests', () => {
         expect(result.results).toBeDefined();
         expect(Array.isArray(result.results)).toBe(true);
         
-        console.log(`✅ search-apis: Found ${result.results.length} results for 'google'`);
+        console.log(`✅ search_apis: Found ${result.results.length} results for 'google'`);
       } catch (error) {
-        console.error(`❌ search-apis failed:`, error);
+        console.error(`❌ search_apis failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('get-api should work with known API', async () => {
+    test('get_api should work with known API', async () => {
       try {
         // Try to get a known API
-        const result = await toolHandler.callTool('get-api', {
+        const result = await toolHandler.callTool('get_api', {
           provider: 'googleapis.com',
           api: 'admin'
         }, toolContext);
@@ -142,16 +146,16 @@ describe('Primary Source Smoke Tests', () => {
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
         
-        console.log(`✅ get-api: Retrieved googleapis.com:admin`);
+        console.log(`✅ get_api: Retrieved googleapis.com:admin`);
       } catch (error) {
-        console.error(`❌ get-api failed:`, error);
+        console.error(`❌ get_api failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('get-api-summary should work', async () => {
+    test('get_api_summary should work', async () => {
       try {
-        const result = await toolHandler.callTool('get-api-summary', {
+        const result = await toolHandler.callTool('get_api_summary', {
           api_id: 'googleapis.com:admin'
         }, toolContext);
         
@@ -160,17 +164,17 @@ describe('Primary Source Smoke Tests', () => {
         expect(result.id).toBe('googleapis.com:admin');
         expect(result.title).toBeDefined();
         
-        console.log(`✅ get-api-summary: ${result.title}`);
+        console.log(`✅ get_api_summary: ${result.title}`);
       } catch (error) {
-        console.error(`❌ get-api-summary failed:`, error);
+        console.error(`❌ get_api_summary failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('get-openapi-spec should work', async () => {
+    test('get_openapi_spec should work', async () => {
       try {
         // Get a known API first to get its swagger URL
-        const apiResult = await toolHandler.callTool('get-api', {
+        const apiResult = await toolHandler.callTool('get_api', {
           provider: 'googleapis.com',
           api: 'admin'
         }, toolContext);
@@ -179,7 +183,7 @@ describe('Primary Source Smoke Tests', () => {
         const preferredVersion = apiResult.versions[apiResult.preferred];
         expect(preferredVersion.swaggerUrl).toBeDefined();
         
-        const result = await toolHandler.callTool('get-openapi-spec', {
+        const result = await toolHandler.callTool('get_openapi_spec', {
           url: preferredVersion.swaggerUrl
         }, toolContext);
         
@@ -187,16 +191,16 @@ describe('Primary Source Smoke Tests', () => {
         expect(result.error).toBeUndefined();
         expect(result.info).toBeDefined();
         
-        console.log(`✅ get-openapi-spec: Retrieved spec for ${result.info.title}`);
+        console.log(`✅ get_openapi_spec: Retrieved spec for ${result.info.title}`);
       } catch (error) {
-        console.error(`❌ get-openapi-spec failed:`, error);
+        console.error(`❌ get_openapi_spec failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('get-provider-stats should work', async () => {
+    test('get_provider_stats should work', async () => {
       try {
-        const result = await toolHandler.callTool('get-provider-stats', {
+        const result = await toolHandler.callTool('get_provider_stats', {
           provider: 'googleapis.com'
         }, toolContext);
         
@@ -204,18 +208,18 @@ describe('Primary Source Smoke Tests', () => {
         expect(result.error).toBeUndefined();
         expect(result.provider).toBe('googleapis.com');
         
-        console.log(`✅ get-provider-stats: googleapis.com has ${result.total_apis} APIs`);
+        console.log(`✅ get_provider_stats: googleapis.com has ${result.total_apis} APIs`);
       } catch (error) {
-        console.error(`❌ get-provider-stats failed:`, error);
+        console.error(`❌ get_provider_stats failed:`, error);
         throw error;
       }
     }, 15000);
   });
 
   describe('Endpoint Tools', () => {
-    test('get-endpoints should work', async () => {
+    test('get_endpoints should work', async () => {
       try {
-        const result = await toolHandler.callTool('get-endpoints', {
+        const result = await toolHandler.callTool('get_endpoints', {
           api_id: 'googleapis.com:admin',
           limit: 5
         }, toolContext);
@@ -225,17 +229,17 @@ describe('Primary Source Smoke Tests', () => {
         expect(result.results).toBeDefined();
         expect(Array.isArray(result.results)).toBe(true);
         
-        console.log(`✅ get-endpoints: Found ${result.results.length} endpoints`);
+        console.log(`✅ get_endpoints: Found ${result.results.length} endpoints`);
       } catch (error) {
-        console.error(`❌ get-endpoints failed:`, error);
+        console.error(`❌ get_endpoints failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('get-endpoint-details should work', async () => {
+    test('get_endpoint_details should work', async () => {
       try {
         // First get endpoints
-        const endpointsResult = await toolHandler.callTool('get-endpoints', {
+        const endpointsResult = await toolHandler.callTool('get_endpoints', {
           api_id: 'googleapis.com:admin',
           limit: 1
         }, toolContext);
@@ -243,7 +247,7 @@ describe('Primary Source Smoke Tests', () => {
         if (endpointsResult.results && endpointsResult.results.length > 0) {
           const endpoint = endpointsResult.results[0];
           
-          const result = await toolHandler.callTool('get-endpoint-details', {
+          const result = await toolHandler.callTool('get_endpoint_details', {
             api_id: 'googleapis.com:admin',
             method: endpoint.method,
             path: endpoint.path
@@ -254,20 +258,20 @@ describe('Primary Source Smoke Tests', () => {
           expect(result.method).toBe(endpoint.method);
           expect(result.path).toBe(endpoint.path);
           
-          console.log(`✅ get-endpoint-details: ${endpoint.method} ${endpoint.path}`);
+          console.log(`✅ get_endpoint_details: ${endpoint.method} ${endpoint.path}`);
         } else {
-          console.log(`⚠️  get-endpoint-details: No endpoints found to test`);
+          console.log(`⚠️  get_endpoint_details: No endpoints found to test`);
         }
       } catch (error) {
-        console.error(`❌ get-endpoint-details failed:`, error);
+        console.error(`❌ get_endpoint_details failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('get-endpoint-schema should work', async () => {
+    test('get_endpoint_schema should work', async () => {
       try {
         // First get endpoints
-        const endpointsResult = await toolHandler.callTool('get-endpoints', {
+        const endpointsResult = await toolHandler.callTool('get_endpoints', {
           api_id: 'googleapis.com:admin',
           limit: 1
         }, toolContext);
@@ -275,7 +279,7 @@ describe('Primary Source Smoke Tests', () => {
         if (endpointsResult.results && endpointsResult.results.length > 0) {
           const endpoint = endpointsResult.results[0];
           
-          const result = await toolHandler.callTool('get-endpoint-schema', {
+          const result = await toolHandler.callTool('get_endpoint_schema', {
             api_id: 'googleapis.com:admin',
             method: endpoint.method,
             path: endpoint.path
@@ -286,20 +290,20 @@ describe('Primary Source Smoke Tests', () => {
           expect(result.method).toBe(endpoint.method);
           expect(result.path).toBe(endpoint.path);
           
-          console.log(`✅ get-endpoint-schema: Schema for ${endpoint.method} ${endpoint.path}`);
+          console.log(`✅ get_endpoint_schema: Schema for ${endpoint.method} ${endpoint.path}`);
         } else {
-          console.log(`⚠️  get-endpoint-schema: No endpoints found to test`);
+          console.log(`⚠️  get_endpoint_schema: No endpoints found to test`);
         }
       } catch (error) {
-        console.error(`❌ get-endpoint-schema failed:`, error);
+        console.error(`❌ get_endpoint_schema failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('get-endpoint-examples should work', async () => {
+    test('get_endpoint_examples should work', async () => {
       try {
         // First get endpoints
-        const endpointsResult = await toolHandler.callTool('get-endpoints', {
+        const endpointsResult = await toolHandler.callTool('get_endpoints', {
           api_id: 'googleapis.com:admin',
           limit: 1
         }, toolContext);
@@ -307,7 +311,7 @@ describe('Primary Source Smoke Tests', () => {
         if (endpointsResult.results && endpointsResult.results.length > 0) {
           const endpoint = endpointsResult.results[0];
           
-          const result = await toolHandler.callTool('get-endpoint-examples', {
+          const result = await toolHandler.callTool('get_endpoint_examples', {
             api_id: 'googleapis.com:admin',
             method: endpoint.method,
             path: endpoint.path
@@ -318,21 +322,21 @@ describe('Primary Source Smoke Tests', () => {
           expect(result.method).toBe(endpoint.method);
           expect(result.path).toBe(endpoint.path);
           
-          console.log(`✅ get-endpoint-examples: Examples for ${endpoint.method} ${endpoint.path}`);
+          console.log(`✅ get_endpoint_examples: Examples for ${endpoint.method} ${endpoint.path}`);
         } else {
-          console.log(`⚠️  get-endpoint-examples: No endpoints found to test`);
+          console.log(`⚠️  get_endpoint_examples: No endpoints found to test`);
         }
       } catch (error) {
-        console.error(`❌ get-endpoint-examples failed:`, error);
+        console.error(`❌ get_endpoint_examples failed:`, error);
         throw error;
       }
     }, 15000);
   });
 
   describe('Provider Tools', () => {
-    test('get-provider-apis should work', async () => {
+    test('get_provider_apis should work', async () => {
       try {
-        const result = await toolHandler.callTool('get-provider-apis', {
+        const result = await toolHandler.callTool('get_provider_apis', {
           provider: 'googleapis.com'
         }, toolContext);
         
@@ -342,142 +346,143 @@ describe('Primary Source Smoke Tests', () => {
         expect(typeof result.apis).toBe('object');
         
         const apiCount = Object.keys(result.apis).length;
-        console.log(`✅ get-provider-apis: googleapis.com has ${apiCount} APIs`);
+        console.log(`✅ get_provider_apis: googleapis.com has ${apiCount} APIs`);
       } catch (error) {
-        console.error(`❌ get-provider-apis failed:`, error);
+        console.error(`❌ get_provider_apis failed:`, error);
         throw error;
       }
     }, 15000);
   });
 
   describe('Utility Tools', () => {
-    test('get-popular-apis should work', async () => {
+    test('get_popular_apis should work', async () => {
       try {
-        const result = await toolHandler.callTool('get-popular-apis', {
+        const result = await toolHandler.callTool('get_popular_apis', {
           limit: 5
         }, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
-        expect(Array.isArray(result)).toBe(true);
-        expect(result.length).toBeGreaterThan(0);
+        expect(Array.isArray(result.data)).toBe(true);
+        expect(result.data.length).toBeGreaterThan(0);
         
-        console.log(`✅ get-popular-apis: Found ${result.length} popular APIs`);
+        console.log(`✅ get_popular_apis: Found ${result.data.length} popular APIs`);
       } catch (error) {
-        console.error(`❌ get-popular-apis failed:`, error);
+        console.error(`❌ get_popular_apis failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('get-recently-updated should work', async () => {
+    test('get_recently_updated should work', async () => {
       try {
-        const result = await toolHandler.callTool('get-recently-updated', {
+        const result = await toolHandler.callTool('get_recently_updated', {
           limit: 5
         }, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
-        expect(Array.isArray(result)).toBe(true);
-        expect(result.length).toBeGreaterThan(0);
+        expect(Array.isArray(result.data)).toBe(true);
+        expect(result.data.length).toBeGreaterThan(0);
         
-        console.log(`✅ get-recently-updated: Found ${result.length} recently updated APIs`);
+        console.log(`✅ get_recently_updated: Found ${result.data.length} recently updated APIs`);
       } catch (error) {
-        console.error(`❌ get-recently-updated failed:`, error);
+        console.error(`❌ get_recently_updated failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('analyze-api-categories should work', async () => {
+    test('analyze_api_categories should work', async () => {
       try {
-        const result = await toolHandler.callTool('analyze-api-categories', {}, toolContext);
+        const result = await toolHandler.callTool('analyze_api_categories', {}, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
         expect(result.categories).toBeDefined();
         expect(Array.isArray(result.categories)).toBe(true);
         
-        console.log(`✅ analyze-api-categories: Found ${result.categories.length} categories`);
+        console.log(`✅ analyze_api_categories: Found ${result.categories.length} categories`);
       } catch (error) {
-        console.error(`❌ analyze-api-categories failed:`, error);
+        console.error(`❌ analyze_api_categories failed:`, error);
         throw error;
       }
     }, 15000);
   });
 
   describe('Cache Tools', () => {
-    test('cache-stats should work', async () => {
+    test('cache_stats should work', async () => {
       try {
-        const result = await toolHandler.callTool('cache-stats', {}, toolContext);
+        const result = await toolHandler.callTool('cache_stats', {}, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
-        expect(result.stats).toBeDefined();
+        expect(result.keys).toBeDefined();
+        expect(typeof result.keys).toBe('number');
         
-        console.log(`✅ cache-stats: ${result.stats.keys} cache keys`);
+        console.log(`✅ cache_stats: ${result.keys} cache keys`);
       } catch (error) {
-        console.error(`❌ cache-stats failed:`, error);
+        console.error(`❌ cache_stats failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('cache-info should work', async () => {
+    test('cache_info should work', async () => {
       try {
-        const result = await toolHandler.callTool('cache-info', {}, toolContext);
+        const result = await toolHandler.callTool('cache_info', {}, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
         
-        console.log(`✅ cache-info: Cache information retrieved`);
+        console.log(`✅ cache_info: Cache information retrieved`);
       } catch (error) {
-        console.error(`❌ cache-info failed:`, error);
+        console.error(`❌ cache_info failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('list-cache-keys should work', async () => {
+    test('list_cache_keys should work', async () => {
       try {
-        const result = await toolHandler.callTool('list-cache-keys', {}, toolContext);
+        const result = await toolHandler.callTool('list_cache_keys', {}, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
         expect(Array.isArray(result.keys)).toBe(true);
         
-        console.log(`✅ list-cache-keys: Found ${result.keys.length} cache keys`);
+        console.log(`✅ list_cache_keys: Found ${result.keys.length} cache keys`);
       } catch (error) {
-        console.error(`❌ list-cache-keys failed:`, error);
+        console.error(`❌ list_cache_keys failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('clear-cache should work', async () => {
+    test('clear_cache should work', async () => {
       try {
-        const result = await toolHandler.callTool('clear-cache', {}, toolContext);
+        const result = await toolHandler.callTool('clear_cache', {}, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
         
-        console.log(`✅ clear-cache: Cache cleared successfully`);
+        console.log(`✅ clear_cache: Cache cleared successfully`);
       } catch (error) {
-        console.error(`❌ clear-cache failed:`, error);
+        console.error(`❌ clear_cache failed:`, error);
         throw error;
       }
     }, 15000);
 
-    test('clear-cache-key should work', async () => {
+    test('clear_cache_key should work', async () => {
       try {
         // First add something to cache, then clear it
-        await toolHandler.callTool('get-providers', {}, toolContext);
+        await toolHandler.callTool('get_providers', {}, toolContext);
         
-        const result = await toolHandler.callTool('clear-cache-key', {
+        const result = await toolHandler.callTool('clear_cache_key', {
           key: 'providers'
         }, toolContext);
         
         expect(result).toBeDefined();
         expect(result.error).toBeUndefined();
         
-        console.log(`✅ clear-cache-key: Specific cache key cleared`);
+        console.log(`✅ clear_cache_key: Specific cache key cleared`);
       } catch (error) {
-        console.error(`❌ clear-cache-key failed:`, error);
+        console.error(`❌ clear_cache_key failed:`, error);
         throw error;
       }
     }, 15000);

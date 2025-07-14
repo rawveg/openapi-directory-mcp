@@ -7,15 +7,36 @@ import { ToolRegistry } from "./registry.js";
 // ES module compatibility - avoid conflicts in test environments
 const getToolsDir = (): string => {
   try {
-    if (typeof import.meta !== "undefined" && import.meta.url) {
-      const __filename = fileURLToPath(import.meta.url);
+    // Use dynamic evaluation to avoid Jest parsing issues with import.meta
+    const importMeta = eval('import.meta');
+    if (typeof importMeta !== "undefined" && importMeta.url) {
+      const __filename = fileURLToPath(importMeta.url);
       return path.dirname(__filename);
     }
   } catch (error) {
     // Fallback for test environments
   }
   // Fallback for environments where import.meta is not available
-  return path.join(process.cwd(), "src", "tools");
+  const fallbackPath = path.join(process.cwd(), "src", "tools");
+  const distPath = path.join(process.cwd(), "dist", "tools");
+  
+  // In test environments, prefer compiled tools in dist directory
+  try {
+    if (fs.existsSync(distPath)) {
+      return distPath;
+    }
+    if (fs.existsSync(fallbackPath)) {
+      return fallbackPath;
+    }
+    // Alternative fallback using __dirname
+    const altPath = path.join(__dirname, "..");
+    if (fs.existsSync(altPath)) {
+      return altPath;
+    }
+  } catch {
+    // Continue with original fallback
+  }
+  return fallbackPath;
 };
 
 export class ToolLoader {

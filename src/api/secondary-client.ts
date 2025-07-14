@@ -39,7 +39,7 @@ export class SecondaryApiClient {
 
     try {
       // Apply rate limiting to external API calls
-      const result = await rateLimiters.secondary.execute(fetchFn);
+      const result = await rateLimiters.secondary!.execute(fetchFn);
       this.cache.set(cacheKey, result, ttl || CACHE_TTL.DEFAULT);
       return result;
     } catch (error) {

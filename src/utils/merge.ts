@@ -50,9 +50,20 @@ export class MergeUtilities {
     primaryProviders: { data: string[] },
     secondaryProviders: { data: string[] },
   ): { data: string[] } {
+    // Import validation here to avoid circular dependencies
+    const { DataValidator } = require('./validation.js');
+    
+    // Validate and sanitize both provider lists
+    const validatedPrimary = DataValidator.validateProviders(primaryProviders);
+    const validatedSecondary = DataValidator.validateProviders(secondaryProviders);
+    
+    // Log any validation issues
+    DataValidator.logValidationResults(validatedPrimary, 'primaryProviders');
+    DataValidator.logValidationResults(validatedSecondary, 'secondaryProviders');
+    
     const uniqueProviders = new Set([
-      ...primaryProviders.data,
-      ...secondaryProviders.data,
+      ...validatedPrimary.data.data,
+      ...validatedSecondary.data.data,
     ]);
 
     return {
@@ -265,6 +276,16 @@ export class MergeUtilities {
     primaryAPIs: Record<string, ApiGuruAPI>,
     secondaryAPIs: Record<string, ApiGuruAPI>,
   ): Promise<ApiGuruMetrics> {
+    // Import validation here to avoid circular dependencies
+    const { DataValidator } = require('./validation.js');
+    
+    // Validate and sanitize both metrics objects
+    const validatedPrimary = DataValidator.validateMetrics(primaryMetrics);
+    const validatedSecondary = DataValidator.validateMetrics(secondaryMetrics);
+    
+    // Log any validation issues
+    DataValidator.logValidationResults(validatedPrimary, 'primaryMetrics');
+    DataValidator.logValidationResults(validatedSecondary, 'secondaryMetrics');
     // Identify overlaps
     const primaryApiIds = new Set(Object.keys(primaryAPIs));
     const secondaryApiIds = new Set(Object.keys(secondaryAPIs));
@@ -300,21 +321,21 @@ export class MergeUtilities {
       (primaryApiIds.size - overlappingApiIds.size) / primaryApiIds.size;
 
     const estimatedEndpoints = Math.round(
-      (primaryMetrics.numEndpoints || 0) * primaryWeight +
-        (secondaryMetrics.numEndpoints || 0),
+      (validatedPrimary.data.numEndpoints || 0) * primaryWeight +
+        (validatedSecondary.data.numEndpoints || 0),
     );
 
-    // Calculate specifications
-    let totalSpecs = primaryMetrics.numSpecs || uniqueApiCount;
-    if (secondaryMetrics.numSpecs) {
+    // Calculate specifications using validated data
+    let totalSpecs = validatedPrimary.data.numSpecs || uniqueApiCount;
+    if (validatedSecondary.data.numSpecs) {
       totalSpecs =
-        (primaryMetrics.numSpecs || 0) +
-        secondaryMetrics.numSpecs -
+        (validatedPrimary.data.numSpecs || 0) +
+        validatedSecondary.data.numSpecs -
         overlappingApiIds.size;
     }
 
     return {
-      ...primaryMetrics, // Keep other fields from primary
+      ...validatedPrimary.data, // Keep other fields from primary (validated)
       // Update the key metrics with our calculated values
       numSpecs: totalSpecs,
       numAPIs: uniqueApiCount,

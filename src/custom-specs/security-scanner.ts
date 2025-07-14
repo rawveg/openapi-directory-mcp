@@ -11,6 +11,10 @@ export class SecurityScanner {
 
   constructor() {
     this.rules = this.initializeRules();
+    // Debug: Verify rules are loaded
+    if (this.rules.length === 0) {
+      console.error('SecurityScanner: No rules loaded!');
+    }
   }
 
   /**
@@ -19,9 +23,10 @@ export class SecurityScanner {
   async scanSpec(spec: any): Promise<SecurityScanResult> {
     const issues: SecurityIssue[] = [];
     const scannedAt = new Date().toISOString();
+    const visited = new WeakSet();
 
     // Recursively scan the entire spec object
-    this.scanObject(spec, "", issues);
+    this.scanObjectWithCircularCheck(spec, "", issues, visited);
 
     // Calculate summary
     const summary = {
@@ -43,7 +48,42 @@ export class SecurityScanner {
   }
 
   /**
-   * Recursively scan an object for security issues
+   * Recursively scan an object for security issues with circular reference check
+   */
+  private scanObjectWithCircularCheck(
+    obj: any, 
+    path: string, 
+    issues: SecurityIssue[], 
+    visited: WeakSet<any>
+  ): void {
+    if (obj === null || obj === undefined) {
+      return;
+    }
+
+    // Check for circular references (only for objects)
+    if (typeof obj === "object" && !Array.isArray(obj)) {
+      if (visited.has(obj)) {
+        return; // Skip circular reference
+      }
+      visited.add(obj);
+    }
+
+    if (typeof obj === "string") {
+      this.scanString(obj, path, issues);
+    } else if (Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        this.scanObjectWithCircularCheck(item, `${path}[${index}]`, issues, visited);
+      });
+    } else if (typeof obj === "object") {
+      Object.entries(obj).forEach(([key, value]) => {
+        const newPath = path ? `${path}.${key}` : key;
+        this.scanObjectWithCircularCheck(value, newPath, issues, visited);
+      });
+    }
+  }
+
+  /**
+   * Recursively scan an object for security issues (legacy method)
    */
   private scanObject(obj: any, path: string, issues: SecurityIssue[]): void {
     if (obj === null || obj === undefined) {
@@ -157,19 +197,19 @@ export class SecurityScanner {
   private determineContext(path: string): SecurityIssue["context"] {
     const lowerPath = path.toLowerCase();
 
+    // Check for more specific contexts first
     if (lowerPath.includes("example") || lowerPath.includes("examples")) {
       return "example";
     }
 
-    if (lowerPath.includes("description") || lowerPath.includes("summary")) {
-      return "description";
-    }
-
+    // Parameter context should be checked before description
+    // to handle cases like parameters[0].description
+    // But be careful not to match "paths." as "path"
     if (
       lowerPath.includes("parameter") ||
       lowerPath.includes("headers") ||
       lowerPath.includes("query") ||
-      lowerPath.includes("path")
+      (lowerPath.includes("path") && !lowerPath.startsWith("paths."))
     ) {
       return "parameter";
     }
@@ -181,6 +221,10 @@ export class SecurityScanner {
       lowerPath.includes("additionalproperties")
     ) {
       return "schema";
+    }
+
+    if (lowerPath.includes("description") || lowerPath.includes("summary")) {
+      return "description";
     }
 
     return "metadata";
@@ -223,7 +267,7 @@ export class SecurityScanner {
         },
         type: "script_injection",
         severity: "high",
-        contexts: ["description", "example", "parameter"],
+        contexts: ["description", "example", "parameter", "schema"],
         message: "Script tag detected - potential XSS vector",
         suggestion: "Remove script tags or escape HTML content",
         description: "Detects HTML script tags that could be used for XSS",
@@ -233,11 +277,22 @@ export class SecurityScanner {
         pattern: /javascript:/gi,
         type: "script_injection",
         severity: "high",
-        contexts: ["description", "example", "parameter", "schema"],
+        contexts: ["description", "example", "parameter", "schema", "metadata"],
         message: "JavaScript protocol detected",
         suggestion: "Use HTTPS URLs instead of javascript: protocol",
         description:
           "Detects javascript: protocol which can execute arbitrary code",
+      },
+      {
+        id: "data-uri-script",
+        pattern: /data:[^,]*text\/html[^,]*,.*<script/gi,
+        type: "script_injection",
+        severity: "high",
+        contexts: ["description", "example", "parameter", "schema", "metadata"],
+        message: "Data URI with script content detected",
+        suggestion: "Avoid data URIs containing scripts",
+        description:
+          "Detects data URIs that contain HTML with script tags",
       },
       {
         id: "eval-function",
@@ -267,7 +322,7 @@ export class SecurityScanner {
       {
         id: "prompt-instruction-override",
         pattern:
-          /ignore\s+(previous|above|all)\s+(instructions?|prompts?|rules?)/gi,
+          /ignore\s+(?:all\s+)?(?:previous|above|all)?\s*(?:instructions?|prompts?|rules?)(?:\s+and)?/gi,
         type: "prompt_injection",
         severity: "high",
         contexts: ["description", "example", "parameter"],
@@ -317,7 +372,7 @@ export class SecurityScanner {
         pattern: /(password|secret|key|token)\s*[:=]\s*["']?[a-zA-Z0-9]{8,}/gi,
         type: "suspicious_content",
         severity: "critical",
-        contexts: ["example", "parameter", "schema"],
+        contexts: ["description", "example", "parameter", "schema"],
         message: "Potential credential exposure detected",
         suggestion: 'Replace with placeholder values like "your_api_key_here"',
         description: "Detects potential hardcoded credentials",
@@ -340,7 +395,7 @@ export class SecurityScanner {
         pattern: /<[^>]+>/g,
         type: "script_injection",
         severity: "low",
-        contexts: ["description", "example"],
+        contexts: ["description", "example", "schema"],
         message: "HTML tags detected",
         suggestion: "Escape HTML content or use plain text",
         description: "Detects HTML tags that might be used for injection",

@@ -13,7 +13,7 @@ export class CacheManager implements ICacheManager {
 
     this.cache = new NodeCache({
       stdTTL: Math.floor(ttlMs / 1000), // NodeCache uses seconds
-      checkperiod: Math.floor((ttlMs / 1000) * CACHE_LIMITS.CHECK_PERIOD_RATIO), // Check every 10% of TTL
+      checkperiod: process.env.NODE_ENV === 'test' ? 0 : Math.floor((ttlMs / 1000) * CACHE_LIMITS.CHECK_PERIOD_RATIO), // Disable periodic checks in tests
       useClones: false, // Better performance, but be careful with mutations
       deleteOnExpire: true,
       maxKeys: CACHE_LIMITS.MAX_KEYS,
@@ -148,6 +148,25 @@ export class CacheManager implements ICacheManager {
   }
 
   /**
+   * Destroy the cache and clean up resources
+   */
+  destroy(): void {
+    if (!this.enabled) return;
+    
+    try {
+      // Clear all data
+      this.cache.flushAll();
+      
+      // Close the cache to stop any internal timers
+      if (typeof (this.cache as any).close === 'function') {
+        (this.cache as any).close();
+      }
+    } catch (error) {
+      console.error("Cache destroy error:", error);
+    }
+  }
+
+  /**
    * Get cache statistics
    */
   getStats(): {
@@ -200,7 +219,9 @@ export class CacheManager implements ICacheManager {
       return undefined;
     }
 
-    return this.cache.getTtl(key);
+    const ttl = this.cache.getTtl(key);
+    // NodeCache returns 0 for non-existent keys
+    return ttl === 0 ? undefined : ttl;
   }
 
   /**

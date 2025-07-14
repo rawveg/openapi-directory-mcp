@@ -45,15 +45,20 @@ export class PersistentCacheManager implements ICacheManager {
         console.error(`Created cache directory: ${this.cacheDir}`);
       }
 
+      // Check for invalidation flag before loading cache
+      this.checkInvalidationFlag();
+
       // Load existing cache data if it exists
       this.loadFromDisk();
 
       console.error(`Persistent cache initialized: ${this.cacheFile}`);
 
-      // Set up automatic persistence interval
-      this.persistTimer = setInterval(() => {
-        this.persistToDisk();
-      }, this.persistInterval);
+      // Set up automatic persistence interval (disabled in test environment)
+      if (process.env.NODE_ENV !== 'test') {
+        this.persistTimer = setInterval(() => {
+          this.persistToDisk();
+        }, this.persistInterval);
+      }
 
       // Clean expired entries on startup
       this.cleanExpired();
@@ -173,6 +178,17 @@ export class PersistentCacheManager implements ICacheManager {
 
     try {
       this.cacheData.clear();
+      
+      // Also delete the cache file
+      if (existsSync(this.cacheFile)) {
+        try {
+          require("fs").unlinkSync(this.cacheFile);
+          console.error("Cache file deleted");
+        } catch (error) {
+          console.error("Failed to delete cache file:", error);
+        }
+      }
+      
       console.error("Cache cleared");
     } catch (error) {
       console.error("Cache clear error:", error);
@@ -428,6 +444,9 @@ export class PersistentCacheManager implements ICacheManager {
     }
 
     try {
+      // Clean expired entries before persisting
+      this.cleanExpired();
+      
       const cacheObject = Object.fromEntries(this.cacheData.entries());
       writeFileSync(
         this.cacheFile,
