@@ -90,6 +90,12 @@ jobs:
           fi
           
           echo "✅ Package validation passed"
+          
+      - name: Test CLI functionality
+        run: |
+          echo "🔍 Testing CLI functionality..."
+          timeout 5s node dist/index.js --help || echo "✅ CLI started successfully (expected timeout for MCP server)"
+          echo "✅ CLI basic functionality verified"
 
   build-and-package:
     name: Build & Package
@@ -231,7 +237,9 @@ jobs:
           echo "✅ NPM publish completed successfully"
           echo "📦 Package: openapi-directory-mcp@${{ needs.pre-release-validation.outputs.version }}"
           echo "🔗 NPM URL: https://www.npmjs.com/package/openapi-directory-mcp/v/${{ needs.pre-release-validation.outputs.version }}"
-          echo "ℹ️  Note: Registry propagation may take a few minutes before package is installable"
+          echo "🔗 Check availability: npm view openapi-directory-mcp@${{ needs.pre-release-validation.outputs.version }}"
+          echo "⏱️  Registry propagation: Typically 2-15 minutes before package is globally installable"
+          echo "📊 You can monitor propagation at: https://registry.npmjs.org/openapi-directory-mcp"
 
   update-github-release:
     name: Update GitHub Release

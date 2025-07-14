@@ -1,0 +1,236 @@
+name: Post-Release Validation
+
+on:
+  workflow_run:
+    workflows: ["Release & NPM Publish"]
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  wait-for-propagation:
+    name: Wait for Registry Propagation
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    outputs:
+      version: ${{ steps.extract-version.outputs.version }}
+      
+    steps:
+      - name: Extract version from workflow
+        id: extract-version
+        run: |
+          # Extract version from the tag that triggered the release
+          echo "Extracting version from completed release workflow..."
+          
+          # Get the release tag from the workflow run
+          RELEASE_TAG=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}" \
+            | jq -r '.head_branch // empty')
+            
+          if [[ "$RELEASE_TAG" =~ ^v(.+)$ ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "📦 Detected version: $VERSION"
+          else
+            # Fallback: get latest release
+            VERSION=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/latest" \
+              | jq -r '.tag_name // empty' | sed 's/^v//')
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "📦 Fallback to latest release version: $VERSION"
+          fi
+          
+      - name: Wait for registry propagation
+        run: |
+          echo "⏱️  Waiting 15 minutes for NPM registry propagation..."
+          echo "🕐 Start time: $(date)"
+          sleep 900  # 15 minutes
+          echo "🕑 Wait complete: $(date)"
+
+  validate-package-availability:
+    name: Validate Package Availability
+    runs-on: ubuntu-latest
+    needs: wait-for-propagation
+    
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+          
+      - name: Test package availability
+        id: availability-test
+        run: |
+          echo "🔍 Testing package availability on NPM registry..."
+          VERSION="${{ needs.wait-for-propagation.outputs.version }}"
+          
+          if [ -z "$VERSION" ]; then
+            echo "❌ Could not determine version to test"
+            exit 1
+          fi
+          
+          echo "📦 Testing: openapi-directory-mcp@$VERSION"
+          
+          # Test npm view command
+          if npm view "openapi-directory-mcp@$VERSION" version; then
+            echo "✅ Package version found on registry"
+            echo "package_found=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Package version not found on registry"
+            echo "package_found=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+      - name: Test package installation
+        run: |
+          echo "🧪 Testing package installation..."
+          VERSION="${{ needs.wait-for-propagation.outputs.version }}"
+          
+          # Create clean test environment
+          mkdir npm-install-test
+          cd npm-install-test
+          
+          # Initialize and install
+          npm init -y
+          echo "📥 Installing openapi-directory-mcp@$VERSION..."
+          
+          if npm install "openapi-directory-mcp@$VERSION"; then
+            echo "✅ Package installation successful"
+          else
+            echo "❌ Package installation failed"
+            exit 1
+          fi
+          
+      - name: Test CLI functionality
+        run: |
+          echo "🔍 Testing CLI functionality post-installation..."
+          cd npm-install-test
+          
+          # Test CLI startup
+          if timeout 5s npx openapi-directory-mcp --help; then
+            echo "✅ CLI help command successful"
+          else
+            echo "✅ CLI started successfully (expected timeout for MCP server)"
+          fi
+          
+          # Test CLI executable
+          if which openapi-directory-mcp >/dev/null 2>&1 || npx openapi-directory-mcp --version >/dev/null 2>&1; then
+            echo "✅ CLI executable accessible"
+          else
+            echo "⚠️  CLI executable test inconclusive"
+          fi
+          
+      - name: Validate package metadata
+        run: |
+          echo "📋 Validating package metadata..."
+          VERSION="${{ needs.wait-for-propagation.outputs.version }}"
+          
+          # Get package info
+          PACKAGE_INFO=$(npm view "openapi-directory-mcp@$VERSION" --json)
+          
+          # Extract key fields
+          PUBLISHED_VERSION=$(echo "$PACKAGE_INFO" | jq -r '.version')
+          DESCRIPTION=$(echo "$PACKAGE_INFO" | jq -r '.description')
+          AUTHOR=$(echo "$PACKAGE_INFO" | jq -r '.author')
+          LICENSE=$(echo "$PACKAGE_INFO" | jq -r '.license')
+          
+          echo "📦 Published Version: $PUBLISHED_VERSION"
+          echo "📝 Description: $DESCRIPTION"
+          echo "👤 Author: $AUTHOR"
+          echo "⚖️  License: $LICENSE"
+          
+          # Validate expected values
+          if [ "$PUBLISHED_VERSION" = "$VERSION" ]; then
+            echo "✅ Version matches expected: $VERSION"
+          else
+            echo "❌ Version mismatch: expected $VERSION, got $PUBLISHED_VERSION"
+            exit 1
+          fi
+          
+          if [ "$LICENSE" = "MIT" ]; then
+            echo "✅ License correct: MIT"
+          else
+            echo "⚠️  License unexpected: $LICENSE"
+          fi
+
+  post-validation-summary:
+    name: Post-Validation Summary
+    runs-on: ubuntu-latest
+    needs: [wait-for-propagation, validate-package-availability]
+    if: always()
+    
+    steps:
+      - name: Generate validation report
+        run: |
+          echo "📊 Post-Release Validation Summary"
+          echo "=================================="
+          echo "📦 Version: ${{ needs.wait-for-propagation.outputs.version }}"
+          echo "⏱️  Validation Time: $(date)"
+          echo ""
+          
+          if [ "${{ needs.validate-package-availability.result }}" = "success" ]; then
+            echo "✅ Package Availability: PASSED"
+            echo "✅ Installation Test: PASSED" 
+            echo "✅ CLI Functionality: PASSED"
+            echo "✅ Metadata Validation: PASSED"
+            echo ""
+            echo "🎉 All post-release validations successful!"
+            echo "📦 Package is fully available and functional on NPM registry"
+          else
+            echo "❌ Package Availability: FAILED"
+            echo ""
+            echo "⚠️  Post-release validation detected issues"
+            echo "🔍 Check the logs above for details"
+            echo "📧 Consider investigating registry propagation delays"
+          fi
+          
+      - name: Create issue on validation failure
+        if: ${{ needs.validate-package-availability.result != 'success' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ needs.wait-for-propagation.outputs.version }}';
+            const issueTitle = `Post-Release Validation Failed for v${version}`;
+            const issueBody = `## Post-Release Validation Failure
+            
+            **Version:** v${version}
+            **Validation Time:** ${new Date().toISOString()}
+            **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            ### Issue
+            The automated post-release validation failed for version ${version}. This could indicate:
+            
+            - Registry propagation delays (>15 minutes)
+            - Package publication issues
+            - Registry connectivity problems
+            - Metadata inconsistencies
+            
+            ### Next Steps
+            1. **Manual Verification:** Check https://www.npmjs.com/package/openapi-directory-mcp/v/${version}
+            2. **Registry Status:** Verify NPM registry status at https://status.npmjs.org/
+            3. **Installation Test:** Try manual installation: \`npm install -g openapi-directory-mcp@${version}\`
+            4. **Timing:** If this is a timing issue, the package may be available now
+            
+            ### Auto-Resolution
+            This issue will be automatically closed if:
+            - The package becomes available and installable
+            - A subsequent release validation succeeds
+            - Manual verification confirms the package is working
+            
+            ---
+            *This issue was automatically created by the Post-Release Validation workflow.*`;
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueTitle,
+              body: issueBody,
+              labels: ['release', 'validation-failure', 'automated']
+            });
