@@ -5,7 +5,12 @@ import { MergeUtilities, MergedSearchResult } from "../utils/merge.js";
 import { ICacheManager } from "../cache/types.js";
 import { PaginationHelper } from "../utils/pagination.js";
 import { PAGINATION } from "../utils/constants.js";
-import { ApiGuruAPI, ApiGuruMetrics, ApiGuruServices } from "../types/api.js";
+import {
+  ApiGuruAPI,
+  ApiGuruApiVersion,
+  ApiGuruMetrics,
+  ApiGuruServices,
+} from "../types/api.js";
 import {
   ProviderStats,
   calculateProviderStats,
@@ -432,7 +437,7 @@ export class DualSourceApiClient {
           },
         };
         if (customResults.status === "fulfilled") {
-          const customAPIs = customResults.value;
+          const customAPIs = customResults.value as Record<string, ApiGuruAPI>;
           const customEntries = Object.entries(customAPIs);
 
           custom = {
@@ -734,7 +739,7 @@ export class DualSourceApiClient {
             const matches =
               apiId.toLowerCase().includes(queryLower) ||
               Object.values(api.versions).some(
-                (version) =>
+                (version: ApiGuruApiVersion) =>
                   version.info.title?.toLowerCase().includes(queryLower) ||
                   version.info.description
                     ?.toLowerCase()
@@ -811,7 +816,7 @@ export class DualSourceApiClient {
           },
         };
         if (customResults.status === "fulfilled") {
-          const customAPIs = customResults.value;
+          const customAPIs = customResults.value as Record<string, ApiGuruAPI>;
           const queryLower = query.toLowerCase();
           const matchingAPIs: Array<[string, ApiGuruAPI]> = [];
 
@@ -825,7 +830,7 @@ export class DualSourceApiClient {
             const matches =
               apiId.toLowerCase().includes(queryLower) ||
               Object.values(api.versions).some(
-                (version) =>
+                (version: ApiGuruApiVersion) =>
                   version.info.title?.toLowerCase().includes(queryLower) ||
                   version.info.description
                     ?.toLowerCase()

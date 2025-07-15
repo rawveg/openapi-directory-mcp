@@ -289,7 +289,7 @@ jobs:
           output=$(node tests/integration/triple-source-smoke-test.mjs 2>&1)
           echo "$output"
           
-          if echo "$output" | grep -q "Success rate: 100.0%"; then
+          if echo "$output" | grep -q "Success Rate: 100.0%"; then
             echo "✅ All 68 tests passed - 100% success rate achieved"
           else
             echo "❌ Regression detected - not all tests passed"
@@ -331,10 +331,103 @@ jobs:
           
           echo "✅ Comprehensive regression test validation passed"
 
+  mutation-testing:
+    name: Mutation Testing
+    runs-on: ubuntu-latest
+    continue-on-error: true  # Don't fail entire CI on mutation score, but provide visibility
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Run mutation testing on security-critical validation module
+        run: |
+          echo "🧬 Running mutation testing on security-critical validation module..."
+          echo "This validates the quality of tests for XSS prevention, SQL injection detection, and input sanitization"
+          
+          # Run validation-focused mutation testing
+          npm run test:mutation:validation || echo "⚠️ Validation mutation testing completed with some surviving mutants"
+          
+      - name: Run quick mutation testing on core security methods
+        run: |
+          echo "🧬 Running quick mutation testing on core security methods..."
+          echo "Testing containsSuspiciousContent and other critical security validation functions"
+          
+          # Run quick mutation testing focused on security methods
+          npm run test:mutation:quick || echo "⚠️ Quick mutation testing completed with some surviving mutants"
+          
+      - name: Generate mutation test summary
+        if: always()
+        run: |
+          echo "📊 Mutation Testing Summary" > mutation-summary.md
+          echo "=========================" >> mutation-summary.md
+          echo "" >> mutation-summary.md
+          echo "**Test Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> mutation-summary.md
+          echo "**Branch:** ${{ github.ref_name }}" >> mutation-summary.md
+          echo "**Commit:** ${{ github.sha }}" >> mutation-summary.md
+          echo "" >> mutation-summary.md
+          echo "## Security-Critical Modules Tested" >> mutation-summary.md
+          echo "" >> mutation-summary.md
+          echo "### Validation Module (src/utils/validation.ts)" >> mutation-summary.md
+          echo "- **Focus:** XSS prevention, SQL injection detection, input sanitization" >> mutation-summary.md
+          echo "- **Critical Methods:** containsSuspiciousContent, validateSearchQuery, sanitizeObject" >> mutation-summary.md
+          echo "- **Security Impact:** HIGH - Protects against code injection attacks" >> mutation-summary.md
+          echo "" >> mutation-summary.md
+          echo "### Logger Module (src/utils/logger.ts)" >> mutation-summary.md
+          echo "- **Focus:** Secure logging, key sanitization, environment handling" >> mutation-summary.md
+          echo "- **Critical Methods:** sanitizeKey, getLogLevelFromEnv, cache logging" >> mutation-summary.md
+          echo "- **Security Impact:** MEDIUM - Prevents sensitive data exposure in logs" >> mutation-summary.md
+          echo "" >> mutation-summary.md
+          echo "## Test Quality Metrics" >> mutation-summary.md
+          echo "" >> mutation-summary.md
+          echo "Mutation testing validates that our tests actually catch bugs by:" >> mutation-summary.md
+          echo "1. Introducing small code changes (mutants)" >> mutation-summary.md
+          echo "2. Verifying tests fail when they should" >> mutation-summary.md
+          echo "3. Ensuring comprehensive edge case coverage" >> mutation-summary.md
+          echo "4. Validating security boundary testing" >> mutation-summary.md
+          echo "" >> mutation-summary.md
+          echo "Higher mutation scores indicate more robust test suites that will catch real bugs." >> mutation-summary.md
+          
+      - name: Upload mutation test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-test-reports-${{ github.run_number }}
+          path: |
+            validation-mutation-report.html
+            quick-mutation-report.html
+            mutation-summary.md
+          retention-days: 30
+          
+      - name: Comment mutation test results
+        if: always() && github.event_name == 'pull_request'
+        run: |
+          echo "🧬 **Mutation Testing Results**" > mutation-comment.md
+          echo "" >> mutation-comment.md
+          echo "Mutation testing has been run on security-critical modules to validate test quality." >> mutation-comment.md
+          echo "" >> mutation-comment.md
+          echo "📁 **Reports Available:** Check the 'mutation-test-reports-${{ github.run_number }}' artifact for detailed HTML reports" >> mutation-comment.md
+          echo "" >> mutation-comment.md
+          echo "🛡️ **Security Focus:** Validation of XSS prevention, SQL injection detection, and input sanitization tests" >> mutation-comment.md
+          echo "" >> mutation-comment.md
+          echo "💡 **Note:** Mutation testing helps ensure our security tests will actually catch real vulnerabilities" >> mutation-comment.md
+
   all-checks:
     name: All Checks Complete
     runs-on: ubuntu-latest
-    needs: [code-quality, build-test, plugin-architecture-validation, security-scan, build-verification, regression-tests]
+    needs: [code-quality, build-test, plugin-architecture-validation, security-scan, build-verification, regression-tests, mutation-testing]
     if: always()
     
     steps:
@@ -372,4 +465,13 @@ jobs:
             exit 1
           fi
           
-          echo "✅ All checks passed! Ready for merge."
+          # Note: mutation-testing is allowed to fail (continue-on-error: true)
+          # so we report its status but don't fail the build
+          if [ "${{ needs.mutation-testing.result }}" == "success" ]; then
+            echo "✅ Mutation testing completed successfully"
+          else
+            echo "⚠️ Mutation testing completed with warnings (this is informational)"
+          fi
+          
+          echo "✅ All required checks passed! Ready for merge."
+          echo "📊 Mutation testing reports available as artifacts for quality insights."

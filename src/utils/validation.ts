@@ -4,6 +4,8 @@
 
 import { createHash } from "crypto";
 import { homedir } from "os";
+import DOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
 import { VALIDATION, FILE_EXTENSIONS } from "./constants.js";
 import { ValidationError } from "./errors.js";
 
@@ -384,4 +386,447 @@ export class URLValidator {
 
     return localPatterns.some((pattern) => pattern.test(hostname));
   }
+}
+
+/**
+ * Data validation and sanitization utilities
+ * Ensures all API responses are properly validated before use
+ */
+
+export interface ValidationResult<T> {
+  isValid: boolean;
+  data: T;
+  errors: string[];
+  warnings: string[];
+}
+
+/**
+ * Validation utilities for API responses
+ */
+export class DataValidator {
+  /**
+   * Validate and sanitize provider list
+   */
+  static validateProviders(
+    providers: any,
+  ): ValidationResult<{ data: string[] }> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const sanitizedData: string[] = [];
+
+    // Check if providers is an object with data property
+    if (!providers || typeof providers !== "object") {
+      errors.push("Providers response must be an object");
+      return {
+        isValid: false,
+        data: { data: [] },
+        errors,
+        warnings,
+      };
+    }
+
+    // Check if data property exists and is an array
+    if (!Array.isArray(providers.data)) {
+      errors.push("Providers data must be an array");
+      return {
+        isValid: false,
+        data: { data: [] },
+        errors,
+        warnings,
+      };
+    }
+
+    // Validate and sanitize each provider entry
+    for (let i = 0; i < providers.data.length; i++) {
+      const provider = providers.data[i];
+
+      // Skip null, undefined, or empty values
+      if (provider == null || provider === "") {
+        warnings.push(`Skipped null/empty provider at index ${i}`);
+        continue;
+      }
+
+      // Convert to string if not already
+      if (typeof provider !== "string") {
+        warnings.push(
+          `Converted non-string provider at index ${i}: ${typeof provider}`,
+        );
+        const stringified = String(provider);
+        if (stringified === "[object Object]") {
+          warnings.push(`Skipped unparseable object at index ${i}`);
+          continue;
+        }
+        sanitizedData.push(stringified);
+        continue;
+      }
+
+      // Validate string is not empty after trim
+      const trimmed = provider.trim();
+      if (trimmed.length === 0) {
+        warnings.push(`Skipped empty provider at index ${i}`);
+        continue;
+      }
+
+      // Basic domain validation (contains dot and no spaces)
+      if (!trimmed.includes(".") || trimmed.includes(" ")) {
+        warnings.push(`Suspicious provider format at index ${i}: "${trimmed}"`);
+      }
+
+      // Check for potential XSS/injection attempts
+      if (this.containsSuspiciousContent(trimmed)) {
+        warnings.push(
+          `Potentially malicious provider at index ${i}: "${trimmed}"`,
+        );
+        // Still include it but logged for monitoring
+      }
+
+      sanitizedData.push(trimmed);
+    }
+
+    return {
+      isValid: true,
+      data: { data: sanitizedData },
+      errors,
+      warnings,
+    };
+  }
+
+  /**
+   * Validate and sanitize search results
+   */
+  static validateSearchResults(searchResults: any): ValidationResult<{
+    results: Array<{
+      id: string;
+      title: string;
+      description: string;
+      provider: string;
+      preferred: string;
+      categories: string[];
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total_results: number;
+      total_pages: number;
+      has_next: boolean;
+      has_previous: boolean;
+    };
+  }> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    if (!searchResults || typeof searchResults !== "object") {
+      errors.push("Search results must be an object");
+      return {
+        isValid: false,
+        data: {
+          results: [],
+          pagination: {
+            page: 1,
+            limit: 20,
+            total_results: 0,
+            total_pages: 0,
+            has_next: false,
+            has_previous: false,
+          },
+        },
+        errors,
+        warnings,
+      };
+    }
+
+    // Validate results array
+    const results: any[] = [];
+    if (Array.isArray(searchResults.results)) {
+      for (let i = 0; i < searchResults.results.length; i++) {
+        const result = searchResults.results[i];
+        if (result && typeof result === "object") {
+          const sanitized = {
+            id: String(result.id || `unknown-${i}`),
+            title: String(result.title || "Untitled API"),
+            description: String(result.description || "").substring(0, 500),
+            provider: String(result.provider || "unknown"),
+            preferred: String(result.preferred || "v1"),
+            categories: Array.isArray(result.categories)
+              ? result.categories
+                  .filter((c: any) => c != null && c !== "")
+                  .map((c: any) => String(c))
+                  .filter((c: string) => c.length > 0)
+              : [],
+          };
+
+          // Check for suspicious content
+          if (
+            this.containsSuspiciousContent(sanitized.id) ||
+            this.containsSuspiciousContent(sanitized.title) ||
+            this.containsSuspiciousContent(sanitized.description)
+          ) {
+            warnings.push(
+              `Potentially malicious content in search result ${i}`,
+            );
+          }
+
+          results.push(sanitized);
+        } else {
+          warnings.push(`Skipped invalid search result at index ${i}`);
+        }
+      }
+    } else {
+      warnings.push(
+        "Search results.results must be an array, using empty array",
+      );
+    }
+
+    // Validate pagination
+    const paginationPage = this.validateNumber(
+      searchResults.pagination?.page,
+      "pagination.page",
+      warnings,
+    );
+    const paginationLimit = this.validateNumber(
+      searchResults.pagination?.limit,
+      "pagination.limit",
+      warnings,
+    );
+    const paginationTotalResults = this.validateNumber(
+      searchResults.pagination?.total_results,
+      "pagination.total_results",
+      warnings,
+    );
+    const paginationTotalPages = this.validateNumber(
+      searchResults.pagination?.total_pages,
+      "pagination.total_pages",
+      warnings,
+    );
+
+    const pagination = {
+      page: paginationPage > 0 ? paginationPage : 1,
+      limit: paginationLimit > 0 ? paginationLimit : 20,
+      total_results:
+        paginationTotalResults >= 0 ? paginationTotalResults : results.length,
+      total_pages: paginationTotalPages > 0 ? paginationTotalPages : 1,
+      has_next: Boolean(searchResults.pagination?.has_next),
+      has_previous: Boolean(searchResults.pagination?.has_previous),
+    };
+
+    return {
+      isValid: true,
+      data: { results, pagination },
+      errors,
+      warnings,
+    };
+  }
+
+  /**
+   * Validate and sanitize metrics data
+   */
+  static validateMetrics(metrics: any): ValidationResult<{
+    numSpecs: number;
+    numAPIs: number;
+    numEndpoints: number;
+    [key: string]: any;
+  }> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    if (!metrics || typeof metrics !== "object") {
+      errors.push("Metrics response must be an object");
+      return {
+        isValid: false,
+        data: { numSpecs: 0, numAPIs: 0, numEndpoints: 0 },
+        errors,
+        warnings,
+      };
+    }
+
+    // Validate and sanitize numeric fields
+    const numSpecs = this.validateNumber(
+      metrics.numSpecs,
+      "numSpecs",
+      warnings,
+    );
+    const numAPIs = this.validateNumber(metrics.numAPIs, "numAPIs", warnings);
+    const numEndpoints = this.validateNumber(
+      metrics.numEndpoints,
+      "numEndpoints",
+      warnings,
+    );
+
+    // Preserve other fields but validate them
+    const sanitizedMetrics = {
+      numSpecs,
+      numAPIs,
+      numEndpoints,
+      ...this.sanitizeObject(
+        metrics,
+        ["numSpecs", "numAPIs", "numEndpoints"],
+        warnings,
+      ),
+    };
+
+    return {
+      isValid: true,
+      data: sanitizedMetrics,
+      errors,
+      warnings,
+    };
+  }
+
+  /**
+   * Check for potentially suspicious content (XSS, injection attempts)
+   * Uses DOMPurify for robust HTML sanitization instead of regex patterns
+   */
+  private static containsSuspiciousContent(str: string): boolean {
+    try {
+      // First check for non-HTML threats (URLs, standalone event handlers)
+      const nonHtmlPatterns = [
+        /javascript:/gi,
+        /vbscript:/gi,
+        /data:.*base64/gi,
+        /on\w+\s*=/gi, // Event handlers like onclick=
+      ];
+
+      const hasNonHtmlThreats = nonHtmlPatterns.some((pattern) =>
+        pattern.test(str),
+      );
+
+      // Check for SQL injection patterns
+      const sqlPatterns = [
+        /\bDROP\s+TABLE\b/gi,
+        /\bSELECT\s+\*\s+FROM\b/gi,
+        /['";].*--/gi,
+      ];
+
+      const hasSqlInjection = sqlPatterns.some((pattern) => pattern.test(str));
+
+      // Use DOMPurify for HTML/XSS detection
+      const window = new JSDOM("").window;
+      const purify = DOMPurify(window as any);
+
+      // Sanitize the string with very strict settings
+      const sanitized = purify.sanitize(str, {
+        ALLOWED_TAGS: [], // No HTML tags allowed
+        ALLOWED_ATTR: [], // No attributes allowed
+        KEEP_CONTENT: true, // Keep text content
+        FORBID_TAGS: ["script", "style", "iframe", "object", "embed"],
+        FORBID_ATTR: ["onclick", "onload", "onerror", "javascript", "vbscript"],
+      });
+
+      const hasHtmlThreats = sanitized !== str;
+
+      // Return true if any threats are detected
+      return hasNonHtmlThreats || hasSqlInjection || hasHtmlThreats;
+    } catch (error) {
+      // If DOMPurify fails, fall back to basic checks
+      const basicPatterns = [
+        /<script/i,
+        /javascript:/i,
+        /on\w+\s*=/i,
+        /\bDROP\s+TABLE\b/gi,
+        /\bSELECT\s+\*\s+FROM\b/gi,
+      ];
+
+      return basicPatterns.some((pattern) => pattern.test(str));
+    }
+  }
+
+  /**
+   * Validate a number field and provide fallback
+   */
+  private static validateNumber(
+    value: any,
+    fieldName: string,
+    warnings: string[],
+  ): number {
+    if (typeof value === "number" && !isNaN(value) && value >= 0) {
+      return Math.floor(value); // Ensure integer
+    }
+
+    if (typeof value === "string") {
+      const parsed = parseInt(value, 10);
+      if (!isNaN(parsed) && parsed >= 0) {
+        warnings.push(
+          `Converted string to number for ${fieldName}: "${value}" -> ${parsed}`,
+        );
+        return parsed;
+      }
+    }
+
+    warnings.push(`Invalid ${fieldName} value: ${value}, using 0`);
+    return 0;
+  }
+
+  /**
+   * Sanitize an object by excluding specified keys and validating remaining ones
+   */
+  private static sanitizeObject(
+    obj: any,
+    excludeKeys: string[],
+    warnings: string[],
+  ): Record<string, any> {
+    const sanitized: Record<string, any> = {};
+
+    for (const [key, value] of Object.entries(obj)) {
+      if (excludeKeys.includes(key)) {
+        continue;
+      }
+
+      // Skip functions and symbols
+      if (typeof value === "function" || typeof value === "symbol") {
+        warnings.push(`Skipped ${typeof value} property: ${key}`);
+        continue;
+      }
+
+      // Handle potential XSS in string values
+      if (typeof value === "string" && this.containsSuspiciousContent(value)) {
+        warnings.push(`Potentially suspicious content in ${key}: "${value}"`);
+      }
+
+      sanitized[key] = value;
+    }
+
+    return sanitized;
+  }
+
+  /**
+   * Log validation results appropriately
+   */
+  static logValidationResults<T>(
+    result: ValidationResult<T>,
+    source: string,
+  ): void {
+    // Import ErrorHandler dynamically to avoid circular dependency
+    const { ErrorHandler } = require("./errors.js");
+
+    if (result.errors.length > 0) {
+      ErrorHandler.logError({
+        code: "VALIDATION_ERROR",
+        message: `Validation errors in ${source}`,
+        context: { errors: result.errors },
+        timestamp: new Date(),
+      } as any);
+    }
+
+    if (result.warnings.length > 0) {
+      ErrorHandler.logError({
+        code: "VALIDATION_WARNING",
+        message: `Validation warnings in ${source}`,
+        context: { warnings: result.warnings },
+        timestamp: new Date(),
+      } as any);
+    }
+  }
+}
+
+/**
+ * Convenience function to validate and sanitize data with automatic logging
+ */
+export function validateAndSanitize<T>(
+  data: any,
+  validator: (data: any) => ValidationResult<T>,
+  source: string,
+): T {
+  const result = validator(data);
+  DataValidator.logValidationResults(result, source);
+  return result.data;
 }

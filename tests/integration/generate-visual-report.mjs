@@ -10,6 +10,411 @@ import { SecondaryApiClient } from '../../dist/api/secondary-client.js';
 import { CustomSpecClient } from '../../dist/custom-specs/custom-spec-client.js';
 import { ToolHandler } from '../../dist/tools/handler.js';
 
+// Create mock API client that doesn't make live calls
+class MockApiClient {
+  constructor(baseUrl, cacheManager) {
+    this.baseUrl = baseUrl;
+    this.cacheManager = cacheManager;
+  }
+
+  async getProviders() {
+    return { data: ['googleapis.com', 'azure.com', 'datadoghq.com'] };
+  }
+
+  async getProvider(provider) {
+    return { 
+      data: {
+        'admin': { 
+          preferred: 'directory_v1', 
+          versions: { 
+            'directory_v1': {
+              info: { title: 'Admin Directory API', version: 'directory_v1' },
+              swaggerUrl: 'https://example.com/swagger.json'
+            } 
+          } 
+        },
+        'drive': {
+          preferred: 'v3',
+          versions: {
+            'v3': {
+              info: { title: 'Drive API', version: 'v3' },
+              swaggerUrl: 'https://example.com/swagger.json'
+            }
+          }
+        },
+        'main': {
+          preferred: 'v1',
+          versions: {
+            'v1': {
+              info: { title: 'Datadog API', version: 'v1' },
+              swaggerUrl: 'https://example.com/swagger.json'
+            }
+          }
+        }
+      }
+    };
+  }
+
+  async getServices(provider) {
+    if (provider === 'googleapis.com') return { data: ['admin', 'drive'] };
+    if (provider === 'datadoghq.com') return { data: ['main'] };
+    return { data: [] };
+  }
+
+  async getAPI(provider, service, api, version) {
+    return {
+      added: '2023-01-01',
+      preferred: version || 'directory_v1',
+      versions: {
+        [version || 'directory_v1']: {
+          info: { title: 'Test API', version: version || 'directory_v1' },
+          swaggerUrl: 'https://example.com/swagger.json'
+        }
+      }
+    };
+  }
+
+  async getServiceAPI(provider, service, api, version) {
+    return this.getAPI(provider, service, api, version);
+  }
+
+  async listAPIs() {
+    return {
+      'googleapis.com:admin': {
+        added: '2023-01-01',
+        preferred: 'directory_v1',
+        versions: { 
+          'directory_v1': {
+            info: { title: 'Admin Directory API', version: 'directory_v1' }
+          } 
+        }
+      },
+      'datadoghq.com:main': {
+        added: '2023-01-01',
+        preferred: 'v1',
+        versions: {
+          'v1': {
+            info: { title: 'Datadog API', version: 'v1' }
+          }
+        }
+      }
+    };
+  }
+
+  async searchAPIs(query) {
+    return [{
+      id: 'googleapis.com:admin',
+      title: 'Admin API',
+      description: 'Test API',
+      provider: 'googleapis.com'
+    }];
+  }
+
+  async getMetrics() {
+    return {
+      numSpecs: 100,
+      numAPIs: 50,
+      numEndpoints: 1000
+    };
+  }
+
+  async getOpenAPISpec(url) {
+    return {
+      openapi: '3.0.0',
+      info: { title: 'Test', version: '1.0.0' },
+      paths: {
+        '/admin/directory/v1/groups': {
+          get: {
+            summary: 'Get groups',
+            responses: { '200': { description: 'Success' } }
+          }
+        },
+        '/api/v2/actions/app_key_registrations': {
+          get: {
+            summary: 'Get app key registrations',
+            responses: { '200': { description: 'Success' } }
+          }
+        }
+      }
+    };
+  }
+
+  async hasProvider(provider) {
+    return ['googleapis.com', 'azure.com', 'datadoghq.com'].includes(provider);
+  }
+
+  async hasAPI(apiId) {
+    return ['googleapis.com:admin', 'datadoghq.com:main'].includes(apiId);
+  }
+
+  async getPaginatedAPIs(page = 1, limit = 10) {
+    return {
+      results: [{
+        id: 'googleapis.com:admin',
+        title: 'Admin API',
+        description: 'Test API',
+        provider: 'googleapis.com',
+        preferred: 'directory_v1',
+        categories: ['test']
+      }],
+      pagination: {
+        page,
+        limit,
+        total_results: 1,
+        total_pages: 1,
+        has_next: false,
+        has_previous: false
+      }
+    };
+  }
+
+  async getAPISummaryById(apiId) {
+    return {
+      id: apiId,
+      title: 'Admin API',
+      description: 'Test API',
+      provider: apiId.split(':')[0],
+      version: 'directory_v1',
+      endpoints: 10,
+      added: '2023-01-01',
+      updated: '2023-01-01'
+    };
+  }
+
+  async getAPIEndpoints(apiId, page = 1, limit = 30, tag) {
+    const endpoints = apiId.includes('googleapis') ? [{
+      method: 'GET',
+      path: '/admin/directory/v1/groups',
+      summary: 'Get groups',
+      tags: ['groups']
+    }] : [{
+      method: 'GET',
+      path: '/api/v2/actions/app_key_registrations',
+      summary: 'Get app key registrations',
+      tags: ['actions']
+    }];
+
+    return {
+      endpoints,
+      pagination: {
+        page,
+        limit,
+        total: endpoints.length,
+        total_pages: 1
+      }
+    };
+  }
+
+  async getEndpointDetails(apiId, method, path) {
+    return {
+      method,
+      path,
+      summary: 'Test endpoint',
+      description: 'Test endpoint description',
+      parameters: [],
+      responses: {
+        '200': { description: 'Success' }
+      },
+      tags: ['test'],
+      operationId: 'testOperation'
+    };
+  }
+
+  async getEndpointSchema(apiId, method, path) {
+    return {
+      request: {
+        parameters: [],
+        body: null
+      },
+      response: {
+        '200': {
+          schema: { type: 'object' }
+        }
+      }
+    };
+  }
+
+  async getEndpointExamples(apiId, method, path) {
+    return {
+      request: {},
+      response: {
+        '200': { example: { success: true } }
+      }
+    };
+  }
+
+  async fetchWithCache(key, fetcher) {
+    return await fetcher();
+  }
+}
+
+// Create mock custom spec client
+class MockCustomSpecClient extends CustomSpecClient {
+  constructor(cacheManager) {
+    super(cacheManager);
+  }
+
+  async hasProvider(provider) {
+    return provider === 'custom';
+  }
+
+  async hasAPI(apiId) {
+    return apiId.startsWith('custom:');
+  }
+
+  async getProviders() {
+    return { data: ['custom'] };
+  }
+
+  async getProvider(provider) {
+    if (provider !== 'custom') return { data: {} };
+    return {
+      data: {
+        'testapi': {
+          preferred: '1.0.0',
+          versions: {
+            '1.0.0': {
+              info: { title: 'Test API', version: '1.0.0' },
+              swaggerUrl: 'custom:testapi:1.0.0'
+            }
+          }
+        }
+      }
+    };
+  }
+
+  async getServices(provider) {
+    return provider === 'custom' ? { data: ['testapi'] } : { data: [] };
+  }
+
+  async listAPIs() {
+    return {
+      'custom:testapi:1.0.0': {
+        added: '2023-01-01',
+        preferred: '1.0.0',
+        versions: {
+          '1.0.0': {
+            info: { title: 'Test API', version: '1.0.0' }
+          }
+        }
+      }
+    };
+  }
+
+  async getAPI(provider, service, api, version) {
+    if (provider !== 'custom') return null;
+    return {
+      added: '2023-01-01',
+      preferred: '1.0.0',
+      versions: {
+        '1.0.0': {
+          info: { title: 'Test API', version: '1.0.0' },
+          swaggerUrl: 'custom:testapi:1.0.0'
+        }
+      }
+    };
+  }
+
+  async getOpenAPISpec(url) {
+    if (url === 'custom:testapi:1.0.0') {
+      return {
+        openapi: '3.0.0',
+        info: { title: 'Test API', version: '1.0.0' },
+        paths: {
+          '/users': {
+            get: {
+              summary: 'Get users',
+              responses: { '200': { description: 'Success' } }
+            }
+          }
+        }
+      };
+    }
+    throw new Error('Not found');
+  }
+
+  async searchAPIs(query) {
+    return [];
+  }
+
+  async getMetrics() {
+    return { numSpecs: 1, numAPIs: 1, numEndpoints: 1 };
+  }
+
+  async getAPISummaryById(apiId) {
+    if (!apiId.startsWith('custom:')) return null;
+    return {
+      id: apiId,
+      title: 'Test API',
+      description: 'Custom test API',
+      provider: 'custom',
+      version: '1.0.0',
+      endpoints: 1,
+      added: '2023-01-01',
+      updated: '2023-01-01'
+    };
+  }
+
+  async getAPIEndpoints(apiId, page = 1, limit = 30) {
+    if (!apiId.startsWith('custom:')) return { endpoints: [], pagination: { total: 0 } };
+    return {
+      endpoints: [{
+        method: 'GET',
+        path: '/users',
+        summary: 'Get users',
+        tags: ['users']
+      }],
+      pagination: {
+        page,
+        limit,
+        total: 1,
+        total_pages: 1
+      }
+    };
+  }
+
+  async getEndpointDetails(apiId, method, path) {
+    if (!apiId.startsWith('custom:')) return null;
+    return {
+      method,
+      path,
+      summary: 'Test endpoint',
+      description: 'Custom test endpoint',
+      parameters: [],
+      responses: {
+        '200': { description: 'Success' }
+      },
+      tags: ['test'],
+      operationId: 'testOperation'
+    };
+  }
+
+  async getEndpointSchema(apiId, method, path) {
+    if (!apiId.startsWith('custom:')) return null;
+    return {
+      request: {
+        parameters: [],
+        body: null
+      },
+      response: {
+        '200': {
+          schema: { type: 'object' }
+        }
+      }
+    };
+  }
+
+  async getEndpointExamples(apiId, method, path) {
+    if (!apiId.startsWith('custom:')) return null;
+    return {
+      request: {},
+      response: {
+        '200': { example: { success: true } }
+      }
+    };
+  }
+}
+
 // Rate limiting for testing
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -139,15 +544,16 @@ async function testTool(toolName, config, client, cacheManager) {
 }
 
 async function generateVisualReport() {
-  console.log('🔍 GENERATING VISUAL STATUS REPORT');
-  console.log('Testing all tools across Primary, Secondary, and Custom data sources\n');
+  console.log('🔍 GENERATING VISUAL STATUS REPORT (USING MOCKED DATA)');
+  console.log('Testing all tools across Primary, Secondary, and Custom data sources');
+  console.log('⚠️  Using mock clients to prevent live API calls\n');
   
   const cacheManager = new CacheManager();
   
-  // Create individual clients
-  const primaryClient = new ApiClient('https://api.apis.guru/v2', cacheManager);
-  const secondaryClient = new SecondaryApiClient('https://api.openapidirectory.com', cacheManager);
-  const customClient = new CustomSpecClient(cacheManager);
+  // Create mocked clients that don't make live API calls
+  const primaryClient = new MockApiClient('https://api.apis.guru/v2', cacheManager);
+  const secondaryClient = new MockApiClient('https://api.openapidirectory.com', cacheManager);
+  const customClient = new MockCustomSpecClient(cacheManager);
   
   const tools = Object.keys(TOOL_CONFIGURATIONS);
   const results = {};
@@ -187,11 +593,12 @@ function generateMarkdownReport(results) {
   const timestamp = new Date().toISOString();
   const tools = Object.keys(results);
   
-  let report = `# Triple-Source Tool Status Report
+  let report = `# Triple-Source Tool Status Report (MOCKED DATA)
   
 **Generated:** ${timestamp}  
 **Total Tools:** ${tools.length}  
-**Data Sources:** Primary (APIs.guru), Secondary (Enhanced Directory), Custom (Local filesystem)
+**Data Sources:** Primary (APIs.guru), Secondary (Enhanced Directory), Custom (Local filesystem)  
+**Note:** This report uses mocked data to prevent live API calls
 
 ## Status Legend
 - ✅ **PASS** - Tool working correctly
@@ -274,7 +681,7 @@ function generateMarkdownReport(results) {
 - **Custom (Local filesystem)**: User-imported OpenAPI specifications
 
 ---
-*Report generated by openapi-directory-mcp regression testing suite*
+*Report generated by openapi-directory-mcp regression testing suite using mocked data*
 `;
 
   // Write to file
@@ -287,7 +694,7 @@ function generateTextReport(results) {
   let report = '';
   
   report += '═'.repeat(80) + '\n';
-  report += '                    TRIPLE-SOURCE TOOL STATUS REPORT\n';
+  report += '              TRIPLE-SOURCE TOOL STATUS REPORT (MOCKED DATA)\n';
   report += '═'.repeat(80) + '\n';
   report += `Generated: ${new Date().toISOString()}\n`;
   report += `Total Tools: ${tools.length}\n`;
@@ -393,8 +800,9 @@ generateVisualReport()
       r.custom.status === 'PASS'
     ).length;
     
-    console.log(`\n✅ Visual report generation completed`);
+    console.log(`\n✅ Visual report generation completed (using mocked data)`);
     console.log(`📊 ${fullyWorking}/${tools.length} tools fully working across all sources`);
+    console.log(`⚠️  Note: This test used mocked data to prevent live API calls`);
     process.exit(0);
   })
   .catch(error => {

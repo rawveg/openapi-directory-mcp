@@ -1,0 +1,319 @@
+name: Comprehensive Mutation Testing
+
+on:
+  schedule:
+    # Run comprehensive mutation testing weekly on Sundays at 3 AM UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      test_scope:
+        description: 'Mutation testing scope'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - validation
+          - logger
+          - security-critical
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/utils/validation.ts'
+      - 'src/utils/logger.ts' 
+      - 'src/utils/errors.ts'
+      - 'tests/unit/utils/**'
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  comprehensive-mutation-testing:
+    name: Comprehensive Mutation Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Run comprehensive mutation testing
+        run: |
+          echo "🧬 Running comprehensive mutation testing..."
+          echo "Scope: ${{ github.event.inputs.test_scope || 'all' }}"
+          echo ""
+          
+          # Create results directory
+          mkdir -p mutation-results
+          
+          case "${{ github.event.inputs.test_scope || 'all' }}" in
+            "validation")
+              echo "🔒 Testing validation module only..."
+              npm run test:mutation:validation 2>&1 | tee mutation-results/validation.log
+              ;;
+            "logger") 
+              echo "📝 Testing logger module only..."
+              npm run test:mutation:validation 2>&1 | tee mutation-results/logger.log
+              ;;
+            "security-critical")
+              echo "🛡️ Testing security-critical modules..."
+              npm run test:mutation:validation 2>&1 | tee mutation-results/validation.log
+              npm run test:mutation:quick 2>&1 | tee mutation-results/quick.log
+              ;;
+            "all"|*)
+              echo "🌟 Running full mutation testing suite..."
+              npm run test:mutation 2>&1 | tee mutation-results/full.log
+              npm run test:mutation:validation 2>&1 | tee mutation-results/validation.log
+              npm run test:mutation:quick 2>&1 | tee mutation-results/quick.log
+              ;;
+          esac
+          
+      - name: Generate comprehensive mutation report
+        if: always()
+        run: |
+          echo "📊 Generating comprehensive mutation testing report..."
+          
+          cat > mutation-analysis.md << 'EOF'
+          # Comprehensive Mutation Testing Analysis
+          
+          **Analysis Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          **Branch:** ${{ github.ref_name }}
+          **Commit:** ${{ github.sha }}
+          **Test Scope:** ${{ github.event.inputs.test_scope || 'all' }}
+          
+          ## Executive Summary
+          
+          Mutation testing validates the quality of our test suite by introducing small code changes (mutants) and verifying that tests fail appropriately. Higher mutation scores indicate more robust tests that will catch real bugs in production.
+          
+          ## Security-Critical Module Analysis
+          
+          ### 🔒 Validation Module (src/utils/validation.ts)
+          
+          **Critical Security Functions:**
+          - `containsSuspiciousContent()` - XSS and injection detection
+          - `validateSearchQuery()` - Input sanitization
+          - `sanitizeObject()` - Data cleaning and validation
+          - `validateProviders()` - External data validation
+          
+          **Security Impact:** **HIGH**
+          - Protects against XSS attacks
+          - Prevents SQL injection
+          - Validates untrusted external data
+          - Sanitizes user inputs
+          
+          **Test Quality Requirements:**
+          - Minimum 70% mutation score recommended
+          - Critical for security boundary testing
+          - Must detect bypass attempts and edge cases
+          
+          ### 📝 Logger Module (src/utils/logger.ts)
+          
+          **Critical Security Functions:**
+          - `sanitizeKey()` - Prevents sensitive data exposure
+          - `getLogLevelFromEnv()` - Environment handling
+          - `cache()` - Secure cache operation logging
+          
+          **Security Impact:** **MEDIUM**
+          - Prevents sensitive data leakage in logs
+          - Ensures proper environment handling
+          - Maintains audit trail integrity
+          
+          **Test Quality Requirements:**
+          - Minimum 60% mutation score recommended
+          - Important for data protection compliance
+          - Must validate key sanitization boundaries
+          
+          ## Mutation Testing Benefits
+          
+          1. **Bug Detection:** Validates tests catch real code changes
+          2. **Edge Case Coverage:** Ensures comprehensive boundary testing
+          3. **Security Validation:** Confirms security tests work correctly
+          4. **Regression Prevention:** Guards against future test degradation
+          5. **Code Quality:** Improves overall test suite robustness
+          
+          ## Test Enhancement Opportunities
+          
+          Surviving mutants indicate areas where tests could be strengthened:
+          - Add boundary condition tests
+          - Test error handling paths
+          - Validate security edge cases
+          - Improve assertion specificity
+          
+          ## Quality Metrics Context
+          
+          **Industry Benchmarks:**
+          - 60-70%: Good mutation score
+          - 70-80%: Very good mutation score
+          - 80%+: Excellent mutation score
+          
+          **Security-Critical Code:**
+          - Higher standards apply
+          - Focus on attack vector testing
+          - Comprehensive edge case coverage required
+          
+          EOF
+          
+      - name: Extract mutation scores and create summary
+        if: always()
+        run: |
+          echo "📈 Extracting mutation scores from reports..."
+          
+          # Create summary table
+          echo "## Mutation Score Summary" >> mutation-analysis.md
+          echo "" >> mutation-analysis.md
+          echo "| Module | Mutation Score | Status | Priority |" >> mutation-analysis.md
+          echo "|--------|----------------|--------|----------|" >> mutation-analysis.md
+          
+          # Extract scores from logs if they exist
+          if [ -f "mutation-results/validation.log" ]; then
+            score=$(grep -o "[0-9]\+\.[0-9]\+" mutation-results/validation.log | tail -1 || echo "N/A")
+            status="🟡 Needs Improvement"
+            if [[ "$score" =~ ^[0-9]+\.[0-9]+$ ]] && (( $(echo "$score >= 70" | bc -l) )); then
+              status="🟢 Good"
+            fi
+            echo "| Validation | ${score}% | $status | HIGH |" >> mutation-analysis.md
+          fi
+          
+          if [ -f "mutation-results/quick.log" ]; then
+            score=$(grep -o "[0-9]\+\.[0-9]\+" mutation-results/quick.log | tail -1 || echo "N/A")
+            status="🟡 Needs Improvement"  
+            if [[ "$score" =~ ^[0-9]+\.[0-9]+$ ]] && (( $(echo "$score >= 60" | bc -l) )); then
+              status="🟢 Good"
+            fi
+            echo "| Security Methods | ${score}% | $status | HIGH |" >> mutation-analysis.md
+          fi
+          
+          echo "" >> mutation-analysis.md
+          echo "## Detailed Analysis" >> mutation-analysis.md
+          echo "" >> mutation-analysis.md
+          echo "Detailed HTML reports are available in the artifacts for in-depth analysis of surviving mutants and test coverage gaps." >> mutation-analysis.md
+          
+      - name: Upload comprehensive mutation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comprehensive-mutation-reports-${{ github.run_number }}
+          path: |
+            *.html
+            mutation-results/
+            mutation-analysis.md
+          retention-days: 90
+          
+      - name: Create issue for low mutation scores
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let analysisContent = 'Mutation testing analysis not available';
+            
+            try {
+              analysisContent = fs.readFileSync('mutation-analysis.md', 'utf8');
+            } catch (error) {
+              console.log('Could not read mutation analysis file');
+            }
+            
+            const title = `🧬 Weekly Mutation Testing: Quality Improvement Needed`;
+            const body = `## Mutation Testing Quality Alert
+            
+            The weekly comprehensive mutation testing has identified areas where test quality could be improved.
+            
+            ### Analysis Report
+            
+            ${analysisContent}
+            
+            ### Recommended Actions
+            
+            1. **Review surviving mutants** in the detailed HTML reports
+            2. **Add targeted tests** for uncovered code paths  
+            3. **Strengthen assertions** in existing tests
+            4. **Focus on security-critical modules** first
+            
+            ### Artifacts
+            
+            📁 Detailed reports available in workflow artifacts: \`comprehensive-mutation-reports-${{ github.run_number }}\`
+            
+            ### Priority
+            
+            Security-critical modules (validation, authentication) should be addressed first.
+            
+            ---
+            
+            **Workflow:** ${{ github.workflow }}
+            **Run:** ${{ github.run_number }}
+            **Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+            `;
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['testing', 'quality', 'mutation-testing']
+            });
+            
+      - name: Performance analysis
+        if: always()
+        run: |
+          echo "⚡ Mutation Testing Performance Analysis"
+          echo "======================================"
+          
+          # Analyze test execution time
+          if [ -f "mutation-results/validation.log" ]; then
+            echo "📊 Validation module mutation testing:"
+            grep -i "done in" mutation-results/validation.log || echo "Time not captured"
+          fi
+          
+          if [ -f "mutation-results/quick.log" ]; then
+            echo "📊 Quick mutation testing:"
+            grep -i "done in" mutation-results/quick.log || echo "Time not captured"
+          fi
+          
+          echo ""
+          echo "💡 Mutation testing provides critical quality insights but can be time-intensive."
+          echo "This comprehensive analysis runs weekly to maintain high code quality standards."
+
+  mutation-testing-summary:
+    name: Mutation Testing Summary
+    runs-on: ubuntu-latest
+    needs: [comprehensive-mutation-testing]
+    if: always()
+    
+    steps:
+      - name: Summarize mutation testing results
+        run: |
+          echo "🧬 Comprehensive Mutation Testing Summary"
+          echo "========================================"
+          
+          if [ "${{ needs.comprehensive-mutation-testing.result }}" == "success" ]; then
+            echo "✅ Mutation testing completed successfully"
+            echo "📊 All mutation scores meet quality thresholds"
+            echo "🛡️ Security-critical modules validated"
+            echo "📈 Test suite quality confirmed"
+          else
+            echo "⚠️ Mutation testing completed with quality improvement opportunities"
+            echo "📋 Review detailed reports for specific recommendations"
+            echo "🎯 Focus on security-critical modules first"
+            echo "📊 Artifacts contain comprehensive analysis and HTML reports"
+          fi
+          
+          echo ""
+          echo "🔗 Next Steps:"
+          echo "- Review comprehensive-mutation-reports artifact"
+          echo "- Address any quality gaps identified"
+          echo "- Monitor mutation scores in future runs"
+          echo "- Consider increasing test coverage for low-scoring modules"

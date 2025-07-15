@@ -1,7 +1,14 @@
 import { join } from "path";
 import { homedir } from "os";
-import { mkdirSync, existsSync, readFileSync, writeFileSync } from "fs";
+import {
+  mkdirSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  unlinkSync,
+} from "fs";
 import { ICacheManager } from "./types.js";
+import { Logger } from "../utils/logger.js";
 
 interface CacheEntry {
   value: any;
@@ -42,23 +49,28 @@ export class PersistentCacheManager implements ICacheManager {
       // Create cache directory if it doesn't exist
       if (!existsSync(this.cacheDir)) {
         mkdirSync(this.cacheDir, { recursive: true });
-        console.error(`Created cache directory: ${this.cacheDir}`);
+        Logger.info(`Created cache directory: ${this.cacheDir}`);
       }
+
+      // Check for invalidation flag before loading cache
+      this.checkInvalidationFlag();
 
       // Load existing cache data if it exists
       this.loadFromDisk();
 
-      console.error(`Persistent cache initialized: ${this.cacheFile}`);
+      Logger.info(`Persistent cache initialized: ${this.cacheFile}`);
 
-      // Set up automatic persistence interval
-      this.persistTimer = setInterval(() => {
-        this.persistToDisk();
-      }, this.persistInterval);
+      // Set up automatic persistence interval (disabled in test environment)
+      if (process.env.NODE_ENV !== "test") {
+        this.persistTimer = setInterval(() => {
+          this.persistToDisk();
+        }, this.persistInterval);
+      }
 
       // Clean expired entries on startup
       this.cleanExpired();
     } catch (error) {
-      console.error("Failed to initialize persistent cache:", error);
+      Logger.error("Failed to initialize persistent cache:", error);
       this.enabled = false;
     }
   }
@@ -68,13 +80,13 @@ export class PersistentCacheManager implements ICacheManager {
    */
   private checkInvalidationFlag(): void {
     if (existsSync(this.invalidateFlag)) {
-      console.error("Cache invalidation flag detected, clearing cache...");
+      Logger.info("Cache invalidation flag detected, clearing cache...");
       this.cacheData.clear();
       try {
-        require("fs").unlinkSync(this.invalidateFlag);
-        console.error("Cache invalidation flag removed");
+        unlinkSync(this.invalidateFlag);
+        Logger.info("Cache invalidation flag removed");
       } catch (error) {
-        console.error("Failed to remove invalidation flag:", error);
+        Logger.error("Failed to remove invalidation flag:", error);
       }
     }
   }
@@ -102,10 +114,10 @@ export class PersistentCacheManager implements ICacheManager {
         return undefined;
       }
 
-      console.error(`Cache hit: ${key}`);
+      Logger.cache("hit", key);
       return entry.value as T;
     } catch (error) {
-      console.error(`Cache get error for key ${key}:`, error);
+      Logger.error(`Cache get error for key ${key}:`, error);
       return undefined;
     }
   }
@@ -132,11 +144,11 @@ export class PersistentCacheManager implements ICacheManager {
 
       const ttlSeconds =
         effectiveTtl > 0 ? Math.floor(effectiveTtl / 1000) : "never";
-      console.error(`Cache set: ${key} (TTL: ${ttlSeconds}s)`);
+      Logger.cache("set", key, { ttl: `${ttlSeconds}s` });
 
       return true;
     } catch (error) {
-      console.error(`Cache set error for key ${key}:`, error);
+      Logger.error(`Cache set error for key ${key}:`, error);
       return false;
     }
   }
@@ -153,12 +165,12 @@ export class PersistentCacheManager implements ICacheManager {
       const existed = this.cacheData.has(key);
       if (existed) {
         this.cacheData.delete(key);
-        console.error(`Cache deleted: ${key}`);
+        Logger.cache("delete", key);
         return 1;
       }
       return 0;
     } catch (error) {
-      console.error(`Cache delete error for key ${key}:`, error);
+      Logger.error(`Cache delete error for key ${key}:`, error);
       return 0;
     }
   }
@@ -173,9 +185,20 @@ export class PersistentCacheManager implements ICacheManager {
 
     try {
       this.cacheData.clear();
-      console.error("Cache cleared");
+
+      // Also delete the cache file
+      if (existsSync(this.cacheFile)) {
+        try {
+          unlinkSync(this.cacheFile);
+          Logger.info("Cache file deleted");
+        } catch (error) {
+          Logger.error("Failed to delete cache file:", error);
+        }
+      }
+
+      Logger.cache("clear", "all");
     } catch (error) {
-      console.error("Cache clear error:", error);
+      Logger.error("Cache clear error:", error);
     }
   }
 
@@ -428,6 +451,9 @@ export class PersistentCacheManager implements ICacheManager {
     }
 
     try {
+      // Clean expired entries before persisting
+      this.cleanExpired();
+
       const cacheObject = Object.fromEntries(this.cacheData.entries());
       writeFileSync(
         this.cacheFile,

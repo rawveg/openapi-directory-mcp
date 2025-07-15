@@ -1,0 +1,126 @@
+{
+  "results": [
+    {
+      "id": "google.com",
+      "title": "Travel Partner API",
+      "description": "The Travel Partner API provides you with a RESTful interface to the Google Hotel Center platform. It enables an app to efficiently retrieve and change Hotel Center data, and is thus suitable for manag...",
+      "provider": "google.com",
+      "preferred": "v3",
+      "categories": [],
+      "source": "primary"
+    },
+    {
+      "id": "google.home",
+      "title": "Google Home",
+      "description": "# Google Home Local API\nThis is an unofficial documentation of the local API used by the Home app to communicate with GH devices.\n[GitHub Repo](https://github.com/rithvikvibhu/GHLocalApi)\n\n[![GitHub s...",
+      "provider": "google.home",
+      "preferred": "2.0",
+      "categories": [],
+      "source": "primary"
+    },
+    {
+      "id": "googleapis.com:abusiveexperiencereport",
+      "title": "Abusive Experience Report API",
+      "description": "Views Abusive Experience Report data, and gets a list of sites that have a significant number of abusive experiences.",
+      "provider": "googleapis.com",
+      "preferred": "v1",
+      "categories": [
+        "analytics",
+        "media"
+      ],
+      "source": "primary"
+    },
+    {
+      "id": "googleapis.com:acceleratedmobilepageurl",
+      "title": "Accelerated Mobile Pages (AMP) URL API",
+      "description": "Retrieves the list of AMP URLs (and equivalent AMP Cache URLs) for a given list of public URL(s). ",
+      "provider": "googleapis.com",
+      "preferred": "v1",
+      "categories": [
+        "analytics",
+        "media"
+      ],
+      "source": "primary"
+    },
+    {
+      "id": "googleapis.com:accessapproval",
+      "title": "Access Approval API",
+      "description": "An API for controlling access to data by Google personnel.",
+      "provider": "googleapis.com",
+      "preferred": "v1",
+      "categories": [
+        "analytics",
+        "media"
+      ],
+      "source": "primary"
+    },
+    {
+      "id": "googleapis.com:accesscontextmanager",
+      "title": "Access Context Manager API",
+      "description": "An API for setting attribute based access control to requests to Google Cloud services.",
+      "provider": "googleapis.com",
+      "preferred": "v1beta",
+      "categories": [
+        "analytics",
+        "media"
+      ],
+      "source": "primary"
+    },
+    {
+      "id": "googleapis.com:acmedns",
+      "title": "ACME DNS API",
+      "description": "Google Domains ACME DNS API that allows users to complete ACME DNS-01 challenges for a domain.",
+      "provider": "googleapis.com",
+      "preferred": "v1",
+      "categories": [
+        "analytics",
+        "media"
+      ],
+      "source": "primary"
+    },
+    {
+      "id": "googleapis.com:adexchangebuyer",
+      "title": "Ad Exchange Buyer API",
+      "description": "Accesses your bidding-account information, submits creatives for validation, finds available direct deals, and retrieves performance reports.",
+      "provider": "googleapis.com",
+      "preferred": "v1.4",
+      "categories": [
+        "analytics",
+        "media"
+      ],
+      "source": "primary"
+    },
+    {
+      "id": "googleapis.com:adexchangebuyer2",
+      "title": "Ad Exchange Buyer API II",
+      "description": "Accesses the latest features for managing Authorized Buyers accounts, Real-Time Bidding configurations and auction metrics, and Marketplace programmatic deals.",
+      "provider": "googleapis.com",
+      "preferred": "v2beta1",
+      "categories": [
+        "analytics",
+        "media"
+      ],
+      "source": "primary"
+    },
+    {
+      "id": "googleapis.com:adexperiencereport",
+      "title": "Ad Experience Report API",
+      "description": "Views Ad Experience Report data, and gets a list of sites that have a significant number of annoying ads.",
+      "provider": "googleapis.com",
+      "preferred": "v1",
+      "categories": [
+        "analytics",
+        "media"
+      ],
+      "source": "primary"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total_results": 10,
+    "total_pages": 1,
+    "has_next": false,
+    "has_previous": false
+  }
+}

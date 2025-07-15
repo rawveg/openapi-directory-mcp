@@ -125,4 +125,52 @@ npm run validate   # Full validation (lint + typecheck + test)
 
 **Due to extremely high number of failures and regressions, these measures are non-negotiable.**
 
+## 🚨 TEST RELIABILITY STANDARDS - ABSOLUTELY NO FLAKY TESTS
+
+### TIMING-BASED TESTS ARE FORBIDDEN
+**NEVER write tests that assert on execution time, performance metrics, or timing ranges**
+
+**Why timing tests are ALWAYS wrong:**
+- CI runners have variable load - tests WILL fail randomly
+- Network conditions vary - timeouts WILL happen
+- Container resources are shared - performance WILL fluctuate  
+- Different environments have different speeds - assertions WILL break
+- These are not real tests - they are time bombs waiting to explode
+
+**What NOT to do:**
+```javascript
+// FORBIDDEN - This WILL fail randomly
+expect(endTime - startTime).toBeLessThan(100);
+expect(duration).toBeGreaterThan(50);
+expect(performance.now() - start).toBeLessThanOrEqual(1000);
+```
+
+**What to do instead:**
+- Test that operations complete successfully
+- Test that results are correct
+- Test that no errors occur
+- Test that resources are not exhausted
+- If something is "fast enough", it won't error or timeout
+
+**Examples of good performance tests:**
+```javascript
+// GOOD - Tests functionality, not arbitrary timing
+const results = await Promise.all(hundredRequests);
+expect(results).toHaveLength(100);
+expect(results.every(r => r.success)).toBe(true);
+
+// GOOD - Tests scalability without timing
+for (let i = 0; i < 1000; i++) {
+  registry.addItem(item);
+}
+expect(registry.size()).toBe(1000);
+expect(() => registry.getItem(999)).not.toThrow();
+```
+
+### FLAKY TEST POLICY
+- ANY test that fails intermittently is UNACCEPTABLE
+- If a test can fail due to external factors, it's WRONG
+- Tests must be deterministic - same input ALWAYS produces same output
+- Random failures destroy CI/CD trust and MUST be eliminated
+
 ## Remember: NEVER COMMIT WITHOUT EXPLICIT USER PERMISSION

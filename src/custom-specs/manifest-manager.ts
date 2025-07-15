@@ -31,6 +31,7 @@ export class ManifestManager {
 
   constructor() {
     this.paths = this.initializePaths();
+    this.ensureDirectories();
     this.manifest = this.loadManifest();
   }
 
@@ -167,6 +168,14 @@ export class ManifestManager {
    * Add a spec to the manifest
    */
   addSpec(entry: CustomSpecEntry): void {
+    // Validate required fields
+    if (!entry.id || !entry.name || !entry.version) {
+      throw new ValidationError("Spec entry must have id, name, and version");
+    }
+
+    if (this.manifest.specs[entry.id]) {
+      throw new ValidationError(`Spec with ID ${entry.id} already exists`);
+    }
     this.manifest.specs[entry.id] = entry;
     this.saveManifest();
   }

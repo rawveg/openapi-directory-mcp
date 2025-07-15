@@ -11,7 +11,7 @@ import { homedir } from "os";
 import * as yaml from "js-yaml";
 import SwaggerParser from "@apidevtools/swagger-parser";
 import axios from "axios";
-import { ApiGuruAPI } from "../types/api.js";
+import { ApiGuruAPI, ApiGuruApiVersion } from "../types/api.js";
 import { ValidationResult, SpecProcessingResult } from "./types.js";
 import { SecurityScanner } from "./security-scanner.js";
 
@@ -68,8 +68,11 @@ export class SpecProcessor {
       );
     }
 
-    // Extract metadata
-    const metadata = this.extractMetadata(specObject, content.length);
+    // Extract metadata - use byte length instead of string length
+    const metadata = this.extractMetadata(
+      specObject,
+      Buffer.byteLength(content, "utf8"),
+    );
 
     return {
       spec: apiGuruSpec,
@@ -244,36 +247,32 @@ export class SpecProcessor {
    */
   private convertToApiGuruFormat(spec: any): ApiGuruAPI {
     const info = spec.info || {};
+    const added = new Date().toISOString();
     const version = info.version || "1.0.0";
 
-    // Create a version entry
-    const versionEntry = {
-      added: new Date().toISOString(),
-      updated: new Date().toISOString(),
-      swaggerUrl: "", // Will be set to local file path
-      swaggerYamlUrl: "", // Will be set to local file path
-      openapiVer: spec.openapi || spec.swagger || "3.0.0",
+    // Determine file extensions based on original format
+    const basePath = "custom/spec";
+
+    const apiVersion: ApiGuruApiVersion = {
+      added,
+      updated: added,
       info: {
         ...info,
         "x-providerName": "custom",
         "x-apisguru-categories": info["x-apisguru-categories"] || ["custom"],
-        "x-origin": [
-          {
-            format: "openapi",
-            version: spec.openapi || spec.swagger || "3.0.0",
-            url: "custom-import",
-          },
-        ],
       },
-      // Include the full spec for analysis
-      spec: spec,
+      swaggerUrl: `${basePath}.json`,
+      swaggerYamlUrl: `${basePath}.yaml`,
+      openapiVer: spec.openapi || spec.swagger || "3.0.0",
+      link: info.contact?.url || "",
+      externalDocs: spec.externalDocs,
     };
 
     return {
-      added: new Date().toISOString(),
+      added,
       preferred: version,
       versions: {
-        [version]: versionEntry,
+        [version]: apiVersion,
       },
     };
   }
@@ -289,7 +288,7 @@ export class SpecProcessor {
 
     return {
       title: info.title || "Untitled API",
-      description: info.description || "No description provided",
+      description: info.description || "",
       version: info.version || "1.0.0",
       fileSize,
     };

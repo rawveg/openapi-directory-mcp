@@ -3,6 +3,7 @@ import { ICacheManager } from "./types.js";
 import { CACHE_TTL, CACHE_LIMITS } from "../utils/constants.js";
 import { CacheValidator } from "../utils/validation.js";
 import { CacheError, ErrorHandler } from "../utils/errors.js";
+import { Logger } from "../utils/logger.js";
 
 export class CacheManager implements ICacheManager {
   private cache: NodeCache;
@@ -13,7 +14,10 @@ export class CacheManager implements ICacheManager {
 
     this.cache = new NodeCache({
       stdTTL: Math.floor(ttlMs / 1000), // NodeCache uses seconds
-      checkperiod: Math.floor((ttlMs / 1000) * CACHE_LIMITS.CHECK_PERIOD_RATIO), // Check every 10% of TTL
+      checkperiod:
+        process.env.NODE_ENV === "test"
+          ? 0
+          : Math.floor((ttlMs / 1000) * CACHE_LIMITS.CHECK_PERIOD_RATIO), // Disable periodic checks in tests
       useClones: false, // Better performance, but be careful with mutations
       deleteOnExpire: true,
       maxKeys: CACHE_LIMITS.MAX_KEYS,
@@ -21,11 +25,11 @@ export class CacheManager implements ICacheManager {
 
     // Set up cache statistics logging
     this.cache.on("expired", (key) => {
-      console.error(`Cache expired: ${key}`);
+      Logger.cache("expired", key);
     });
 
     this.cache.on("set", (key) => {
-      console.error(`Cache set: ${key}`);
+      Logger.cache("set", key);
     });
   }
 
@@ -42,12 +46,12 @@ export class CacheManager implements ICacheManager {
       if (wrappedValue !== undefined) {
         // Validate cache entry integrity
         if (!this.validateCacheEntry(key, wrappedValue)) {
-          console.error(`Cache corruption detected for key: ${key}`);
+          Logger.warn(`Cache corruption detected for key: ${key}`);
           this.delete(key);
           return undefined;
         }
 
-        console.error(`Cache hit: ${key}`);
+        Logger.cache("hit", key);
 
         // Return the unwrapped value
         return wrappedValue.value as T;
@@ -94,7 +98,7 @@ export class CacheManager implements ICacheManager {
         const ttlSeconds = ttlMs
           ? Math.max(1, Math.floor(ttlMs / 1000))
           : "default";
-        console.error(`Cache set: ${key} (TTL: ${ttlSeconds}s)`);
+        Logger.cache("set", key, { ttl: `${ttlSeconds}s` });
       }
 
       return success;
@@ -122,11 +126,11 @@ export class CacheManager implements ICacheManager {
     try {
       const deleted = this.cache.del(key);
       if (deleted > 0) {
-        console.error(`Cache deleted: ${key}`);
+        Logger.cache("delete", key);
       }
       return deleted;
     } catch (error) {
-      console.error(`Cache delete error for key ${key}:`, error);
+      Logger.error(`Cache delete error for key ${key}:`, error);
       return 0;
     }
   }
@@ -141,9 +145,28 @@ export class CacheManager implements ICacheManager {
 
     try {
       this.cache.flushAll();
-      console.error("Cache cleared");
+      Logger.cache("clear", "all");
     } catch (error) {
-      console.error("Cache clear error:", error);
+      Logger.error("Cache clear error:", error);
+    }
+  }
+
+  /**
+   * Destroy the cache and clean up resources
+   */
+  destroy(): void {
+    if (!this.enabled) return;
+
+    try {
+      // Clear all data
+      this.cache.flushAll();
+
+      // Close the cache to stop any internal timers
+      if (typeof (this.cache as any).close === "function") {
+        (this.cache as any).close();
+      }
+    } catch (error) {
+      Logger.error("Cache destroy error:", error);
     }
   }
 
@@ -200,7 +223,9 @@ export class CacheManager implements ICacheManager {
       return undefined;
     }
 
-    return this.cache.getTtl(key);
+    const ttl = this.cache.getTtl(key);
+    // NodeCache returns 0 for non-existent keys
+    return ttl === 0 ? undefined : ttl;
   }
 
   /**
@@ -298,14 +323,12 @@ export class CacheManager implements ICacheManager {
       }
 
       if (deletedCount > 0) {
-        console.error(
-          `Cache invalidated ${deletedCount} keys matching pattern: ${pattern}`,
-        );
+        Logger.cache("invalidatePattern", pattern, { count: deletedCount });
       }
 
       return deletedCount;
     } catch (error) {
-      console.error(
+      Logger.error(
         `Cache invalidatePattern error for pattern ${pattern}:`,
         error,
       );
@@ -329,12 +352,12 @@ export class CacheManager implements ICacheManager {
       }
 
       if (deletedCount > 0) {
-        console.error(`Cache invalidated ${deletedCount} specific keys`);
+        Logger.cache("invalidateKeys", "multiple", { count: deletedCount });
       }
 
       return deletedCount;
     } catch (error) {
-      console.error(`Cache invalidateKeys error:`, error);
+      Logger.error(`Cache invalidateKeys error:`, error);
       return 0;
     }
   }
@@ -360,7 +383,7 @@ export class CacheManager implements ICacheManager {
       }
 
       // Fetch fresh data
-      console.error(`Cache warming: ${key}`);
+      Logger.cache("warming", key);
       const data = await fetchFn();
 
       // Store in cache
@@ -368,7 +391,7 @@ export class CacheManager implements ICacheManager {
 
       return data;
     } catch (error) {
-      console.error(`Cache warmCache error for key ${key}:`, error);
+      Logger.error(`Cache warmCache error for key ${key}:`, error);
       // On error, try to fetch without caching
       return await fetchFn();
     }
@@ -408,7 +431,7 @@ export class CacheManager implements ICacheManager {
 
       return true;
     } catch (error) {
-      console.error(`Cache validation error for key ${key}:`, error);
+      Logger.error(`Cache validation error for key ${key}:`, error);
       return false;
     }
   }
@@ -441,9 +464,11 @@ export class CacheManager implements ICacheManager {
 
     const memoryUsage = this.getMemoryUsage();
 
-    console.error(
-      `Cache health check: ${cleanedKeys} corrupted entries cleaned out of ${keys.length} total`,
-    );
+    Logger.cache("healthCheck", "completed", {
+      cleaned: cleanedKeys,
+      total: keys.length,
+      corrupted: corruptedKeys,
+    });
 
     return {
       totalKeys: keys.length,
