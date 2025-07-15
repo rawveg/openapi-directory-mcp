@@ -2,6 +2,7 @@
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { MCPLogger } from "./utils/mcp-logger.js";
 import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
@@ -487,32 +488,19 @@ export class OpenAPIDirectoryServer {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
 
-    console.error(
-      `${config.name} v${config.version} - Dual-source MCP server started`,
-    );
-    console.error(`Primary API: ${config.primaryApiBaseUrl}`);
-    console.error(`Secondary API: ${config.secondaryApiBaseUrl}`);
-    console.error(
-      `Cache: ${config.cacheEnabled ? "enabled" : "disabled"} (TTL: ${config.cacheTTL}ms)`,
-    );
-    if (
-      config.cacheEnabled &&
-      this.cacheManager.isEnabled() &&
-      this.cacheManager.getCacheDir
-    ) {
-      console.error(`Cache directory: ${this.cacheManager.getCacheDir()}`);
-    }
+    // MCP servers must not write to stdout/stderr - it breaks the protocol
+    // All output must be JSON-RPC messages only
+    // Startup logging removed to ensure MCP protocol compliance
 
     // Set up graceful shutdown
     const shutdown = () => {
-      console.error("Shutting down server...");
+      // MCP servers must not write to stdout/stderr during shutdown
       if (
         this.cacheManager &&
         this.cacheManager.isEnabled() &&
         this.cacheManager.destroy
       ) {
         this.cacheManager.destroy();
-        console.error("Cache saved and cleaned up");
       }
       process.exit(0);
     };
@@ -530,6 +518,9 @@ export { OpenAPIDirectoryServer as MCPServer };
 import { CLIHandler } from "./cli/cli-handler.js";
 
 async function main() {
+  // Initialize MCP compliance - must be first to silence all console output
+  MCPLogger.initializeMCPCompliance();
+
   // Parse command line arguments (skip 'node' and script name)
   const args = process.argv.slice(2);
 
@@ -551,7 +542,8 @@ async function main() {
 }
 
 // Start the application
-main().catch((error) => {
-  console.error("Failed to start:", error);
+main().catch(() => {
+  // MCP servers must not write to stdout/stderr
+  // Exit silently on error to maintain protocol compliance
   process.exit(1);
 });

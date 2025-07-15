@@ -98,10 +98,29 @@ export class SecondaryApiClient {
    */
   async getAPI(provider: string, api: string): Promise<ApiGuruAPI> {
     return this.fetchWithCache(`api:${provider}:${api}`, async () => {
-      const response = await this.http.get<ApiGuruAPI>(
-        `/specs/${provider}/${api}.json`,
-      );
-      return response.data;
+      // Secondary API structure varies by provider
+      // For datadoghq.com: /specs/datadoghq.com/main/v1.json
+      // For others, it might be different
+
+      // If api already includes version (e.g., "v1"), use it directly
+      if (api.match(/^v\d+/)) {
+        const url = `/specs/${provider}/${api}.json`;
+        const response = await this.http.get<ApiGuruAPI>(url);
+        return response.data;
+      }
+
+      // For APIs like "main", try with /v1.json suffix
+      let url = `/specs/${provider}/${api}/v1.json`;
+
+      try {
+        const response = await this.http.get<ApiGuruAPI>(url);
+        return response.data;
+      } catch (error) {
+        // Try without version suffix if v1 fails
+        url = `/specs/${provider}/${api}.json`;
+        const response = await this.http.get<ApiGuruAPI>(url);
+        return response.data;
+      }
     });
   }
 
@@ -216,20 +235,7 @@ export class SecondaryApiClient {
   async hasAPI(apiId: string): Promise<boolean> {
     try {
       const allAPIs = await this.listAPIs();
-
-      // Direct match
-      if (apiId in allAPIs) {
-        return true;
-      }
-
-      // If apiId includes version (provider:service:version), try without version
-      const parts = apiId.split(":");
-      if (parts.length === 3) {
-        const withoutVersion = `${parts[0]}:${parts[1]}`;
-        return withoutVersion in allAPIs;
-      }
-
-      return false;
+      return apiId in allAPIs;
     } catch (error) {
       return false;
     }

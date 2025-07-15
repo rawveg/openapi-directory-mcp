@@ -222,21 +222,33 @@ describe('SecondaryApiClient', () => {
   });
 
   describe('listAPIs', () => {
-    test('should fetch all APIs', async () => {
-      const mockAllAPIs = {
-        'custom.com': {
-          'api1': { added: '2023-01-01', preferred: '1.0.0', versions: {} }
+    test('should fetch all APIs from list.json', async () => {
+      const mockAPIs = {
+        'datadoghq.com:main': {
+          added: '2023-01-01',
+          preferred: 'v1',
+          versions: {
+            v1: {
+              info: { title: 'DataDog API' },
+              swaggerUrl: '/specs/datadoghq.com/main/v1.json'
+            }
+          }
         }
       };
       
       mockCacheManager.get.mockReturnValueOnce(undefined);
-      mockAxiosInstance.get.mockResolvedValueOnce({ data: mockAllAPIs });
+      mockAxiosInstance.get.mockResolvedValueOnce({ data: mockAPIs });
 
       const result = await secondaryClient.listAPIs();
 
       expect(mockCacheManager.get).toHaveBeenCalledWith('secondary:all_apis');
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/list.json');
-      expect(result).toEqual(mockAllAPIs);
+      expect(mockCacheManager.set).toHaveBeenCalledWith(
+        'secondary:all_apis',
+        mockAPIs,
+        expect.any(Number)
+      );
+      expect(result).toEqual(mockAPIs);
     });
   });
 
@@ -284,6 +296,14 @@ describe('SecondaryApiClient', () => {
   describe('error handling', () => {
     test('should handle 404 errors', async () => {
       mockCacheManager.get.mockReturnValueOnce(undefined);
+      // First try with /v1.json suffix
+      mockAxiosInstance.get.mockRejectedValueOnce({
+        response: {
+          status: 404,
+          statusText: 'Not Found'
+        }
+      });
+      // Second try without suffix also fails
       mockAxiosInstance.get.mockRejectedValueOnce({
         response: {
           status: 404,

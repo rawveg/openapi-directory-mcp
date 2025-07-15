@@ -1,6 +1,12 @@
 import { join } from "path";
 import { homedir } from "os";
-import { mkdirSync, existsSync, readFileSync, writeFileSync } from "fs";
+import {
+  mkdirSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  unlinkSync,
+} from "fs";
 import { ICacheManager } from "./types.js";
 import { Logger } from "../utils/logger.js";
 
@@ -77,7 +83,7 @@ export class PersistentCacheManager implements ICacheManager {
       Logger.info("Cache invalidation flag detected, clearing cache...");
       this.cacheData.clear();
       try {
-        require("fs").unlinkSync(this.invalidateFlag);
+        unlinkSync(this.invalidateFlag);
         Logger.info("Cache invalidation flag removed");
       } catch (error) {
         Logger.error("Failed to remove invalidation flag:", error);
@@ -183,7 +189,7 @@ export class PersistentCacheManager implements ICacheManager {
       // Also delete the cache file
       if (existsSync(this.cacheFile)) {
         try {
-          require("fs").unlinkSync(this.cacheFile);
+          unlinkSync(this.cacheFile);
           Logger.info("Cache file deleted");
         } catch (error) {
           Logger.error("Failed to delete cache file:", error);
