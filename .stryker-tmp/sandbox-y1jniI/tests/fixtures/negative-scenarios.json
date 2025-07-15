@@ -1,0 +1,237 @@
+{
+  "networkErrors": {
+    "connectionRefused": {
+      "error": {
+        "code": "ECONNREFUSED",
+        "message": "connect ECONNREFUSED 127.0.0.1:80",
+        "errno": -61,
+        "syscall": "connect",
+        "address": "127.0.0.1",
+        "port": 80
+      }
+    },
+    "timeout": {
+      "error": {
+        "code": "ECONNABORTED",
+        "message": "timeout of 5000ms exceeded"
+      }
+    },
+    "dnsError": {
+      "error": {
+        "code": "ENOTFOUND",
+        "message": "getaddrinfo ENOTFOUND invalid-domain.com"
+      }
+    },
+    "rateLimited": {
+      "status": 429,
+      "statusText": "Too Many Requests",
+      "data": {
+        "error": {
+          "message": "Rate limit exceeded. Please try again later.",
+          "type": "rate_limit_error"
+        }
+      },
+      "headers": {
+        "retry-after": "60",
+        "x-ratelimit-limit": "1000",
+        "x-ratelimit-remaining": "0"
+      }
+    }
+  },
+  "malformedResponses": {
+    "invalidJson": {
+      "status": 200,
+      "data": "{ invalid json structure missing quotes and brackets"
+    },
+    "unexpectedStructure": {
+      "status": 200,
+      "data": {
+        "completely": "different",
+        "structure": "than expected",
+        "no_data_field": true
+      }
+    },
+    "nullResponse": {
+      "status": 200,
+      "data": null
+    },
+    "emptyResponse": {
+      "status": 200,
+      "data": ""
+    },
+    "arrayInsteadOfObject": {
+      "status": 200,
+      "data": ["should", "be", "object", "not", "array"]
+    }
+  },
+  "httpErrors": {
+    "notFound": {
+      "status": 404,
+      "statusText": "Not Found",
+      "data": {
+        "error": {
+          "message": "The requested resource was not found.",
+          "type": "not_found_error"
+        }
+      }
+    },
+    "unauthorized": {
+      "status": 401,
+      "statusText": "Unauthorized",
+      "data": {
+        "error": {
+          "message": "Authentication required.",
+          "type": "authentication_error"
+        }
+      }
+    },
+    "forbidden": {
+      "status": 403,
+      "statusText": "Forbidden",
+      "data": {
+        "error": {
+          "message": "Access denied.",
+          "type": "authorization_error"
+        }
+      }
+    },
+    "internalServerError": {
+      "status": 500,
+      "statusText": "Internal Server Error",
+      "data": {
+        "error": {
+          "message": "An internal server error occurred.",
+          "type": "server_error"
+        }
+      }
+    },
+    "badGateway": {
+      "status": 502,
+      "statusText": "Bad Gateway",
+      "data": {
+        "error": {
+          "message": "Bad gateway error.",
+          "type": "gateway_error"
+        }
+      }
+    },
+    "serviceUnavailable": {
+      "status": 503,
+      "statusText": "Service Unavailable",
+      "data": {
+        "error": {
+          "message": "Service temporarily unavailable.",
+          "type": "service_unavailable"
+        }
+      }
+    }
+  },
+  "corruptedData": {
+    "providersCorrupted": {
+      "status": 200,
+      "data": {
+        "data": [
+          null,
+          "",
+          123,
+          { "not": "a string" },
+          "valid-provider.com",
+          undefined
+        ]
+      }
+    },
+    "metricsCorrupted": {
+      "status": 200,
+      "data": {
+        "numSpecs": "not_a_number",
+        "numAPIs": -1,
+        "numEndpoints": null,
+        "missing_required_fields": true
+      }
+    },
+    "searchCorrupted": {
+      "status": 200,
+      "data": {
+        "results": "should_be_array",
+        "pagination": null,
+        "total": "infinity"
+      }
+    },
+    "apiDetailsCorrupted": {
+      "status": 200,
+      "data": {
+        "versions": null,
+        "preferred": 123,
+        "info": "should_be_object"
+      }
+    }
+  },
+  "edgeCases": {
+    "extremelyLargeResponse": {
+      "status": 200,
+      "data": {
+        "data": Array(10000).fill("provider-").map((p, i) => `${p}${i}.com`)
+      }
+    },
+    "unicodeAndSpecialChars": {
+      "status": 200,
+      "data": {
+        "data": [
+          "api-🚀.com",
+          "test<script>alert('xss')</script>.com",
+          "unicode-测试.com",
+          "emoji-💻.com",
+          "quotes\"and'apostrophes.com",
+          "backslashes\\and\\slashes/.com"
+        ]
+      }
+    },
+    "sqlInjectionAttempt": {
+      "status": 200,
+      "data": {
+        "data": [
+          "'; DROP TABLE providers; --",
+          "admin'--",
+          "1' OR '1'='1",
+          "normal-provider.com"
+        ]
+      }
+    },
+    "emptyArrays": {
+      "status": 200,
+      "data": {
+        "data": [],
+        "results": [],
+        "pagination": {
+          "total_results": 0,
+          "page": 1,
+          "limit": 10,
+          "has_next": false,
+          "has_previous": false
+        }
+      }
+    }
+  },
+  "performanceStress": {
+    "slowResponse": {
+      "status": 200,
+      "delay": 30000,
+      "data": {
+        "data": ["slow-provider.com"]
+      }
+    },
+    "intermittentFailure": {
+      "failureRate": 0.5,
+      "responses": [
+        {
+          "status": 500,
+          "data": { "error": "Intermittent failure" }
+        },
+        {
+          "status": 200,
+          "data": { "data": ["success-provider.com"] }
+        }
+      ]
+    }
+  }
+}

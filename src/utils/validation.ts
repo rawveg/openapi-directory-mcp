@@ -678,7 +678,28 @@ export class DataValidator {
    */
   private static containsSuspiciousContent(str: string): boolean {
     try {
-      // Create a DOM implementation for Node.js
+      // First check for non-HTML threats (URLs, standalone event handlers)
+      const nonHtmlPatterns = [
+        /javascript:/gi,
+        /vbscript:/gi,
+        /data:.*base64/gi,
+        /on\w+\s*=/gi, // Event handlers like onclick=
+      ];
+
+      const hasNonHtmlThreats = nonHtmlPatterns.some((pattern) =>
+        pattern.test(str),
+      );
+
+      // Check for SQL injection patterns
+      const sqlPatterns = [
+        /\bDROP\s+TABLE\b/gi,
+        /\bSELECT\s+\*\s+FROM\b/gi,
+        /['";].*--/gi,
+      ];
+
+      const hasSqlInjection = sqlPatterns.some((pattern) => pattern.test(str));
+
+      // Use DOMPurify for HTML/XSS detection
       const window = new JSDOM("").window;
       const purify = DOMPurify(window as any);
 
@@ -691,17 +712,10 @@ export class DataValidator {
         FORBID_ATTR: ["onclick", "onload", "onerror", "javascript", "vbscript"],
       });
 
-      // Check for SQL injection patterns separately since DOMPurify focuses on HTML/XSS
-      const sqlPatterns = [
-        /\bDROP\s+TABLE\b/gi,
-        /\bSELECT\s+\*\s+FROM\b/gi,
-        /['";].*--/gi,
-      ];
+      const hasHtmlThreats = sanitized !== str;
 
-      const hasSqlInjection = sqlPatterns.some((pattern) => pattern.test(str));
-
-      // If sanitized content differs from original or SQL patterns found, it's suspicious
-      return sanitized !== str || hasSqlInjection;
+      // Return true if any threats are detected
+      return hasNonHtmlThreats || hasSqlInjection || hasHtmlThreats;
     } catch (error) {
       // If DOMPurify fails, fall back to basic checks
       const basicPatterns = [

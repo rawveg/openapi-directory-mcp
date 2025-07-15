@@ -1,0 +1,230 @@
+name: Comprehensive Regression Tests
+
+on:
+  schedule:
+    # Run comprehensive tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_scope:
+        description: 'Test scope to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - primary-only
+          - secondary-only
+          - custom-only
+          - triple-only
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/api/**'
+      - 'src/tools/**'
+      - 'src/custom-specs/**'
+      - 'tests/**'
+
+permissions:
+  contents: read
+
+jobs:
+  comprehensive-regression-tests:
+    name: Comprehensive Triple-Source Regression Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+      fail-fast: false
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Setup test environment
+        run: |
+          echo "🔧 Setting up comprehensive test environment..."
+          
+          # Setup custom spec for testing
+          node tests/integration/setup-custom-spec.mjs
+          
+          # Verify test fixtures
+          if [ ! -f "tests/fixtures/test-custom-spec.json" ]; then
+            echo "❌ Test custom spec fixture missing"
+            exit 1
+          fi
+          
+          echo "✅ Test environment ready"
+          
+      - name: Run comprehensive triple-source tests
+        run: |
+          echo "🚀 Running comprehensive regression tests on Node.js ${{ matrix.node-version }}"
+          echo "Testing all 22 tools against all 3 data sources (68 test combinations)"
+          echo "Test scope: ${{ github.event.inputs.test_scope || 'all' }}"
+          
+          # Run the comprehensive test
+          node tests/integration/triple-source-smoke-test.mjs
+          
+      - name: Generate visual status reports
+        if: always()
+        run: |
+          echo "📋 Generating visual status reports..."
+          node tests/integration/generate-visual-report.mjs
+          
+      - name: Verify zero regressions
+        run: |
+          echo "🔍 Verifying zero regressions..."
+          
+          # Capture test output and verify 100% success
+          output=$(node tests/integration/triple-source-smoke-test.mjs 2>&1)
+          echo "$output"
+          
+          # Check for 100% success rate
+          if echo "$output" | grep -q "Success Rate: 100.0%"; then
+            echo "✅ ZERO REGRESSIONS - All 68 tests passed (100% success rate)"
+          else
+            echo "❌ REGRESSIONS DETECTED - Tests failed"
+            echo "Expected: 100% success rate across all 68 test combinations"
+            echo ""
+            echo "This indicates regressions in one or more areas:"
+            echo "- Primary source (APIs.guru) integration"
+            echo "- Secondary source (Enhanced Directory) integration"  
+            echo "- Custom source (Local filesystem) integration"
+            echo "- Triple source (Combined precedence) logic"
+            echo ""
+            echo "All 22 tools must work correctly across all 3 data sources."
+            exit 1
+          fi
+          
+      - name: Performance benchmark
+        run: |
+          echo "⚡ Running performance benchmark..."
+          
+          # Time the full test suite
+          start_time=$(date +%s)
+          node tests/integration/triple-source-smoke-test.mjs > /dev/null 2>&1
+          end_time=$(date +%s)
+          
+          duration=$((end_time - start_time))
+          echo "📊 Test suite completed in ${duration} seconds"
+          
+          # Fail if tests take too long (indicate performance regression)
+          if [ $duration -gt 300 ]; then
+            echo "❌ Performance regression detected - tests took ${duration}s (limit: 300s)"
+            exit 1
+          else
+            echo "✅ Performance within acceptable limits (${duration}s)"
+          fi
+          
+      - name: Tool coverage validation
+        run: |
+          echo "🔍 Validating comprehensive tool coverage..."
+          
+          # Verify all tool categories are covered
+          categories=(
+            "api-discovery" "api-details" "endpoint-tools" 
+            "provider-tools" "utility-tools" "cache-tools"
+          )
+          
+          for category in "${categories[@]}"; do
+            if [ -d "src/tools/$category" ]; then
+              tool_count=$(find "src/tools/$category" -name "*.ts" -not -name "index.ts" | wc -l)
+              echo "✅ $category: $tool_count tools"
+            fi
+          done
+          
+          echo "✅ All tool categories validated"
+          
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "📋 Generating comprehensive test report..."
+          
+          # Create test report
+          cat > test-report-node${{ matrix.node-version }}.md << EOF
+          # Comprehensive Regression Test Report
+          
+          **Node.js Version:** ${{ matrix.node-version }}
+          **Test Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          **Branch:** ${{ github.ref_name }}
+          **Commit:** ${{ github.sha }}
+          
+          ## Test Results
+          - **Total test combinations:** 68 (22 tools × 4 sources)
+          - **Sources tested:** Primary (APIs.guru), Secondary (Enhanced Directory), Custom (Local filesystem), Triple (Combined)
+          - **Expected success rate:** 100.0%
+          
+          ## Tool Categories Tested
+          1. **Provider Tools** (4 tools): get_providers, get_provider_apis, get_provider_services, get_provider_stats
+          2. **API Discovery** (4 tools): get_api, list_all_apis, get_api_summary, get_metrics  
+          3. **Search & Discovery** (4 tools): search_apis, get_popular_apis, get_recently_updated, analyze_api_categories
+          4. **OpenAPI Specs** (1 tool): get_openapi_spec
+          5. **Endpoint Tools** (4 tools): get_endpoints, get_endpoint_details, get_endpoint_schema, get_endpoint_examples
+          
+          ## Architecture Validated
+          - ✅ Triple-source data integration (Custom > Secondary > Primary precedence)
+          - ✅ Tool loading and discovery system
+          - ✅ Cache management across all sources
+          - ✅ Error handling and fallback mechanisms
+          - ✅ API client abstraction layer
+          
+          EOF
+          
+          echo "✅ Test report generated"
+          
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-test-report-node${{ matrix.node-version }}
+          path: |
+            test-report-node${{ matrix.node-version }}.md
+            test-status-report.md
+            test-status-report.txt
+            test-status-report.json
+          retention-days: 30
+
+  test-summary:
+    name: Regression Test Summary
+    runs-on: ubuntu-latest
+    needs: [comprehensive-regression-tests]
+    if: always()
+    
+    steps:
+      - name: Evaluate test results
+        run: |
+          echo "📊 Evaluating comprehensive regression test results..."
+          
+          if [ "${{ needs.comprehensive-regression-tests.result }}" == "success" ]; then
+            echo "✅ ALL REGRESSION TESTS PASSED"
+            echo "🎉 Zero regressions detected across all Node.js versions"
+            echo "📈 All 68 test combinations passing at 100% success rate"
+            echo "🛡️ Triple-source architecture integrity verified"
+          else
+            echo "❌ REGRESSION TESTS FAILED"
+            echo "🚨 Regressions detected - immediate attention required"
+            echo ""
+            echo "Critical areas to investigate:"
+            echo "1. Tool loading and discovery mechanisms"
+            echo "2. API client integration (primary/secondary/custom)"
+            echo "3. Source precedence logic (Custom > Secondary > Primary)"  
+            echo "4. Cache management and invalidation"
+            echo "5. Error handling and fallback systems"
+            echo ""
+            echo "All 22 tools must achieve 100% success across all 3 data sources."
+            exit 1
+          fi

@@ -1,0 +1,11 @@
+{
+  "results": [],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total_results": 0,
+    "total_pages": 0,
+    "has_next": false,
+    "has_previous": false
+  }
+}

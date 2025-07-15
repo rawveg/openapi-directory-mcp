@@ -2,11 +2,20 @@ import { describe, test, expect, jest, beforeEach } from '@jest/globals';
 import { SecurityScanner } from '../../../src/custom-specs/security-scanner.js';
 import { SecurityScanResult, SecurityIssue } from '../../../src/custom-specs/types.js';
 
-// Mock xss module
-jest.mock('xss', () => ({
-  filterXSS: jest.fn((input: string) => input.replace(/<script[^>]*>.*?<\/script>/gi, '')),
-  whiteList: {}
-}));
+// Mock xss module with proper security-aware implementation
+jest.mock('xss', () => {
+  // Import actual xss for robust sanitization in tests
+  const actualXSS = jest.requireActual('xss');
+  
+  return {
+    filterXSS: jest.fn((input: string, options?: any) => {
+      // Use actual XSS filtering to ensure test mocks are security-compliant
+      // This prevents masking real security vulnerabilities in tests
+      return actualXSS.filterXSS(input, options);
+    }),
+    whiteList: actualXSS.whiteList || {}
+  };
+});
 
 describe('SecurityScanner', () => {
   let securityScanner: SecurityScanner;

@@ -31,6 +31,8 @@
     "test:reports": "node tests/integration/generate-visual-report.mjs",
     "test:regression:full": "npm run test:regression:setup && npm run test:regression:run && npm run test:reports",
     "test:mutation": "stryker run",
+    "test:mutation:validation": "stryker run stryker.validation.conf.mjs",
+    "test:mutation:quick": "stryker run stryker.quick.conf.mjs",
     "test:security": "jest -c jest.config.security.js",
     "test:performance": "jest -c jest.config.performance.js",
     "lint": "eslint src --ext .ts",
@@ -40,6 +42,7 @@
     "format:fix": "prettier --write 'src/**/*.ts'",
     "type-check": "tsc --noEmit",
     "validate": "npm run lint && npm run type-check && npm run test:ci && npm run test:regression",
+    "validate:full": "npm run validate && npm run test:mutation:quick",
     "prepare": "npm run build",
     "prepublishOnly": "npm run validate"
   },
