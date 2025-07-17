@@ -1,0 +1,42 @@
+# Ignore build output
+dist/
+build/
+
+# Ignore node modules
+node_modules/
+
+# Ignore coverage reports
+coverage/
+
+# Ignore package files
+*.tgz
+
+# Ignore test fixtures that may have intentional issues
+tests/fixtures/
+
+# Ignore temporary files
+.temp-*.mjs
+*.tmp
+
+# Ignore mutation testing temporary files
+.stryker-tmp/
+stryker-tmp/
+
+# Ignore markdown and other non-code files
+*.md
+*.txt
+
+# Ignore config files that might not follow our linting rules
+jest.config.js
+*.config.js
+*.config.mjs
+
+# Ignore mutation test reports
+*-mutation-report.html
+mutation-summary.md
+
+# Ignore visual reports
+test-status-report.*
+
+# Ignore all JSON files (they should be linted by jsonlint, not eslint)
+*.json

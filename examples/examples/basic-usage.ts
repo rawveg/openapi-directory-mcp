@@ -5,10 +5,10 @@
  * This demonstrates how to interact with the server programmatically
  */
 
-import { CacheManager } from '../src/cache/manager.js';
-import { ApiClient } from '../src/api/client.js';
-import { ToolGenerator } from '../src/tools/generator.js';
-import { getResourcePrompts } from '../src/prompts/index.js';
+import { CacheManager } from '../dist/cache/manager.js';
+import { ApiClient } from '../dist/api/client.js';
+import { ToolHandler } from '../dist/tools/handler.js';
+import { getResourcePrompts } from '../dist/prompts/index.js';
 
 async function main() {
   console.log('OpenAPI Directory MCP Server - Basic Usage Example');
@@ -17,15 +17,22 @@ async function main() {
   // Initialize components
   const cacheManager = new CacheManager(86400000); // 24 hour TTL
   const apiClient = new ApiClient('https://api.apis.guru/v2', cacheManager);
-  const toolGenerator = new ToolGenerator();
+  const toolHandler = new ToolHandler();
 
   try {
-    // 1. Generate available tools
+    // 1. List available tools
     console.log('1. Available Tools:');
-    const tools = await toolGenerator.generateTools();
+    const { tools } = await toolHandler.listTools();
     tools.forEach(tool => {
       console.log(`   - ${tool.name}: ${tool.description}`);
     });
+    console.log();
+
+    // Example of calling a tool
+    console.log('   Example tool call - get_providers:');
+    const context = { apiClient, cacheManager };
+    const result = await toolHandler.callTool('get_providers', {}, context);
+    console.log(`   Providers from tool: ${result.providers.slice(0, 5).join(', ')}...`);
     console.log();
 
     // 2. Get resource prompts

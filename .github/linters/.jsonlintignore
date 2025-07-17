@@ -1,0 +1,20 @@
+# Ignore build output
+dist/
+build/
+
+# Ignore node modules
+node_modules/
+
+# Ignore package-lock.json as it's auto-generated
+package-lock.json
+
+# Ignore coverage reports
+coverage/
+
+# Ignore test reports
+test-status-report.json
+*-mutation-report.json
+
+# Ignore TypeScript config files (they support comments)
+tsconfig.json
+tsconfig.*.json

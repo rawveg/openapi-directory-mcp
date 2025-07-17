@@ -11,32 +11,87 @@ const getToolsDir = (): string => {
     const importMeta = eval("import.meta");
     if (typeof importMeta !== "undefined" && importMeta.url) {
       const __filename = fileURLToPath(importMeta.url);
-      return path.dirname(__filename);
+      const toolsDir = path.dirname(__filename);
+      return toolsDir;
     }
   } catch (error) {
     // Fallback for test environments
   }
-  // Fallback for environments where import.meta is not available
-  const fallbackPath = path.join(process.cwd(), "src", "tools");
-  const distPath = path.join(process.cwd(), "dist", "tools");
 
-  // In test environments, prefer compiled tools in dist directory
-  try {
-    if (fs.existsSync(distPath)) {
-      return distPath;
+  // Try multiple paths to find the tools directory
+  const projectRoot = findProjectRoot();
+
+  const possiblePaths = [
+    // Current working directory variations
+    path.join(process.cwd(), "dist", "tools"),
+    path.join(process.cwd(), "src", "tools"),
+    // Search up the directory tree for package.json
+    projectRoot && path.join(projectRoot, "dist", "tools"),
+    projectRoot && path.join(projectRoot, "src", "tools"),
+  ].filter(Boolean) as string[];
+
+  // Find the first existing path that contains tool directories
+  for (const testPath of possiblePaths) {
+    try {
+      if (fs.existsSync(testPath) && fs.statSync(testPath).isDirectory()) {
+        // Check if it contains expected tool category directories
+        const entries = fs.readdirSync(testPath, { withFileTypes: true });
+        const hasToolDirs = entries.some(
+          (entry) =>
+            entry.isDirectory() &&
+            [
+              "provider",
+              "api",
+              "search",
+              "openapi",
+              "endpoint",
+              "cache",
+            ].includes(entry.name),
+        );
+        if (hasToolDirs) {
+          return testPath;
+        }
+      }
+    } catch {
+      // Continue to next path
     }
-    if (fs.existsSync(fallbackPath)) {
-      return fallbackPath;
-    }
-    // Alternative fallback using __dirname
-    const altPath = path.join(__dirname, "..");
-    if (fs.existsSync(altPath)) {
-      return altPath;
-    }
-  } catch {
-    // Continue with original fallback
   }
-  return fallbackPath;
+
+  // Last resort fallback
+  const fallback = path.join(process.cwd(), "dist", "tools");
+  return fallback;
+};
+
+// Helper function to find project root by looking for package.json
+const findProjectRoot = (): string | null => {
+  let currentDir = process.cwd();
+
+  // Limit search to prevent infinite loops
+  for (let i = 0; i < 10; i++) {
+    const packageJsonPath = path.join(currentDir, "package.json");
+    if (fs.existsSync(packageJsonPath)) {
+      try {
+        const packageJson = JSON.parse(
+          fs.readFileSync(packageJsonPath, "utf-8"),
+        );
+        // Verify it's our project by checking the name
+        if (packageJson.name === "openapi-directory-mcp") {
+          return currentDir;
+        }
+      } catch {
+        // Continue searching
+      }
+    }
+
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      // Reached root directory
+      break;
+    }
+    currentDir = parentDir;
+  }
+
+  return null;
 };
 
 export class ToolLoader {
@@ -95,8 +150,11 @@ export class ToolLoader {
     const relativePath = path.relative(getToolsDir(), filePath);
 
     try {
-      // Use dynamic import to load the module
-      const module = await import(`./${relativePath.replace(/\\/g, "/")}`);
+      // Use absolute file path or file:// URL for dynamic import
+      // This ensures the import works regardless of the current working directory
+      const absolutePath = path.resolve(filePath);
+      const fileUrl = `file://${absolutePath.replace(/\\/g, "/")}`;
+      const module = await import(fileUrl);
 
       let tool: ToolDefinition | undefined;
 

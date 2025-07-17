@@ -309,6 +309,9 @@ export class ToolGenerator {
       },
     ];
 
+    // Add utility tools including cache management tools
+    tools.push(...this.generateUtilityTools());
+
     return tools;
   }
 
@@ -435,93 +438,6 @@ export class ToolGenerator {
    */
   generateUtilityTools(): Tool[] {
     return [
-      {
-        name: "validate_openapi_spec",
-        description: "Validate an OpenAPI specification",
-        inputSchema: {
-          type: "object",
-          properties: {
-            spec: {
-              type: "object",
-              description: "OpenAPI specification to validate",
-            },
-          },
-          required: ["spec"],
-        },
-      },
-      {
-        name: "compare_api_versions",
-        description: "Compare two versions of an API",
-        inputSchema: {
-          type: "object",
-          properties: {
-            provider: {
-              type: "string",
-              description: "Provider name",
-            },
-            api: {
-              type: "string",
-              description: "API identifier",
-            },
-            version1: {
-              type: "string",
-              description: "First version to compare",
-            },
-            version2: {
-              type: "string",
-              description: "Second version to compare",
-            },
-          },
-          required: ["provider", "api", "version1", "version2"],
-        },
-      },
-      {
-        name: "get_api_dependencies",
-        description: "Analyze API dependencies and relationships",
-        inputSchema: {
-          type: "object",
-          properties: {
-            provider: {
-              type: "string",
-              description: "Provider name",
-            },
-            api: {
-              type: "string",
-              description: "API identifier",
-            },
-          },
-          required: ["provider", "api"],
-        },
-      },
-      {
-        name: "export_api_collection",
-        description: "Export a collection of APIs in various formats",
-        inputSchema: {
-          type: "object",
-          properties: {
-            apis: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  provider: { type: "string" },
-                  api: { type: "string" },
-                  version: { type: "string" },
-                },
-                required: ["provider", "api", "version"],
-              },
-              description: "List of APIs to export",
-            },
-            format: {
-              type: "string",
-              enum: ["json", "yaml", "postman", "insomnia"],
-              description: "Export format",
-              default: "json",
-            },
-          },
-          required: ["apis"],
-        },
-      },
       {
         name: "cache_stats",
         description: "Get cache statistics and information",

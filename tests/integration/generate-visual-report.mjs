@@ -246,6 +246,82 @@ class MockApiClient {
   async fetchWithCache(key, fetcher) {
     return await fetcher();
   }
+
+  // Missing methods that tools expect
+  async getProviderStats(provider) {
+    return {
+      provider,
+      apiCount: 10,
+      totalEndpoints: 100,
+      totalVersions: 15,
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  async getPopularAPIs(limit = 20) {
+    return {
+      'googleapis.com:admin': {
+        added: '2023-01-01',
+        preferred: 'directory_v1',
+        versions: { 
+          'directory_v1': {
+            info: { title: 'Admin Directory API', version: 'directory_v1' }
+          } 
+        }
+      }
+    };
+  }
+
+  async getRecentlyUpdatedAPIs(limit = 10) {
+    return {
+      'googleapis.com:admin': {
+        added: '2023-01-01',
+        preferred: 'directory_v1',
+        versions: { 
+          'directory_v1': {
+            info: { title: 'Admin Directory API', version: 'directory_v1' },
+            updated: '2023-12-01'
+          } 
+        }
+      }
+    };
+  }
+
+  // Cache management methods
+  async getCacheStats() {
+    return {
+      size: 10,
+      count: 5,
+      hit_rate: 0.75,
+      miss_rate: 0.25,
+      evictions: 0,
+      memory_usage: '1.2 MB'
+    };
+  }
+
+  async listCacheKeys() {
+    return ['api:googleapis.com', 'api:datadoghq.com', 'metrics', 'providers', 'test-key'];
+  }
+
+  async clearCache() {
+    return { cleared: true, message: 'Cache cleared successfully' };
+  }
+
+  async clearCacheKey(key) {
+    return { cleared: true, key, message: `Cache key '${key}' cleared successfully` };
+  }
+
+  async getCacheInfo() {
+    return {
+      enabled: true,
+      config: {
+        ttl: 3600,
+        max_size: 100,
+        policy: 'LRU'
+      },
+      size: 10
+    };
+  }
 }
 
 // Create mock custom spec client
