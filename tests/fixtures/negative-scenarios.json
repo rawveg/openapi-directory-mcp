@@ -136,7 +136,7 @@
           123,
           { "not": "a string" },
           "valid-provider.com",
-          undefined
+          null
         ]
       }
     },
@@ -170,7 +170,7 @@
     "extremelyLargeResponse": {
       "status": 200,
       "data": {
-        "data": Array(10000).fill("provider-").map((p, i) => `${p}${i}.com`)
+        "data": ["provider-0.com", "provider-1.com", "provider-2.com", "...truncated for 10000 items..."]
       }
     },
     "unicodeAndSpecialChars": {

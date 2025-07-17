@@ -982,6 +982,51 @@ npm run dev
 # Lint code
 npm run lint
 npm run lint:fix
+
+# Run pre-flight checks (recommended before pushing)
+npm run preflight
+```
+
+### Pre-flight Checks
+
+This project includes a comprehensive pre-flight check system that catches common issues before they reach CI/CD:
+
+```bash
+# Run all pre-flight checks
+npm run preflight
+```
+
+Pre-flight checks include:
+- **Build Output** - Ensures project is built
+- **Tool Exposure** - Validates all tool files are exposed (auto-adjusts to file count)
+- **Prompt Exposure** - Validates all prompt files are exposed (auto-adjusts to file count)
+- **Mock Validation** - Ensures test mocks implement required methods
+- **TypeScript** - Validates TypeScript compilation
+- **ESLint** - Validates code style and quality
+
+#### Benefits:
+- ⚡ **Fast Failure** - Catches issues in seconds instead of minutes
+- 💰 **Cost Savings** - Avoids running expensive CI/CD for doomed builds
+- 🎯 **Specific Errors** - Provides exact fix instructions
+- 🔄 **Self-Adjusting** - No hardcoded counts, derives from filesystem
+
+📚 **[Full Pre-flight Documentation](docs/preflight-checks.md)**
+
+### Git Hooks Setup
+
+For automatic pre-push validation:
+
+```bash
+# Install git hooks
+./scripts/install-hooks.sh
+
+# This installs:
+# - pre-push: Runs pre-flight checks before pushing
+```
+
+To bypass hooks in emergencies (not recommended):
+```bash
+git push --no-verify
 ```
 
 ### Automated Release Process
@@ -1019,6 +1064,26 @@ This project uses an automated release workflow triggered by version tags:
    # Also push the commit
    git push origin main
    ```
+
+#### CI/CD Pipeline
+
+All pushes and pull requests run through our comprehensive CI/CD pipeline:
+
+1. **Pre-flight Checks** (runs first, fails fast):
+   - Build validation
+   - Plugin exposure verification
+   - Mock completeness check
+   - TypeScript compilation
+   - Linting
+
+2. **Main Pipeline** (only runs if pre-flight passes):
+   - Code quality checks
+   - Multi-node version testing (18, 20, 22)
+   - Plugin architecture validation
+   - Security scanning
+   - Test suites (unit, feature, integration, regression)
+
+This staged approach saves CI/CD resources by catching common issues early.
 
 #### What Happens Automatically
 

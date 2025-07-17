@@ -128,3 +128,7 @@ jspm_packages/
 test-status-report.json
 test-status-report.md
 test-status-report.txt
+
+# Temporary files from pre-flight checks
+.temp-check-tools.mjs
+.temp-check-prompts.mjs

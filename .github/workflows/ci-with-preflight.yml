@@ -1,0 +1,112 @@
+name: CI with Pre-flight Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  preflight:
+    name: Pre-flight Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Run pre-flight checks
+      run: npm run preflight
+      
+    # If pre-flight fails, the job stops here
+    # This saves CI/CD minutes and provides fast feedback
+
+  test:
+    name: Run Tests
+    needs: preflight  # Only runs if pre-flight passes
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        test-suite: [unit, feature, integration, regression]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Run ${{ matrix.test-suite }} tests
+      run: npm run test:${{ matrix.test-suite }}
+    
+    - name: Upload coverage
+      if: matrix.test-suite == 'unit' || matrix.test-suite == 'feature'
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-${{ matrix.test-suite }}
+        path: coverage/
+
+  security-scan:
+    name: Security Scan
+    needs: preflight  # Only runs if pre-flight passes
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run security audit
+      run: npm audit --production
+    
+    - name: Run SAST scan
+      uses: github/super-linter@v5
+      env:
+        DEFAULT_BRANCH: main
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VALIDATE_JAVASCRIPT_ES: true
+        VALIDATE_TYPESCRIPT_ES: true
+        VALIDATE_JSON: true
+        VALIDATE_YAML: true
+        FILTER_REGEX_EXCLUDE: '.*\.stryker-tmp/.*|.*stryker-tmp/.*|.*node_modules/.*|.*dist/.*'
+
+  publish-check:
+    name: NPM Publish Dry Run
+    needs: [test, security-scan]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        registry-url: 'https://registry.npmjs.org'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: NPM publish dry run
+      run: npm publish --dry-run
