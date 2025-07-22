@@ -339,10 +339,10 @@ describe('MockServerRegistryImpl', () => {
       const stats = registry.getStatistics();
       
       expect(stats).toEqual({
-        total: 3,
-        running: 1,
-        stopped: 1,
-        error: 1,
+        totalServers: 3,
+        runningServers: 1,
+        stoppedServers: 1,
+        errorServers: 1,
         totalRequests: 18,
         totalErrors: 3,
       });

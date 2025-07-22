@@ -138,6 +138,22 @@ export interface MockServerRegistry {
   
   /** Clear all servers */
   clear(): void;
+  
+  /** Update server status */
+  updateServerStatus(id: string, status: MockServerStatus): void;
+  
+  /** Get registry statistics */
+  getStatistics(): {
+    totalServers: number;
+    runningServers: number;
+    stoppedServers: number;
+    errorServers: number;
+    totalRequests: number;
+    totalErrors: number;
+  };
+  
+  /** Get servers needing cleanup */
+  getServersNeedingCleanup(): MockServerInstance[];
 }
 
 /**

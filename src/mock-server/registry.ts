@@ -123,20 +123,20 @@ export class MockServerRegistryImpl implements MockServerRegistry {
    * Get server statistics
    */
   getStatistics(): {
-    total: number;
-    running: number;
-    stopped: number;
-    error: number;
+    totalServers: number;
+    runningServers: number;
+    stoppedServers: number;
+    errorServers: number;
     totalRequests: number;
     totalErrors: number;
   } {
     const instances = this.getAll();
     
     return {
-      total: instances.length,
-      running: this.getByStatus('running').length,
-      stopped: this.getByStatus('stopped').length,
-      error: this.getByStatus('error').length,
+      totalServers: instances.length,
+      runningServers: this.getByStatus('running').length,
+      stoppedServers: this.getByStatus('stopped').length,
+      errorServers: this.getByStatus('error').length,
       totalRequests: instances.reduce((sum, instance) => sum + instance.requestCount, 0),
       totalErrors: instances.reduce((sum, instance) => sum + instance.errorCount, 0),
     };

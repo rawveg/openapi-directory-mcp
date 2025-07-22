@@ -359,8 +359,8 @@ describe('MockServerManagerImpl', () => {
       
       const stats = manager.getStatistics();
       
-      expect(stats.total).toBe(2);
-      expect(stats.running).toBe(2);
+      expect(stats.totalServers).toBe(2);
+      expect(stats.runningServers).toBe(2);
       expect(stats.maxInstances).toBe(3);
       expect(stats.portRange).toEqual({ start: 9000, end: 9010 });
       expect(stats.allocatedPorts).toHaveLength(2);

@@ -13,3 +13,4 @@ export * from './errors.js';
 export * from './manager.js';
 export * from './registry.js';
 export * from './port-allocator.js';
+export * from './data-generator.js';
