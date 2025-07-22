@@ -8,3 +8,8 @@ export * from './types.js';
 
 // Export all errors
 export * from './errors.js';
+
+// Export core components
+export * from './manager.js';
+export * from './registry.js';
+export * from './port-allocator.js';
