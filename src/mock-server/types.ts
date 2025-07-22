@@ -204,10 +204,17 @@ export interface DataGenerationStrategy {
  */
 export interface AuthenticationHandler {
   /** Validate authentication for a request */
-  validateAuth(req: any, securitySchemes: any[]): AuthValidationResult;
+  validateAuth(
+    req: any, 
+    securityRequirements: any[], 
+    securitySchemes: Record<string, any>
+  ): AuthValidationResult;
   
   /** Generate appropriate auth error response */
   generateAuthError(scheme: any): { statusCode: number; body: any };
+  
+  /** Generate 403 Forbidden response for insufficient permissions */
+  generateForbiddenError(scheme: any, requiredScopes?: string[]): { statusCode: number; body: any };
 }
 
 /**
