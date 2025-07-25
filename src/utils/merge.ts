@@ -1,4 +1,5 @@
 import { ApiGuruAPI, ApiGuruMetrics } from "../types/api.js";
+import { DataValidator } from "./validation.js";
 
 /**
  * Merge utilities for combining data from primary and secondary API sources
@@ -50,9 +51,6 @@ export class MergeUtilities {
     primaryProviders: { data: string[] },
     secondaryProviders: { data: string[] },
   ): { data: string[] } {
-    // Import validation here to avoid circular dependencies
-    const { DataValidator } = require("./validation.js");
-
     // Validate and sanitize both provider lists
     const validatedPrimary = DataValidator.validateProviders(primaryProviders);
     const validatedSecondary =
@@ -280,9 +278,6 @@ export class MergeUtilities {
     primaryAPIs: Record<string, ApiGuruAPI>,
     secondaryAPIs: Record<string, ApiGuruAPI>,
   ): Promise<ApiGuruMetrics> {
-    // Import validation here to avoid circular dependencies
-    const { DataValidator } = require("./validation.js");
-
     // Validate and sanitize both metrics objects
     const validatedPrimary = DataValidator.validateMetrics(primaryMetrics);
     const validatedSecondary = DataValidator.validateMetrics(secondaryMetrics);

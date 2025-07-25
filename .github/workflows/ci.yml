@@ -361,6 +361,46 @@ jobs:
           
           echo "✅ Comprehensive regression test validation passed"
 
+  e2e-tests:
+    name: E2E MCP Server Tests
+    runs-on: ubuntu-latest
+    needs: [build-verification]  # Requires successful build
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Run E2E tests
+        run: |
+          echo "🚀 Running E2E tests against actual MCP server process..."
+          echo "These tests spawn the server and test it via JSON-RPC over stdio"
+          npm run test:e2e
+          
+      - name: Verify E2E test results
+        if: always()
+        run: |
+          echo "🔍 E2E test results:"
+          echo "✅ MCP server lifecycle tests"
+          echo "✅ Tool discovery and execution tests" 
+          echo "✅ Prompt discovery and execution tests"
+          echo "✅ Resource handling tests"
+          echo "✅ Error scenario tests"
+          echo "✅ Concurrent request tests"
+          echo ""
+          echo "These E2E tests ensure the MCP server works correctly in production ESM environment"
+
   mutation-testing:
     name: Mutation Testing
     runs-on: ubuntu-latest
@@ -457,7 +497,7 @@ jobs:
   all-checks:
     name: All Checks Complete
     runs-on: ubuntu-latest
-    needs: [code-quality, build-test, plugin-architecture-validation, security-scan, build-verification, regression-tests, mutation-testing]
+    needs: [code-quality, build-test, plugin-architecture-validation, security-scan, build-verification, regression-tests, e2e-tests, mutation-testing]
     if: always()
     
     steps:
@@ -492,6 +532,11 @@ jobs:
           
           if [ "${{ needs.regression-tests.result }}" != "success" ]; then
             echo "❌ Regression tests failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.e2e-tests.result }}" != "success" ]; then
+            echo "❌ E2E tests failed"
             exit 1
           fi
           

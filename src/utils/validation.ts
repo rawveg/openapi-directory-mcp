@@ -7,7 +7,7 @@ import { homedir } from "os";
 import DOMPurify from "dompurify";
 import { JSDOM } from "jsdom";
 import { VALIDATION, FILE_EXTENSIONS } from "./constants.js";
-import { ValidationError } from "./errors.js";
+import { ValidationError, ErrorHandler } from "./errors.js";
 
 /**
  * Path validation to prevent path traversal attacks
@@ -795,9 +795,6 @@ export class DataValidator {
     result: ValidationResult<T>,
     source: string,
   ): void {
-    // Import ErrorHandler dynamically to avoid circular dependency
-    const { ErrorHandler } = require("./errors.js");
-
     if (result.errors.length > 0) {
       ErrorHandler.logError({
         code: "VALIDATION_ERROR",
