@@ -6,15 +6,9 @@ import { SecurityRule } from '../../../src/custom-specs/types.js';
 jest.mock('xss', () => {
   return {
     filterXSS: jest.fn((input: string) => {
-      // Properly mock XSS filtering with repeated replacement to handle nested tags
-      let previous;
-      let sanitized = input;
-      do {
-        previous = sanitized;
-        // Use a more robust regex that handles spaces in closing tags and multiline content
-        sanitized = sanitized.replace(/<script[^>]*>[\s\S]*?<\/script\s*>/gi, '');
-      } while (sanitized !== previous);
-      return sanitized;
+      // Use the actual xss library for proper sanitization
+      const xss = jest.requireActual('xss');
+      return xss.filterXSS(input);
     }),
     whiteList: {}
   };
