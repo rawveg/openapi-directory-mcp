@@ -63,6 +63,66 @@ describe('Production Tools Feature Tests', () => {
   });
 
   describe('Tool Registry Functionality', () => {
+    test('should use getAllTools to retrieve registered tools', () => {
+      // Register some tools
+      const tool1: ToolDefinition = {
+        name: 'getAllTools_test1',
+        description: 'Test tool 1',
+        inputSchema: { type: 'object' },
+        async execute() { return { result: 'test1' }; }
+      };
+
+      const tool2: ToolDefinition = {
+        name: 'getAllTools_test2',
+        description: 'Test tool 2',
+        inputSchema: { type: 'object' },
+        async execute() { return { result: 'test2' }; }
+      };
+
+      registry.register('test-category', tool1);
+      registry.register('test-category', tool2);
+
+      // Use getAllTools method
+      const allTools = registry.getAllTools();
+      expect(allTools).toHaveLength(2);
+      expect(allTools.some(t => t.name === 'getAllTools_test1')).toBe(true);
+      expect(allTools.some(t => t.name === 'getAllTools_test2')).toBe(true);
+      
+      // Verify it returns a copy
+      allTools.push({
+        name: 'extra_tool',
+        description: 'Extra',
+        inputSchema: {},
+        async execute() { return {}; }
+      });
+      expect(registry.getAllTools()).toHaveLength(2); // Original unchanged
+    });
+
+    test('should use clear method to reset registry', () => {
+      // Register tools
+      for (let i = 0; i < 3; i++) {
+        const tool: ToolDefinition = {
+          name: `clear_test_${i}`,
+          description: `Clear test tool ${i}`,
+          inputSchema: {},
+          async execute() { return { id: i }; }
+        };
+        registry.register('clear-test-category', tool);
+      }
+
+      expect(registry.getToolCount()).toBe(3);
+      expect(registry.getCategoryCount()).toBe(1);
+
+      // Clear the registry
+      registry.clear();
+
+      // Verify cleared
+      expect(registry.getToolCount()).toBe(0);
+      expect(registry.getCategoryCount()).toBe(0);
+      expect(registry.getAllTools()).toEqual([]);
+      expect(registry.getTool('clear_test_0')).toBeUndefined();
+    });
+
     test('should manage tool registration and organization', () => {
       // Simulate registering production tool categories
       const productionCategories = [

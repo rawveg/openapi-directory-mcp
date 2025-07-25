@@ -67,7 +67,6 @@ describe("Mock API Client Validation", () => {
       'getRecentlyUpdatedAPIs',
       'getProviderStats',
       'getOpenAPISpec',
-      'analyzeAPICategories',
       'fetchWithCache'
     ];
 

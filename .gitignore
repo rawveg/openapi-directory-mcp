@@ -44,6 +44,9 @@ coverage/
 # nyc test coverage
 .nyc_output/
 
+# Stryker mutation testing temporary files
+.stryker-tmp/
+
 # Dependency directories
 jspm_packages/
 
@@ -132,3 +135,6 @@ test-status-report.txt
 # Temporary files from pre-flight checks
 .temp-check-tools.mjs
 .temp-check-prompts.mjs
+
+# Claude directory
+.claude/
