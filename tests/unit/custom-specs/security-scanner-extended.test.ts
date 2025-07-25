@@ -11,7 +11,8 @@ jest.mock('xss', () => {
       let sanitized = input;
       do {
         previous = sanitized;
-        sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
+        // Use a more robust regex that handles spaces in closing tags and multiline content
+        sanitized = sanitized.replace(/<script[^>]*>[\s\S]*?<\/script\s*>/gi, '');
       } while (sanitized !== previous);
       return sanitized;
     }),
