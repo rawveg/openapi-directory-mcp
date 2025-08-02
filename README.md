@@ -137,7 +137,7 @@ claude mcp add openapi-directory -- node /absolute/path/to/openapi-directory-mcp
 #### Cursor (Local)
 ```json
 {
-  "mcp.servers": {
+  "mcpServers": {
     "openapi-directory": {
       "command": "node",
       "args": ["/path/to/openapi-directory-mcp/dist/index.js"],
@@ -229,7 +229,7 @@ claude mcp remove openapi-directory
 #### Cursor (NPX)
 ```json
 {
-  "mcp.servers": {
+  "mcpServers": {
     "openapi-directory": {
       "command": "npx",
       "args": ["-y", "openapi-directory-mcp"]
