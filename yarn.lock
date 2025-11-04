@@ -560,6 +560,11 @@
   resolved "https://registry.npmjs.org/@humanwhocodes/object-schema/-/object-schema-2.0.3.tgz"
   integrity sha512-93zYdMES/c1D69yZiKDBj0V24vqNzB/koF26KPaagAfd3P/4gUlh3Dys5ogAK+Exi9QyzlD8x/08Zt7wIKcDcA==
 
+"@inquirer/ansi@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/@inquirer/ansi/-/ansi-1.0.1.tgz"
+  integrity sha512-yqq0aJW/5XPhi5xOAL1xRCpe1eh8UFVgYFpFsjEqmIR8rKLyP+HINvFXwUaxYICflJrVlxnp7lLN6As735kVpw==
+
 "@inquirer/checkbox@^4.1.9":
   version "4.1.9"
   resolved "https://registry.npmjs.org/@inquirer/checkbox/-/checkbox-4.1.9.tgz"
@@ -579,14 +584,14 @@
     "@inquirer/core" "^10.1.14"
     "@inquirer/type" "^3.0.7"
 
-"@inquirer/core@^10.1.14":
-  version "10.1.14"
-  resolved "https://registry.npmjs.org/@inquirer/core/-/core-10.1.14.tgz"
-  integrity sha512-Ma+ZpOJPewtIYl6HZHZckeX1STvDnHTCB2GVINNUlSEn2Am6LddWwfPkIGY0IUFVjUUrr/93XlBwTK6mfLjf0A==
+"@inquirer/core@^10.1.14", "@inquirer/core@^10.3.0":
+  version "10.3.0"
+  resolved "https://registry.npmjs.org/@inquirer/core/-/core-10.3.0.tgz"
+  integrity sha512-Uv2aPPPSK5jeCplQmQ9xadnFx2Zhj9b5Dj7bU6ZeCdDNNY11nhYy4btcSdtDguHqCT2h5oNeQTcUNSGGLA7NTA==
   dependencies:
-    "@inquirer/figures" "^1.0.12"
-    "@inquirer/type" "^3.0.7"
-    ansi-escapes "^4.3.2"
+    "@inquirer/ansi" "^1.0.1"
+    "@inquirer/figures" "^1.0.14"
+    "@inquirer/type" "^3.0.9"
     cli-width "^4.1.0"
     mute-stream "^2.0.0"
     signal-exit "^4.1.0"
@@ -594,13 +599,13 @@
     yoctocolors-cjs "^2.1.2"
 
 "@inquirer/editor@^4.2.14":
-  version "4.2.14"
-  resolved "https://registry.npmjs.org/@inquirer/editor/-/editor-4.2.14.tgz"
-  integrity sha512-yd2qtLl4QIIax9DTMZ1ZN2pFrrj+yL3kgIWxm34SS6uwCr0sIhsNyudUjAo5q3TqI03xx4SEBkUJqZuAInp9uA==
+  version "4.2.21"
+  resolved "https://registry.npmjs.org/@inquirer/editor/-/editor-4.2.21.tgz"
+  integrity sha512-MjtjOGjr0Kh4BciaFShYpZ1s9400idOdvQ5D7u7lE6VztPFoyLcVNE5dXBmEEIQq5zi4B9h2kU+q7AVBxJMAkQ==
   dependencies:
-    "@inquirer/core" "^10.1.14"
-    "@inquirer/type" "^3.0.7"
-    external-editor "^3.1.0"
+    "@inquirer/core" "^10.3.0"
+    "@inquirer/external-editor" "^1.0.2"
+    "@inquirer/type" "^3.0.9"
 
 "@inquirer/expand@^4.0.16":
   version "4.0.16"
@@ -611,10 +616,18 @@
     "@inquirer/type" "^3.0.7"
     yoctocolors-cjs "^2.1.2"
 
-"@inquirer/figures@^1.0.12":
-  version "1.0.12"
-  resolved "https://registry.npmjs.org/@inquirer/figures/-/figures-1.0.12.tgz"
-  integrity sha512-MJttijd8rMFcKJC8NYmprWr6hD3r9Gd9qUC0XwPNwoEPWSMVJwA2MlXxF+nhZZNMY+HXsWa+o7KY2emWYIn0jQ==
+"@inquirer/external-editor@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.npmjs.org/@inquirer/external-editor/-/external-editor-1.0.2.tgz"
+  integrity sha512-yy9cOoBnx58TlsPrIxauKIFQTiyH+0MK4e97y4sV9ERbI+zDxw7i2hxHLCIEGIE/8PPvDxGhgzIOTSOWcs6/MQ==
+  dependencies:
+    chardet "^2.1.0"
+    iconv-lite "^0.7.0"
+
+"@inquirer/figures@^1.0.12", "@inquirer/figures@^1.0.14":
+  version "1.0.14"
+  resolved "https://registry.npmjs.org/@inquirer/figures/-/figures-1.0.14.tgz"
+  integrity sha512-DbFgdt+9/OZYFM+19dbpXOSeAstPy884FPy1KjDu4anWwymZeOYhMY1mdFri172htv6mvc/uvIAAi7b7tvjJBQ==
 
 "@inquirer/input@^4.2.0":
   version "4.2.0"
@@ -687,10 +700,10 @@
     ansi-escapes "^4.3.2"
     yoctocolors-cjs "^2.1.2"
 
-"@inquirer/type@^3.0.7":
-  version "3.0.7"
-  resolved "https://registry.npmjs.org/@inquirer/type/-/type-3.0.7.tgz"
-  integrity sha512-PfunHQcjwnju84L+ycmcMKB/pTPIngjUJvfnRhKY6FKPuYXlM4aQCb/nIdTFR6BEhMjFvngzvng/vBAJMZpLSA==
+"@inquirer/type@^3.0.7", "@inquirer/type@^3.0.9":
+  version "3.0.9"
+  resolved "https://registry.npmjs.org/@inquirer/type/-/type-3.0.9.tgz"
+  integrity sha512-QPaNt/nmE2bLGQa9b7wwyRJoLZ7pN6rcyXvzU0YCmivmJyq1BVo94G98tStRWkoD1RgDX5C+dPlhhHzNdu/W/w==
 
 "@isaacs/cliui@^8.0.2":
   version "8.0.2"
@@ -1508,12 +1521,12 @@ asynckit@^0.4.0:
   integrity sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==
 
 axios@^1.6.0:
-  version "1.10.0"
-  resolved "https://registry.npmjs.org/axios/-/axios-1.10.0.tgz"
-  integrity sha512-/1xYAC4MP/HEG+3duIhFr4ZQXR4sQXOIe+o6sdqzeykGLx6Upp/1p8MHqhINOvGeP7xyNHe7tsiJByc4SSVUxw==
+  version "1.13.1"
+  resolved "https://registry.npmjs.org/axios/-/axios-1.13.1.tgz"
+  integrity sha512-hU4EGxxt+j7TQijx1oYdAjw4xuIp1wRQSsbMFwSthCWeBQur1eF+qJ5iQ5sN3Tw8YRzQNKb8jszgBdMDVqwJcw==
   dependencies:
     follow-redirects "^1.15.6"
-    form-data "^4.0.0"
+    form-data "^4.0.4"
     proxy-from-env "^1.1.0"
 
 "babel-jest@^29.0.0 || ^30.0.0", babel-jest@30.0.4:
@@ -1698,10 +1711,10 @@ char-regex@^1.0.2:
   resolved "https://registry.npmjs.org/char-regex/-/char-regex-1.0.2.tgz"
   integrity sha512-kWWXztvZ5SBQV+eRgKFeh8q5sLuZY2+8WUIzlxWVTg+oGwY14qylx1KbKzHd8P6ZYkAg0xyIDU9JMHhyJMZ1jw==
 
-chardet@^0.7.0:
-  version "0.7.0"
-  resolved "https://registry.npmjs.org/chardet/-/chardet-0.7.0.tgz"
-  integrity sha512-mT8iDcrh03qDGRRmoA2hmBJnxpllMR+0/0qlzjqZES6NdiWDcZkCNAk4rPFZ9Q85r27unkiNNg8ZOiwZXBHwcA==
+chardet@^2.1.0:
+  version "2.1.1"
+  resolved "https://registry.npmjs.org/chardet/-/chardet-2.1.1.tgz"
+  integrity sha512-PsezH1rqdV9VvyNhxxOW32/d75r01NY7TQCmOqomRo15ZSOKbpTFVsfjghxo6JloQUCGnH4k1LGu0R4yCLlWQQ==
 
 ci-info@^4.2.0:
   version "4.3.0"
@@ -2147,15 +2160,6 @@ expect@^30.0.0, expect@30.0.4:
     jest-mock "30.0.2"
     jest-util "30.0.2"
 
-external-editor@^3.1.0:
-  version "3.1.0"
-  resolved "https://registry.npmjs.org/external-editor/-/external-editor-3.1.0.tgz"
-  integrity sha512-hMQ4CX1p1izmuLYyZqLMO/qGNw10wSv9QDCPfzXfyFrOaCSSoRfqE1Kf1s5an66J5JZC62NewG+mK49jOCtQew==
-  dependencies:
-    chardet "^0.7.0"
-    iconv-lite "^0.4.24"
-    tmp "^0.0.33"
-
 fast-deep-equal@^3.1.1, fast-deep-equal@^3.1.3:
   version "3.1.3"
   resolved "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz"
@@ -2277,7 +2281,7 @@ foreground-child@^3.1.0:
     cross-spawn "^7.0.6"
     signal-exit "^4.0.1"
 
-form-data@^4.0.0:
+form-data@^4.0.4:
   version "4.0.4"
   resolved "https://registry.npmjs.org/form-data/-/form-data-4.0.4.tgz"
   integrity sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==
@@ -2500,12 +2504,12 @@ human-signals@^8.0.0:
   resolved "https://registry.npmjs.org/human-signals/-/human-signals-8.0.1.tgz"
   integrity sha512-eKCa6bwnJhvxj14kZk5NCPc6Hb6BdsU9DZcOnmQKSnO1VKrfV0zCvtttPZUsBvjmNDn8rpcJfpwSYnHBjc95MQ==
 
-iconv-lite@^0.4.24:
-  version "0.4.24"
-  resolved "https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.4.24.tgz"
-  integrity sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==
+iconv-lite@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.7.0.tgz"
+  integrity sha512-cf6L2Ds3h57VVmkZe+Pn+5APsT7FpqJtEhhieDCvrE2MK5Qk9MyffgQyuxQTm6BChfeZNtcOLHp9IcWRVcIcBQ==
   dependencies:
-    safer-buffer ">= 2.1.2 < 3"
+    safer-buffer ">= 2.1.2 < 3.0.0"
 
 iconv-lite@0.6.3:
   version "0.6.3"
@@ -3413,11 +3417,6 @@ optionator@^0.9.3:
     type-check "^0.4.0"
     word-wrap "^1.2.5"
 
-os-tmpdir@~1.0.2:
-  version "1.0.2"
-  resolved "https://registry.npmjs.org/os-tmpdir/-/os-tmpdir-1.0.2.tgz"
-  integrity sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==
-
 p-limit@^2.2.0:
   version "2.3.0"
   resolved "https://registry.npmjs.org/p-limit/-/p-limit-2.3.0.tgz"
@@ -3676,7 +3675,7 @@ rxjs@~7.8.1:
   dependencies:
     tslib "^2.1.0"
 
-"safer-buffer@>= 2.1.2 < 3", "safer-buffer@>= 2.1.2 < 3.0.0":
+"safer-buffer@>= 2.1.2 < 3.0.0":
   version "2.1.2"
   resolved "https://registry.npmjs.org/safer-buffer/-/safer-buffer-2.1.2.tgz"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
@@ -3957,13 +3956,6 @@ tldts@^6.1.32:
   integrity sha512-WMi/OQ2axVTf/ykqCQgXiIct+mSQDFdH2fkwhPwgEwvJ1kSzZRiinb0zF2Xb8u4+OqPChmyI6MEu4EezNJz+FQ==
   dependencies:
     tldts-core "^6.1.86"
-
-tmp@^0.0.33:
-  version "0.0.33"
-  resolved "https://registry.npmjs.org/tmp/-/tmp-0.0.33.tgz"
-  integrity sha512-jRCJlojKnZ3addtTOjdIqoRuPEKBvNXcGYqzO6zWZX8KfKEpnGY5jfggJQ3EjKuu8D4bJRr0y+cYJFmYbImXGw==
-  dependencies:
-    os-tmpdir "~1.0.2"
 
 tmpl@1.0.5:
   version "1.0.5"
