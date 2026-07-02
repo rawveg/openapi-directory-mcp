@@ -1,6 +1,7 @@
 import { describe, test, expect, jest, beforeEach } from '@jest/globals';
 import { SecurityScanner } from '../../../src/custom-specs/security-scanner.js';
 import { SecurityScanResult, SecurityIssue } from '../../../src/custom-specs/types.js';
+import { readFileSync } from 'fs';
 
 // Mock xss module with proper security-aware implementation
 jest.mock('xss', () => {
@@ -60,6 +61,23 @@ describe('SecurityScanner', () => {
       });
       expect(result.blocked).toBe(false);
       expect(result.scannedAt).toBeDefined();
+    });
+
+    test('should accept authenticated social API fixture', async () => {
+      const fixture = JSON.parse(
+        readFileSync('tests/fixtures/xquik-social-openapi.json', 'utf8')
+      );
+
+      const result = await securityScanner.scanSpec(fixture);
+
+      expect(result.issues).toHaveLength(0);
+      expect(result.summary).toEqual({
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0
+      });
+      expect(result.blocked).toBe(false);
     });
 
     test('should detect script injection in descriptions', async () => {
